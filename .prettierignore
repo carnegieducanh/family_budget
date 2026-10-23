@@ -1,0 +1,5 @@
+package-lock.json
+src-tauri/target
+src-tauri/gen
+# Tài liệu gốc của người dùng, giữ nguyên định dạng
+docs/SPEC.md

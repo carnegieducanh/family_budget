@@ -1,0 +1,70 @@
+.layout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-6);
+}
+
+.donut {
+  flex-shrink: 0;
+
+  // Khe 2px màu nền giữa các lát, thay cho viền.
+  :global(.recharts-sector) {
+    stroke: var(--color-surface);
+    stroke-width: 2px;
+  }
+}
+
+.legend {
+  flex: 1;
+  min-width: 0;
+  border-collapse: collapse;
+
+  td {
+    padding: 3px var(--space-2);
+  }
+}
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+.name {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pct {
+  color: var(--color-text-muted);
+}
+
+.tooltip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-modal);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+.empty {
+  margin: 0;
+  padding: var(--space-6) 0;
+  text-align: center;
+  color: var(--color-text-muted);
+}

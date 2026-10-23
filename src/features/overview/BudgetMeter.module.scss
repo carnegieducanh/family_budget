@@ -1,0 +1,65 @@
+.meter {
+  margin-top: var(--space-4);
+}
+
+// Nền thanh là bậc nhạt của cùng màu với phần đã dùng.
+.track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+}
+
+.fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+}
+
+.ok {
+  background: var(--color-primary-soft);
+  .fill {
+    background: var(--color-primary);
+  }
+}
+
+.warning {
+  background: var(--color-warning-soft);
+  .fill {
+    background: var(--color-warning);
+  }
+}
+
+.over {
+  background: var(--color-danger-soft);
+  .fill {
+    background: var(--color-danger);
+  }
+}
+
+.caption {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.status {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.warningText {
+  color: var(--color-warning-text);
+}
+
+.overText {
+  color: var(--color-danger-text);
+}
+
+.none {
+  margin: var(--space-4) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}

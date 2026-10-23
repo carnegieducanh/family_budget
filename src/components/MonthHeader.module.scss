@@ -1,0 +1,61 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  margin-right: auto;
+}
+
+.picker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.arrow {
+  min-width: 32px;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+}
+
+.month {
+  min-width: 120px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.lock {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.lockedBadge,
+.unlockedBadge {
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+.lockedBadge {
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+
+.unlockedBadge {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
+}
+
+.error {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-danger-text);
+  font-size: var(--font-size-sm);
+}

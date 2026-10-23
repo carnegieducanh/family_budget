@@ -1,0 +1,83 @@
+// Biến màu và kích thước dùng chung. Component chỉ dùng var(--...), không hard-code màu.
+// Dark mode đi theo cài đặt hệ thống (prefers-color-scheme).
+
+:root {
+  color-scheme: light dark;
+
+  --color-bg: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eef0f3;
+  --color-border: #dde1e7;
+  --color-text: #1c2430;
+  --color-text-muted: #5f6b7a;
+  --color-overlay: rgba(15, 20, 30, 0.45);
+  --shadow-modal: 0 12px 40px rgba(15, 20, 30, 0.25);
+
+  --color-primary: #3b6fe0;
+  --color-primary-soft: #dbe6fb;
+  --color-primary-text: #ffffff;
+
+  // Màu trạng thái: chỉ dùng khi màu mang nghĩa tốt/cảnh báo/lỗi, luôn kèm icon + chữ.
+  // *-text dùng cho chữ (đủ tương phản), màu gốc dùng cho thanh, chấm, viền.
+  --color-success: #1f9d61;
+  --color-success-soft: #dcf3e7;
+  --color-success-text: #13734a;
+  --color-warning: #c98a06;
+  --color-warning-soft: #fbefd2;
+  --color-warning-text: #8a5d00;
+  --color-danger: #d64545;
+  --color-danger-soft: #fbe0e0;
+  --color-danger-text: #b42f2f;
+  --color-on-danger: #ffffff;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+  --font-size-hero: 48px;
+
+  --sidebar-width: 220px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #15181d;
+    --color-surface: #1e232a;
+    --color-surface-muted: #262c35;
+    --color-border: #343b46;
+    --color-text: #e6e9ee;
+    --color-text-muted: #9aa4b2;
+    --color-overlay: rgba(0, 0, 0, 0.6);
+    --shadow-modal: 0 12px 40px rgba(0, 0, 0, 0.5);
+
+    --color-primary: #6c95f0;
+    --color-primary-soft: #26365a;
+    --color-primary-text: #0f1420;
+
+    --color-success: #3cc183;
+    --color-success-soft: #1d3a2d;
+    --color-success-text: #4fd197;
+    --color-warning: #e3a92b;
+    --color-warning-soft: #3d321a;
+    --color-warning-text: #f0bd52;
+    --color-danger: #f06b6b;
+    --color-danger-soft: #42252a;
+    --color-danger-text: #f59393;
+    --color-on-danger: #1a0f10;
+  }
+}
