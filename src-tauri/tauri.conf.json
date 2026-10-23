@@ -18,11 +18,17 @@
         "height": 800,
         "minWidth": 1024,
         "minHeight": 700,
-        "center": true
+        "center": true,
+        "dragDropEnabled": false
       }
     ],
     "security": {
       "csp": null
+    }
+  },
+  "plugins": {
+    "fs": {
+      "requireLiteralLeadingDot": false
     }
   },
   "bundle": {

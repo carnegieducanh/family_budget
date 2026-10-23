@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatYen } from './money';
+import { formatYen, parseYen } from './money';
 
 describe('formatYen', () => {
   it('thêm ký hiệu ¥ và dấu phẩy ngăn cách hàng nghìn', () => {
@@ -18,5 +18,21 @@ describe('formatYen', () => {
 
   it('phần chịu lẻ nửa yên hiện đúng ¥500.5 (ví dụ SPEC mục 6)', () => {
     expect(formatYen(500.5)).toBe('¥500.5');
+  });
+});
+
+describe('parseYen', () => {
+  it.each([
+    ['12500', 12500],
+    ['12,500', 12500],
+    ['¥12,500', 12500],
+    [' 3000円 ', 3000],
+    ['', null],
+    ['0', null],
+    ['-5', null],
+    ['12.5', null],
+    ['abc', null],
+  ])('"%s" → %s', (text, expected) => {
+    expect(parseYen(text)).toBe(expected);
   });
 });

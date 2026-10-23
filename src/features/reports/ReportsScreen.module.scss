@@ -1,0 +1,176 @@
+.grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--space-4) 0;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+// --- Biểu đồ cột
+
+.chart {
+  // Lưới và trục lùi về sau: đường mảnh, liền, màu viền; chữ dùng màu chữ phụ.
+  :global(.recharts-cartesian-grid line) {
+    stroke: var(--color-border);
+    stroke-width: 1px;
+  }
+
+  :global(.recharts-cartesian-axis-tick-value) {
+    fill: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.tick,
+.tickSelected {
+  fill: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.tickSelected {
+  fill: var(--color-text);
+  font-weight: 700;
+}
+
+.bar {
+  cursor: pointer;
+}
+
+.cursor {
+  fill: var(--color-surface-muted);
+}
+
+.tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-modal);
+  font-size: var(--font-size-sm);
+
+  strong {
+    font-size: var(--font-size-md);
+    font-variant-numeric: tabular-nums;
+  }
+
+  span {
+    color: var(--color-text-muted);
+  }
+}
+
+.details {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-sm);
+
+  summary {
+    cursor: pointer;
+    color: var(--color-text-muted);
+  }
+
+  .table {
+    max-width: 320px;
+    margin-top: var(--space-2);
+  }
+}
+
+// --- Bảng chi theo danh mục
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: var(--space-2) var(--space-3);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  th {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-muted);
+  }
+}
+
+.strong td {
+  border-bottom-width: 2px;
+}
+
+.num {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.meterCell {
+  width: 40%;
+}
+
+.meterRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+// Nền thanh là bậc nhạt của cùng màu với phần đã dùng (giống Tổng quan).
+.track {
+  flex: 1;
+  min-width: 80px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+}
+
+.fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+}
+
+.ok {
+  background: var(--color-primary-soft);
+  .fill {
+    background: var(--color-primary);
+  }
+}
+
+.warning {
+  background: var(--color-warning-soft);
+  .fill {
+    background: var(--color-warning);
+  }
+}
+
+.over {
+  background: var(--color-danger-soft);
+  .fill {
+    background: var(--color-danger);
+  }
+}
+
+.percent {
+  min-width: 40px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.warningText {
+  font-weight: 500;
+  color: var(--color-warning-text);
+}
+
+.overText {
+  font-weight: 500;
+  color: var(--color-danger-text);
+}

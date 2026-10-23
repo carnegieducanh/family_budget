@@ -10,3 +10,14 @@ const yenFormatter = new Intl.NumberFormat('en-US', {
 export function formatYen(amount: number): string {
   return yenFormatter.format(amount);
 }
+
+/**
+ * Số tiền người dùng gõ: "12500", "12,500", "¥12,500", "12500円" → 12500.
+ * null nếu không phải số nguyên yên lớn hơn 0.
+ */
+export function parseYen(text: string): number | null {
+  const digits = text.replace(/[¥￥円,\s]/g, '');
+  if (!/^\d+$/.test(digits)) return null;
+  const amount = Number(digits);
+  return Number.isSafeInteger(amount) && amount > 0 ? amount : null;
+}

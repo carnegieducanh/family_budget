@@ -1,13 +1,9 @@
 import { useReadyData } from '../state/dataStore';
-import { useUiStore, type Screen } from '../state/uiStore';
+import { useUiStore } from '../state/uiStore';
+import { NAV_ITEMS, canOpen } from './navigation';
 import styles from './Sidebar.module.scss';
+import { SyncIndicator } from './SyncIndicator';
 import { UserDot } from './UserDot';
-
-const NAV_ITEMS: { screen: Screen; icon: string; label: string }[] = [
-  { screen: 'overview', icon: '📊', label: 'Tổng quan' },
-  { screen: 'transactions', icon: '🧾', label: 'Khoản chi' },
-  { screen: 'settlement', icon: '🤝', label: 'Tất toán' },
-];
 
 export function Sidebar() {
   const screen = useUiStore((s) => s.screen);
@@ -18,7 +14,7 @@ export function Sidebar() {
     <aside className={styles.sidebar}>
       <div className={styles.brand}>Family Budget</div>
       <nav className={styles.nav}>
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.filter((item) => canOpen(me, item.screen)).map((item) => (
           <button
             key={item.screen}
             type="button"
@@ -31,11 +27,14 @@ export function Sidebar() {
           </button>
         ))}
       </nav>
-      <footer className={styles.footer}>
-        <UserDot user={me} />
-        <span className={styles.me}>{me.name}</span>
-        <span className={styles.role}>{me.role === 'admin' ? 'Admin' : 'Thành viên'}</span>
-      </footer>
+      <div className={styles.bottom}>
+        <SyncIndicator />
+        <footer className={styles.footer}>
+          <UserDot user={me} />
+          <span className={styles.me}>{me.name}</span>
+          <span className={styles.role}>{me.role === 'admin' ? 'Admin' : 'Thành viên'}</span>
+        </footer>
+      </div>
     </aside>
   );
 }

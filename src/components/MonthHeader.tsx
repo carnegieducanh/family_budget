@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatDateTime, formatMonthLabel, toMonth } from '../core/month';
 import { findMonthRecord, isLocked, isPastMonth, isTemporarilyUnlocked } from '../core/monthLock';
+import { can } from '../core/permissions';
 import { useDataStore, useReadyData } from '../state/dataStore';
 import { useUiStore } from '../state/uiStore';
 import { useNow } from '../state/useNow';
@@ -21,7 +22,7 @@ export function MonthHeader({ title }: { title: string }) {
   const record = findMonthRecord(data.months, month);
   const locked = isLocked(month, now, record);
   const tempUnlocked = isPastMonth(month, now) && isTemporarilyUnlocked(record, now);
-  const isAdmin = me.role === 'admin';
+  const isAdmin = can(me, 'month:unlock');
   const currentMonth = toMonth(now);
 
   function run(action: () => void) {

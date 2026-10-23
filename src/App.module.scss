@@ -38,7 +38,8 @@
   }
 }
 
-.saveError {
+.saveError,
+.banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -48,4 +49,9 @@
   background: var(--color-danger-soft);
   border-radius: var(--radius-sm);
   color: var(--color-danger-text);
+}
+
+.warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
 }

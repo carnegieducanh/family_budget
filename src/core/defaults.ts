@@ -39,6 +39,21 @@ export function createDefaultCategories(userId: string, now: Date): Category[] {
   );
 }
 
+/** Dữ liệu rỗng của một máy, dùng làm điểm xuất phát khi máy thứ hai tham gia. */
+export function createEmptyData(deviceId: string, now: Date): DataFile {
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    deviceId,
+    writtenAt: now.toISOString(),
+    users: [],
+    categories: [],
+    transactions: [],
+    budgets: [],
+    recurring: [],
+    months: [],
+  };
+}
+
 export interface InitialDataInput {
   deviceId: string;
   myName: string;
@@ -72,15 +87,9 @@ export function createInitialData(input: InitialDataInput): { data: DataFile; my
   );
 
   const data: DataFile = {
-    schemaVersion: SCHEMA_VERSION,
-    deviceId,
-    writtenAt: now.toISOString(),
+    ...createEmptyData(deviceId, now),
     users: [me, other],
     categories: createDefaultCategories(myUserId, now),
-    transactions: [],
-    budgets: [],
-    recurring: [],
-    months: [],
   };
   return { data, myUserId };
 }

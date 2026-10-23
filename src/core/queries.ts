@@ -111,3 +111,24 @@ export function activeMonths(data: DataFile, now: Date): string[] {
 export function adjacentMonths(month: string): { prev: string; next: string } {
   return { prev: addMonths(month, -1), next: addMonths(month, 1) };
 }
+
+export interface MonthTotal {
+  month: string;
+  total: number;
+}
+
+/** Tổng chi của `count` tháng liên tiếp, kết thúc ở `endMonth`, cũ nhất trước. */
+export function monthlyTotals(
+  transactions: readonly Transaction[],
+  endMonth: string,
+  count = 12,
+): MonthTotal[] {
+  const months = Array.from({ length: count }, (_, i) => addMonths(endMonth, i - count + 1));
+  const totals = new Map(months.map((month) => [month, 0]));
+  for (const tx of transactions) {
+    const month = tx.date.slice(0, 7);
+    const current = totals.get(month);
+    if (!tx.deleted && current !== undefined) totals.set(month, current + tx.amount);
+  }
+  return months.map((month) => ({ month, total: totals.get(month) ?? 0 }));
+}

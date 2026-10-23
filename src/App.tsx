@@ -1,15 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { Button } from './components/Button';
 import { isAnyModalOpen } from './components/modalStack';
+import { canOpen } from './components/navigation';
 import { Sidebar } from './components/Sidebar';
+import { BudgetScreen } from './features/budget/BudgetScreen';
+import { CategoriesScreen } from './features/categories/CategoriesScreen';
 import { OverviewScreen } from './features/overview/OverviewScreen';
+import { RecurringScreen } from './features/recurring/RecurringScreen';
+import { ReportsScreen } from './features/reports/ReportsScreen';
+import { SettingsScreen } from './features/settings/SettingsScreen';
 import { SettlementScreen } from './features/settlement/SettlementScreen';
 import { SetupScreen } from './features/setup/SetupScreen';
 import { TransactionEditor } from './features/transactions/TransactionEditor';
 import { TransactionsScreen } from './features/transactions/TransactionsScreen';
-import { useDataStore } from './state/dataStore';
-import { useUiStore } from './state/uiStore';
+import { useDataStore, useReadyData } from './state/dataStore';
+import { useSyncStore } from './state/syncStore';
+import { useUiStore, type Screen } from './state/uiStore';
 import { getDataFilePath } from './storage/localStore';
+import { startSync } from './sync/appSync';
 import styles from './App.module.scss';
 
 function App() {
@@ -25,9 +33,31 @@ function App() {
   return <MainLayout />;
 }
 
+const SCREENS: Record<Screen, () => ReactElement> = {
+  overview: OverviewScreen,
+  transactions: TransactionsScreen,
+  settlement: SettlementScreen,
+  reports: ReportsScreen,
+  budget: BudgetScreen,
+  categories: CategoriesScreen,
+  recurring: RecurringScreen,
+  settings: SettingsScreen,
+};
+
 function MainLayout() {
-  const screen = useUiStore((s) => s.screen);
+  const selected = useUiStore((s) => s.screen);
   const saveError = useDataStore((s) => s.saveError);
+  const { me } = useReadyData();
+  // Vừa mất quyền admin (chuyển quyền, hoặc nhận từ máy kia) thì quay về Tổng quan.
+  const screen = canOpen(me, selected) ? selected : 'overview';
+  const Current = SCREENS[screen];
+
+  // Khi mở app: sinh khoản định kỳ của tháng này (SPEC mục 6), rồi bắt đầu lịch sync:
+  // sync ngay, định kỳ, khi focus lại cửa sổ và sau mỗi thay đổi (SPEC mục 5).
+  useEffect(() => {
+    useDataStore.getState().generateRecurring();
+    startSync();
+  }, []);
 
   // Ctrl/Cmd + N: thêm khoản chi mới từ bất kỳ màn hình nào.
   useEffect(() => {
@@ -53,13 +83,33 @@ function MainLayout() {
             </Button>
           </div>
         )}
-        {screen === 'overview' && <OverviewScreen />}
-        {screen === 'transactions' && <TransactionsScreen />}
-        {screen === 'settlement' && <SettlementScreen />}
+        <SyncBanner />
+        <Current />
       </main>
       <TransactionEditor />
     </div>
   );
+}
+
+/** Cảnh báo sync cần người dùng xử lý; các cảnh báo nhẹ chỉ hiện ở góc sidebar. */
+function SyncBanner() {
+  const last = useSyncStore((s) => s.last);
+  if (last?.kind === 'schema-too-new') {
+    return (
+      <div className={styles.banner} role="alert">
+        Máy kia đang dùng bản mới hơn, hãy cập nhật app. Đồng bộ tạm dừng cho đến khi cập nhật.
+      </div>
+    );
+  }
+  if (last?.kind === 'ok' && last.clockSkew) {
+    return (
+      <div className={`${styles.banner} ${styles.warning}`} role="alert">
+        Giờ trên hai máy lệch nhau. Hãy bật “Đặt giờ tự động” trên cả hai máy, nếu không bản sửa
+        trên máy chạy nhanh giờ có thể đè bản sửa mới hơn trên máy kia.
+      </div>
+    );
+  }
+  return null;
 }
 
 function LoadError() {

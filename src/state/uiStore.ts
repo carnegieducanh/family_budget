@@ -3,7 +3,15 @@ import { addMonths, toMonth } from '../core/month';
 
 // Trạng thái giao diện (không lưu file): màn hình đang mở, tháng đang chọn, modal khoản chi.
 
-export type Screen = 'overview' | 'transactions' | 'settlement';
+export type Screen =
+  | 'overview'
+  | 'transactions'
+  | 'settlement'
+  | 'reports'
+  | 'budget'
+  | 'categories'
+  | 'recurring'
+  | 'settings';
 
 export type EditorState = { mode: 'closed' } | { mode: 'create' } | { mode: 'edit'; id: string };
 

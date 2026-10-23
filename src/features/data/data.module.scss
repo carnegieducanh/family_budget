@@ -1,0 +1,123 @@
+// Dùng chung cho export/import CSV và backup.
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+
+  > span {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-muted);
+  }
+}
+
+.muted {
+  align-self: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.ok,
+.error {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.ok {
+  color: var(--color-success-text);
+}
+
+.error {
+  color: var(--color-danger-text);
+}
+
+// --- Xem trước import CSV và khôi phục
+
+.summary {
+  margin: 0 0 var(--space-3);
+}
+
+.previewTable {
+  display: block;
+  max-height: 340px;
+  overflow: auto;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+
+  th,
+  td {
+    padding: var(--space-1) var(--space-2);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    background: var(--color-surface);
+    font-weight: 500;
+    color: var(--color-text-muted);
+  }
+}
+
+.num {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.statusNew {
+  color: var(--color-success-text);
+  white-space: nowrap;
+}
+
+.statusDuplicate {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.statusError {
+  color: var(--color-danger-text);
+  white-space: nowrap;
+}
+
+.snapshots {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-1) 0;
+    border-bottom: 1px solid var(--color-border);
+    font-variant-numeric: tabular-nums;
+  }
+
+  li > :last-child {
+    margin-left: auto;
+  }
+}

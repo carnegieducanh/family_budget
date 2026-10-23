@@ -107,3 +107,119 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 - **Ô chọn ngày hiển thị theo ngôn ngữ của hệ điều hành** (WebView2 trên Windows tiếng Anh hiện `10/23/2026`). Giá trị lưu luôn là `YYYY-MM-DD`; các chỗ khác trong app hiện `dd/mm/yyyy`.
   Lý do: đổi định dạng của ô ngày gốc cần thêm tham số trình duyệt cho WebView2; chưa cần ở MVP.
+
+## 2026-10-23 — Giai đoạn 2
+
+- **Cài `plugin-dialog` (chỉ cấp quyền `dialog:allow-open`) và `plugin-persisted-scope`. Đăng ký plugin theo thứ tự fs → dialog → persisted-scope.**
+  Lý do: chỉ cần hộp chọn thư mục. `tauri add` đặt persisted-scope trước fs, nhưng persisted-scope phải đăng ký sau fs thì mới khôi phục được quyền vào thư mục Drive khi mở lại app.
+
+- **Thêm `serde_json` vào `Cargo.toml`.**
+  Lý do: khi `tauri.conf.json` có mục `plugins`, `generate_context!` sinh code dùng `serde_json`. Crate này đã có sẵn trong cây phụ thuộc của tauri nên không tải thêm gì.
+
+- **`plugins.fs.requireLiteralLeadingDot: false` trong `tauri.conf.json`.**
+  Lý do: trên macOS, mặc định mẫu quyền `**` không khớp file bắt đầu bằng dấu chấm, nên không ghi được file tạm `.data.json.tmp` (lỗi tiềm ẩn từ giai đoạn 1, chưa lộ vì mới chạy trên Windows) và `.device-<id>.json.tmp` trên Drive.
+
+- **Hộp chọn thư mục cấp quyền đọc ghi cho thư mục đã chọn và mọi thư mục con (`recursive: true`).** Không cấp quyền fs nào khác ngoài thư mục app data.
+  Lý do: app cần tạo và ghi trong `<thư mục>/FamilyBudget/`.
+
+- **File đồng bộ nằm trong `<thư mục đã chọn>/FamilyBudget/`; nếu người dùng chọn thẳng một thư mục tên `FamilyBudget` thì dùng luôn thư mục đó.**
+  Lý do: khi dùng 2 tài khoản Google, người kia có thể thêm lối tắt tới chính thư mục `FamilyBudget`; tránh tạo `FamilyBudget/FamilyBudget` khiến hai máy không thấy nhau.
+
+- **Chỉ đọc file khớp `device-<id>.json` / `device-<id>.enc.json` với id chỉ gồm chữ, số, dấu gạch.**
+  Lý do: bỏ qua file tạm và bản sao `device-<id> (1).json` mà Google Drive có thể tạo khi xung đột.
+
+- **Kết quả merge sắp xếp mỗi collection theo `id`; phần đầu file (`deviceId`, `writtenAt`) giữ của máy local.** `householdUsers` không còn dựa vào thứ tự trong mảng: admin trước, rồi theo `createdAt`, rồi `id`.
+  Lý do: `merge(a, b)` và `merge(b, a)` ra đúng cùng một mảng. Hai người dùng được tạo cùng một thời điểm nên phải có quy tắc thứ tự rõ ràng.
+
+- **So sánh chuỗi theo mã ký tự, không dùng `localeCompare`. Nếu `updatedAt` và `updatedBy` đều bằng nhau (rất hiếm) thì so nội dung bản ghi.**
+  Lý do: hai máy luôn chọn cùng một bản, dù ngôn ngữ hệ thống khác nhau.
+
+- **File của gia đình khác (tập người dùng khác) bị bỏ qua khi sync; kết nối thư mục như vậy trong Cài đặt bị từ chối.**
+  Lý do: gộp hai bộ dữ liệu khác nhau sẽ ra 4 người dùng. Giới hạn: máy đã tự tạo dữ liệu riêng không tham gia được thư mục của máy kia; chưa có chức năng bỏ dữ liệu riêng để tham gia.
+
+- **Máy thứ hai tham gia bằng cách gộp mọi file `device-*.json` của máy khác trong thư mục** (không chỉ file của máy admin). File hỏng được liệt kê, file có `schemaVersion` cao hơn thì báo cần cập nhật app.
+  Lý do: cùng một luật với lượt sync thường; thư mục có thể còn file của máy cũ đã cài lại.
+
+- **Thiết lập lần đầu (tạo mới) bắt buộc chọn thư mục Drive; thư mục được kiểm tra lúc chọn và kiểm tra lại ngay trước khi tạo.** Máy đã có dữ liệu từ trước (giai đoạn 1) chọn thư mục trong Cài đặt, không phải thiết lập lại.
+  Lý do: SPEC mục 5 và 8; không bao giờ tạo bộ dữ liệu thứ hai trong cùng thư mục.
+
+- **Sau thay đổi local, hết 10 giây debounce thì chạy cả một lượt sync** (đọc file máy kia, gộp, rồi ghi file của mình), không chỉ ghi.
+  Lý do: chỉ có một đường đi qua khóa chống chạy song song; đọc thêm một file nhỏ gần như không tốn gì.
+
+- **Focus lại cửa sổ (sự kiện focus của Tauri) chỉ sync nếu lượt trước đã xong hơn 30 giây.**
+  Lý do: chuyển qua lại giữa các cửa sổ liên tục không tạo nhiều lượt ghi lên Drive.
+
+- **Tắt app trong vòng 10 giây sau khi sửa thì file Drive chưa được ghi; lượt sync khi mở app lần sau sẽ ghi.** Không chặn việc đóng cửa sổ để ghi.
+  Lý do: đơn giản; `data.json` đã được lưu ngay.
+
+- **Backup trước khi gộp là snapshot dữ liệu trong bộ nhớ** (bằng nội dung `data.json`), tên theo giờ local, trùng giây thì thêm `-2`, `-3`. Backup lỗi thì không áp dụng kết quả gộp và lượt sync báo lỗi. Nếu người dùng sửa trong lúc đang ghi backup, kết quả được gộp lại vào bản mới nhất trước khi lưu. "12 tháng gần nhất" gồm tháng hiện tại và 11 tháng trước.
+  Lý do: SPEC mục 9; không mất thay đổi nào của người dùng.
+
+- **Lệch giờ: kiểm tra `writtenAt` của file máy kia, ngoài `updatedAt` của từng bản ghi.**
+  Lý do: phát hiện ngay ở lượt sync đầu, không phải chờ máy kia sửa một bản ghi.
+
+- **File máy kia đã mã hóa (`.enc.json`): giai đoạn 2 bỏ qua kèm cảnh báo.** Giai đoạn 4 thêm giải mã.
+
+- **Ổ Drive chưa mount (Google Drive chưa chạy) được báo là "Lỗi: không tìm thấy thư mục Drive".**
+  Lý do: khi ổ không tồn tại, plugin-fs báo lỗi quyền thay vì trả về `false`.
+
+- **Cách hiện trạng thái sync:** góc sidebar luôn có trạng thái và nút "Sync ngay". "Chưa thấy dữ liệu từ máy kia" khi chưa đọc được file hợp lệ nào của máy khác. File lỗi → dòng cảnh báo nhẹ ở sidebar, chi tiết trong Cài đặt. Máy kia dùng bản mới hơn và lệch giờ → thêm banner ở đầu vùng nội dung. Lần sync thành công cuối quá 1 giờ → màu cảnh báo, kể cả khi máy vừa ngủ dậy chưa tới lượt sync định kỳ. `lastSyncAt` được lưu vào `settings.json` sau mỗi lượt thành công.
+  Lý do: lỗi cần người dùng xử lý thì phải dễ thấy; cảnh báo nhẹ thì không làm phiền.
+
+- **Màn hình Cài đặt ở giai đoạn 2 chỉ có phần Đồng bộ và thông tin máy.** Đồng bộ gồm: thư mục Drive, chu kỳ sync (1–60 phút), trạng thái, thời điểm máy kia ghi file, danh sách file bị bỏ qua, "Sync ngay", và thêm nút "Ngắt kết nối" (SPEC không có). Thông tin máy gồm: mã máy, đường dẫn `data.json`, thư mục backup.
+  Lý do: các phần còn lại thuộc giai đoạn 3–4. "Ngắt kết nối" giúp tắt sync khi thư mục hỏng mà không phải sửa file cài đặt.
+
+- **Thử thật trên một máy Windows 11 với 2 instance app (identifier `com.familybudget.testa`/`testb`, mỗi instance có app data riêng) và một thư mục local đóng vai thư mục Google Drive.** Chưa thử với Google Drive for Desktop thật (máy phát triển chưa cài) và chưa thử trên macOS.
+  Lý do: chỉ có một máy; phần đồng bộ file giữa 2 máy do Google Drive đảm nhận, app chỉ đọc ghi file trong thư mục.
+
+- **Giai đoạn 2 được chấp nhận khi chưa thử trên macOS và chưa thử với Google Drive for Desktop thật trên 2 máy.** Tiêu chí "Thử thật trên 2 máy" (SPEC mục 10) còn treo, sẽ kiểm chứng khi có máy Mac.
+  Lý do: hiện chỉ có một máy Windows; người dùng quyết định chuyển sang giai đoạn 3.
+
+## 2026-10-23 — Giai đoạn 3
+
+- **Phân quyền là một hàm `can(user, action, record?)` trong `core/permissions.ts`**, dùng chung cho UI và store; mọi thao tác dữ liệu trong store đều gọi `assertCan`. Màn hình Ngân sách, Danh mục, Định kỳ ẩn khỏi menu với thành viên. Nếu đang ở màn hình admin mà mất quyền (chuyển quyền, hoặc nhận thay đổi vai trò từ máy kia) thì app quay về Tổng quan.
+  Lý do: SPEC mục 7; một chỗ duy nhất quyết định quyền nên UI và store không lệch nhau.
+
+- **Khoản chi người khác nhập: thành viên vẫn mở được nhưng chỉ xem** (nút "Xem" thay cho "Sửa / Xóa", form bị khóa kèm dòng "Khoản này do … nhập, bạn chỉ xem được").
+  Lý do: vẫn xem được ghi chú và người nhập mà không sửa nhầm.
+
+- **Khoản sinh từ chi tiêu định kỳ ghi người nhập (và người sửa) là người sửa mẫu gần nhất** (luôn là admin), ghi chú là tên mẫu.
+  Lý do: hai máy sinh ra cùng một nội dung; thành viên không sửa nhầm khoản định kỳ.
+
+- **Ngoài lúc mở app và sau mỗi lượt sync, khoản định kỳ còn được sinh ngay khi admin lưu mẫu.** Sửa mẫu không đổi khoản đã sinh của tháng này; xóa mẫu không xóa các khoản đã sinh.
+  Lý do: thấy kết quả ngay sau khi thêm mẫu; khoản đã sinh là dữ liệu thật, sửa riêng trong màn hình Khoản chi nếu cần.
+
+- **Ngân sách phải lớn hơn 0; để trống ô là bỏ mức đó (xóa mềm), đặt lại thì dùng lại bản ghi cũ (id cố định).** Mức riêng của tháng đã khóa không sửa được (trừ khi admin mở khóa tạm). Đổi mức mặc định thì các tháng đã khóa đang dùng mức mặc định cũng thấy mức mới.
+  Lý do: SPEC mục 6 chỉ chặn sửa ngân sách _của_ tháng đã khóa; giữ mức mặc định đơn giản, không chép mức cũ vào từng tháng.
+
+- **Tên danh mục không được trùng (không phân biệt hoa thường, bỏ khoảng trắng thừa).**
+  Lý do: import CSV khớp danh mục theo tên, nên tên phải không nhập nhằng.
+
+- **Danh mục chưa từng dùng thì xóa được (xóa mềm); đã có khoản chi (kể cả khoản đã xóa) hoặc mẫu định kỳ dùng thì chỉ ẩn được.** Danh mục mới dùng id UUID.
+  Lý do: SPEC mục 4 ("danh mục đã dùng chỉ được ẩn"). Chỉ admin tạo danh mục nên không cần id cố định.
+
+- **Sắp xếp danh mục bằng kéo thả HTML5 (kéo biểu tượng ⠿), kèm nút lên/xuống cho bàn phím. Tắt `dragDropEnabled` của cửa sổ Tauri.**
+  Lý do: trên Windows, xử lý thả file của Tauri chặn kéo thả HTML5 trong trang. App không cần nhận file thả vào cửa sổ (CSV mở bằng hộp chọn file); tắt đi cũng tránh việc file thả vào được cấp quyền đọc.
+
+- **Người dùng: admin đổi được tên, màu và chuyển quyền admin cho người kia** (người cũ thành thành viên, luôn còn đúng một admin). Màu chỉ lưu khi đóng bảng chọn màu.
+  Lý do: SPEC mục 7; không ghi dữ liệu liên tục khi đang kéo chọn màu.
+
+- **Export CSV:** UTF-8 có BOM, xuống dòng CRLF, ô chứa `,` `;` `"` hoặc xuống dòng được đặt trong ngoặc kép. Ô bắt đầu bằng `=` `+` `-` `@` được thêm dấu `'` phía trước để Excel không chạy như công thức; import thì bỏ dấu này. Khoản chi xếp cũ nhất trước. Có ở cả màn Báo cáo và Cài đặt. Hộp lưu file mặc định mở ở thư mục Tải xuống.
+  Lý do: Excel mở đúng tiếng Việt và không chạy công thức lạ từ ghi chú; export rồi import lại ra đúng dữ liệu.
+
+- **Import CSV:** tên cột không phân biệt hoa thường, thứ tự tùy ý; bắt buộc `date, amount, category, paidBy`; `createdBy` để trống thì là người đang import. Nhận ngày `YYYY-MM-DD` hoặc `YYYY/M/D`, số tiền có `¥`, dấu phẩy hoặc `円`, dấu phân cách `,` `;` hoặc tab. File không phải UTF-8 bị từ chối kèm hướng dẫn lưu "CSV UTF-8" trong Excel. Dòng thuộc tháng đã khóa là dòng lỗi. Dòng trùng so với khoản đã có và với dòng trước đó trong file. Khi bấm nhập, file được kiểm tra lại trên dữ liệu mới nhất (sau khi tạo backup), người sửa của khoản mới là người import.
+  Lý do: Excel ở máy Nhật/Việt lưu ngày và số theo cài đặt vùng; không nhập trùng hay nhập vào tháng đã khóa.
+
+- **Khôi phục backup bỏ qua luật khóa tháng** (ghi lại cả bản ghi của tháng đã khóa) và từ chối bản backup của gia đình khác. Trước khi xác nhận hiện số khoản chi, khoảng ngày, và số bản ghi sẽ ghi lại / xóa.
+  Lý do: khôi phục là công cụ cứu dữ liệu nên phải đưa được mọi thứ về đúng bản backup; chỉ admin làm được.
+
+- **Backup JSON:** "Lưu file backup" (ai cũng làm được, như export CSV) ghi nội dung `data.json` hiện tại; "Khôi phục từ file backup" (admin) dùng đúng cách khôi phục ở SPEC mục 9 như với bản backup tự động.
+  Lý do: cùng một luồng khôi phục, không có đường ghi đè dữ liệu thứ hai.
+
+- **Báo cáo:** biểu đồ cột tổng chi 12 tháng kết thúc ở tháng đang chọn, bấm vào cột để chuyển tháng, có bảng số liệu mở ra được. Một chuỗi số liệu dùng một màu (màu slot 1 đã kiểm ở giai đoạn 1), không có chú thích; cột rộng tối đa 24px, đầu bo 4px, lưới ngang mảnh. Bảng "chi theo danh mục so với ngân sách" có thanh tiến độ cùng quy ước màu với Tổng quan, cảnh báo luôn kèm icon và chữ.
+  Lý do: làm theo skill dataviz (một chuỗi không cần chú thích, giá trị luôn đọc được không cần tooltip).
+
+- **Cài đặt giai đoạn 3:** thứ tự Người dùng và vai trò → Đồng bộ → Backup → Import/export CSV → Máy này. Mã hóa và cập nhật app thêm ở giai đoạn 4.
+  Lý do: theo thứ tự ở SPEC mục 8, màn hình 9.
+
+- **Thêm quyền `dialog:allow-save`** (lưu CSV, lưu backup JSON). Hộp mở/lưu file chỉ cấp quyền cho đúng file được chọn.

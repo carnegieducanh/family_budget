@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   activeMonths,
   filterTransactions,
+  monthlyTotals,
   normalizeSearchText,
   recentTransactions,
   sortTransactions,
@@ -104,5 +105,22 @@ describe('activeMonths', () => {
       },
     ];
     expect(activeMonths(data, NOW)).toEqual(['2026-10', '2026-09', '2026-06']);
+  });
+});
+
+describe('monthlyTotals', () => {
+  it('12 tháng liên tiếp kết thúc ở tháng chọn, tháng không có khoản nào là 0', () => {
+    const txs = [
+      makeTx({ date: '2026-10-05', amount: 1000, paidBy: 'user-a' }),
+      makeTx({ date: '2026-10-20', amount: 500, paidBy: 'user-b' }),
+      makeTx({ date: '2025-11-01', amount: 200, paidBy: 'user-a' }),
+      makeTx({ date: '2025-10-31', amount: 999, paidBy: 'user-a' }),
+      makeTx({ date: '2026-03-03', amount: 50, paidBy: 'user-a', deleted: true }),
+    ];
+    const totals = monthlyTotals(txs, '2026-10');
+    expect(totals).toHaveLength(12);
+    expect(totals[0]).toEqual({ month: '2025-11', total: 200 });
+    expect(totals[11]).toEqual({ month: '2026-10', total: 1500 });
+    expect(totals.find((t) => t.month === '2026-03')?.total).toBe(0);
   });
 });

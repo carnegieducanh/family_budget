@@ -1,0 +1,40 @@
+import { DomainError } from './errors';
+import { active, touch } from './records';
+import type { MutationContext, User } from './types';
+
+// Người dùng và vai trò (SPEC mục 7, 8). Luôn có đúng 2 người và đúng một admin.
+
+export interface UserInput {
+  name: string;
+  color: string;
+}
+
+const COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+
+export function updateUser(existing: User, input: UserInput, ctx: MutationContext): User {
+  if (existing.deleted) throw new DomainError('Không tìm thấy người dùng.');
+  const name = input.name.trim().replace(/\s+/g, ' ');
+  if (!name) throw new DomainError('Hãy nhập tên.');
+  if (name.length > 40) throw new DomainError('Tên tối đa 40 ký tự.');
+  const other = active(ctx.data.users).find((u) => u.id !== existing.id);
+  if (other && other.name.trim().toLocaleLowerCase('vi') === name.toLocaleLowerCase('vi')) {
+    throw new DomainError('Tên 2 người phải khác nhau.');
+  }
+  if (!COLOR_RE.test(input.color)) throw new DomainError('Màu không hợp lệ.');
+  return touch(existing, { name, color: input.color.toUpperCase() }, ctx.userId, ctx.now);
+}
+
+/**
+ * Chuyển quyền admin cho người kia: người đó thành admin, mọi admin khác thành người
+ * dùng thường. Trả về các bản ghi người dùng thay đổi.
+ */
+export function transferAdmin(targetId: string, ctx: MutationContext): User[] {
+  const users = active(ctx.data.users);
+  const target = users.find((u) => u.id === targetId);
+  if (!target) throw new DomainError('Không tìm thấy người dùng.');
+  if (target.role === 'admin') throw new DomainError(`${target.name} đã là admin.`);
+  return users
+    .map((user) => ({ user, role: user.id === targetId ? 'admin' : 'member' }) as const)
+    .filter(({ user, role }) => user.role !== role)
+    .map(({ user, role }) => touch(user, { role }, ctx.userId, ctx.now));
+}

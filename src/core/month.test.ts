@@ -3,6 +3,7 @@ import {
   addMonths,
   formatDate,
   formatMonthLabel,
+  formatTimeAgo,
   isValidDate,
   isValidMonth,
   monthOfDate,
@@ -40,5 +41,24 @@ describe('month helpers', () => {
     expect(formatMonthLabel('2026-10')).toBe('Tháng 10/2026');
     expect(formatMonthLabel('2026-03')).toBe('Tháng 3/2026');
     expect(formatDate('2026-10-05')).toBe('05/10/2026');
+  });
+});
+
+describe('formatTimeAgo', () => {
+  const now = localTime(2026, 10, 23, 14, 0);
+  const ago = (ms: number) => new Date(now.getTime() - ms).toISOString();
+
+  it.each([
+    [30_000, 'vừa xong'],
+    [5 * 60_000, '5 phút trước'],
+    [59 * 60_000, '59 phút trước'],
+    [2 * 3_600_000 + 5 * 60_000, '2 giờ trước'],
+    [3 * 86_400_000, '3 ngày trước'],
+  ])('%i ms → %s', (ms, expected) => {
+    expect(formatTimeAgo(ago(ms), now)).toBe(expected);
+  });
+
+  it('thời điểm ở tương lai (lệch giờ) → vừa xong', () => {
+    expect(formatTimeAgo(ago(-10 * 60_000), now)).toBe('vừa xong');
   });
 });

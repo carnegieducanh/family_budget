@@ -2,6 +2,7 @@ import { useId, useState, type FormEvent } from 'react';
 import { formatYen } from '../../core/money';
 import { formatDate, monthOfDate, toLocalDate } from '../../core/month';
 import { findMonthRecord, isLocked } from '../../core/monthLock';
+import { can } from '../../core/permissions';
 import { active } from '../../core/records';
 import type { Transaction, TransactionInput } from '../../core/types';
 import { Button } from '../../components/Button';
@@ -46,19 +47,21 @@ function EditorForm({ editor }: { editor: Exclude<EditorState, { mode: 'closed' 
   }
 
   const now = new Date();
-  const readOnly =
+  const locked =
     existing !== undefined &&
     isLocked(
       monthOfDate(existing.date),
       now,
       findMonthRecord(data.months, monthOfDate(existing.date)),
     );
+  const forbidden = existing !== undefined && !can(me, 'transaction:edit', existing);
+  const creator = existing && data.users.find((u) => u.id === existing.createdBy);
+  const readOnly = locked || forbidden;
   // Danh mục ẩn không hiện trong danh sách chọn, trừ khi khoản đang sửa dùng danh mục đó.
   const categories = active(data.categories)
     .filter((c) => !c.hidden || c.id === existing?.categoryId)
     .sort((a, b) => a.order - b.order);
   const amountNumber = amount.trim() === '' ? Number.NaN : Number(amount);
-  const creator = existing && data.users.find((u) => u.id === existing.createdBy);
 
   function save(event: FormEvent) {
     event.preventDefault();
@@ -110,7 +113,12 @@ function EditorForm({ editor }: { editor: Exclude<EditorState, { mode: 'closed' 
       }
     >
       <form id="transaction-form" className={styles.form} onSubmit={save}>
-        {readOnly && <p className={styles.locked}>🔒 Tháng đã khóa, chỉ xem được khoản này.</p>}
+        {locked && <p className={styles.locked}>🔒 Tháng đã khóa, chỉ xem được khoản này.</p>}
+        {!locked && forbidden && (
+          <p className={styles.locked}>
+            Khoản này do {creator?.name ?? 'người khác'} nhập, bạn chỉ xem được.
+          </p>
+        )}
 
         <fieldset className={styles.fieldset} disabled={readOnly}>
           <div className={styles.field}>

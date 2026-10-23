@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { formatYen } from '../../core/money';
 import { formatDate, formatMonthLabel } from '../../core/month';
 import { findMonthRecord, isLocked } from '../../core/monthLock';
+import { can } from '../../core/permissions';
 import {
   filterTransactions,
   sortTransactions,
@@ -34,7 +35,7 @@ export function TransactionsScreen() {
   const month = useUiStore((s) => s.month);
   const openCreate = useUiStore((s) => s.openCreate);
   const openEdit = useUiStore((s) => s.openEdit);
-  const { data, users } = useReadyData();
+  const { data, me, users } = useReadyData();
   const now = useNow();
 
   const [categoryId, setCategoryId] = useState('');
@@ -166,12 +167,20 @@ export function TransactionsScreen() {
                   </td>
                   {!locked && (
                     <td className={styles.actions} onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(tx.id)}>
-                        Sửa
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setDeleting(tx)}>
-                        Xóa
-                      </Button>
+                      {can(me, 'transaction:edit', tx) ? (
+                        <>
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(tx.id)}>
+                            Sửa
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => setDeleting(tx)}>
+                            Xóa
+                          </Button>
+                        </>
+                      ) : (
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(tx.id)}>
+                          Xem
+                        </Button>
+                      )}
                     </td>
                   )}
                 </tr>

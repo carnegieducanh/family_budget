@@ -1,0 +1,12 @@
+import type { ReactNode } from 'react';
+import styles from './PageHeader.module.scss';
+
+/** Tiêu đề màn hình không có bộ chọn tháng. */
+export function PageHeader({ title, actions }: { title: string; actions?: ReactNode }) {
+  return (
+    <header className={styles.header}>
+      <h1 className={styles.title}>{title}</h1>
+      {actions && <div className={styles.actions}>{actions}</div>}
+    </header>
+  );
+}

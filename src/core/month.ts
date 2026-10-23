@@ -49,3 +49,13 @@ export function formatDate(date: string): string {
 export function formatDateTime(iso: string): string {
   return dayjs(iso).format('HH:mm DD/MM/YYYY');
 }
+
+/** Khoảng thời gian từ `iso` đến `now`: "vừa xong", "5 phút trước", "2 giờ trước", "3 ngày trước". */
+export function formatTimeAgo(iso: string, now: Date): string {
+  const minutes = Math.floor((now.getTime() - Date.parse(iso)) / 60_000);
+  if (minutes < 1) return 'vừa xong';
+  if (minutes < 60) return `${minutes} phút trước`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} giờ trước`;
+  return `${Math.floor(hours / 24)} ngày trước`;
+}

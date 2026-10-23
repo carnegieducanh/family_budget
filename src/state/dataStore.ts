@@ -1,11 +1,41 @@
 import { create } from 'zustand';
+import { setBudget } from '../core/budget';
+import {
+  createCategory,
+  deleteCategory,
+  reorderCategories,
+  setCategoryHidden,
+  updateCategory,
+  type CategoryInput,
+} from '../core/categories';
+import { importTransactions, prepareImport } from '../core/csv';
 import { createInitialData } from '../core/defaults';
 import { DomainError } from '../core/errors';
+import { householdUsers } from '../core/household';
 import { relockMonth, unlockMonth } from '../core/monthLock';
+import { assertCan, type Action } from '../core/permissions';
 import { active, upsert } from '../core/records';
+import {
+  createRecurring,
+  deleteRecurring,
+  generateRecurring,
+  updateRecurring,
+  type RecurringInput,
+} from '../core/recurring';
+import { planRestore, type RestorePlan } from '../core/restore';
 import { computeSettlement, markSettled } from '../core/settlement';
 import { createTransaction, deleteTransaction, updateTransaction } from '../core/transactions';
-import type { DataFile, MutationContext, Settings, TransactionInput, User } from '../core/types';
+import type {
+  BaseRecord,
+  DataFile,
+  MutationContext,
+  Settings,
+  Transaction,
+  TransactionInput,
+  User,
+} from '../core/types';
+import { transferAdmin, updateUser, type UserInput } from '../core/users';
+import { createSnapshot } from '../storage/backup';
 import { loadData, loadSettings, saveData, saveSettings } from '../storage/localStore';
 
 export type LoadStatus = 'loading' | 'setup' | 'ready' | 'error';
@@ -18,37 +48,71 @@ interface DataState {
   saveError: string | null;
   data: DataFile | null;
   settings: Settings | null;
+  /** Tăng sau mỗi thay đổi do người dùng trên máy này (không tính dữ liệu gộp từ máy kia). */
+  localRevision: number;
 
   /** Đọc dữ liệu lúc mở app. Gọi nhiều lần vẫn chỉ đọc một lần. */
   init(): Promise<void>;
   /** Ghi lại data.json sau khi lần ghi trước bị lỗi. */
   retrySave(): void;
-  /** Thiết lập lần đầu (rút gọn): tạo 2 người, người tạo là admin. */
-  createHousehold(myName: string, otherName: string): Promise<void>;
+  /** Máy admin, thiết lập lần đầu: tạo 2 người (người tạo là admin) và chọn thư mục Drive. */
+  createHousehold(myName: string, otherName: string, syncFolder: string): Promise<void>;
+  /** Máy thứ hai: dùng dữ liệu đọc từ thư mục Drive và chọn "Tôi là ...". */
+  joinHousehold(data: DataFile, userId: string, syncFolder: string): Promise<void>;
   /** Máy đã có data.json nhưng chưa biết là của ai: chọn "Tôi là ...". */
   chooseUser(userId: string): Promise<void>;
+  /** Thay dữ liệu bằng kết quả merge của lượt sync (đã backup trước đó). */
+  applyMerged(data: DataFile): void;
+  /** Cài đặt riêng của máy này (thư mục sync, chu kỳ sync...). */
+  updateSettings(changes: Partial<Omit<Settings, 'deviceId'>>): Promise<void>;
+  /** Dữ liệu, người dùng của máy này và thời điểm hiện tại, để xem trước một thao tác. */
+  context(): MutationContext;
 
-  // Các thao tác dưới đây ném DomainError (thông báo tiếng Việt) khi bị từ chối.
+  // Các thao tác dưới đây kiểm tra quyền (SPEC mục 7) và luật khóa tháng,
+  // ném DomainError (thông báo tiếng Việt) khi bị từ chối.
   addTransaction(input: TransactionInput): string;
   updateTransaction(id: string, input: TransactionInput): void;
   deleteTransaction(id: string): void;
   unlockMonth(month: string): void;
   relockMonth(month: string): void;
   markSettled(month: string): void;
+
+  addCategory(input: CategoryInput): string;
+  updateCategory(id: string, input: CategoryInput): void;
+  setCategoryHidden(id: string, hidden: boolean): void;
+  deleteCategory(id: string): void;
+  reorderCategories(orderedIds: string[]): void;
+
+  /** `amount = null` là bỏ mức ngân sách đó. */
+  setBudget(month: string, categoryId: string | null, amount: number | null): void;
+
+  addRecurring(input: RecurringInput): string;
+  updateRecurring(id: string, input: RecurringInput): void;
+  deleteRecurring(id: string): void;
+  /** Sinh khoản định kỳ của tháng hiện tại (tự động, không cần quyền). Trả về số khoản mới. */
+  generateRecurring(): number;
+
+  updateUser(id: string, input: UserInput): void;
+  transferAdmin(userId: string): void;
+
+  /** Nhập CSV (đã xem trước), tạo backup trước khi ghi. Trả về số khoản đã nhập. */
+  importCsv(text: string): Promise<number>;
+  /** Khôi phục một bản backup theo cách ở SPEC mục 9, tạo backup trước khi ghi. */
+  restore(snapshot: DataFile): Promise<RestorePlan>;
 }
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-/** Hai người dùng của gia đình, theo thứ tự tạo (admin tạo trước). */
-export function householdUsers(data: DataFile): [User, User] {
-  const users = active(data.users);
-  const [first, second] = users;
-  if (!first || !second || users.length !== 2) {
-    throw new DomainError('Dữ liệu phải có đúng 2 người dùng.');
-  }
-  return [first, second];
+function upsertAll<T extends BaseRecord>(list: readonly T[], records: readonly T[]): T[] {
+  return records.reduce<T[]>((result, record) => upsert(result, record), [...list]);
+}
+
+function find<T extends BaseRecord>(list: readonly T[], id: string, what: string): T {
+  const record = list.find((r) => r.id === id);
+  if (!record) throw new DomainError(`Không tìm thấy ${what}.`);
+  return record;
 }
 
 // React StrictMode chạy effect 2 lần khi dev; nếu init chạy 2 lần song song ở lần mở đầu
@@ -62,24 +126,39 @@ export const useDataStore = create<DataState>()((set, get) => {
     return { data, userId: settings.userId, now: new Date() };
   }
 
-  function requireAdmin(ctx: MutationContext): void {
-    const me = ctx.data.users.find((u) => u.id === ctx.userId);
-    if (me?.role !== 'admin') throw new DomainError('Chỉ admin được làm thao tác này.');
+  /** Ngữ cảnh thao tác, sau khi đã kiểm tra quyền của người dùng máy này. */
+  function authorized(action: Action, record?: Transaction): MutationContext {
+    const ctx = context();
+    assertCan(
+      ctx.data.users.find((u) => u.id === ctx.userId),
+      action,
+      record,
+    );
+    return ctx;
   }
 
-  /** Lưu thay đổi vào bộ nhớ ngay, rồi ghi data.json (ghi nguyên tử, theo hàng đợi). */
-  function commit(data: DataFile): void {
-    set({ data });
+  /** Ghi data.json (ghi nguyên tử, theo hàng đợi). Bộ nhớ đã được cập nhật trước đó. */
+  function save(data: DataFile): void {
     saveData(data).then(
       () => set({ saveError: null }),
       (error: unknown) => set({ saveError: errorMessage(error) }),
     );
   }
 
-  function findTransaction(ctx: MutationContext, id: string) {
-    const tx = ctx.data.transactions.find((t) => t.id === id);
-    if (!tx) throw new DomainError('Không tìm thấy khoản chi.');
-    return tx;
+  /** Lưu thay đổi của người dùng; lịch sync sẽ ghi file Drive sau 10 giây. */
+  function commit(data: DataFile): void {
+    set((s) => ({ data, localRevision: s.localRevision + 1 }));
+    save(data);
+  }
+
+  function requireSettings(): Settings {
+    const { settings } = get();
+    if (!settings) throw new DomainError('Chưa đọc được settings.');
+    return settings;
+  }
+
+  function transaction(id: string): Transaction {
+    return find(context().data.transactions, id, 'khoản chi');
   }
 
   return {
@@ -88,6 +167,7 @@ export const useDataStore = create<DataState>()((set, get) => {
     saveError: null,
     data: null,
     settings: null,
+    localRevision: 0,
 
     init() {
       initPromise ??= (async () => {
@@ -108,10 +188,9 @@ export const useDataStore = create<DataState>()((set, get) => {
       if (data) commit(data);
     },
 
-    async createHousehold(myName, otherName) {
-      const { settings, data: existing } = get();
-      if (!settings) throw new DomainError('Chưa đọc được settings.');
-      if (existing) throw new DomainError('Máy này đã có dữ liệu, hãy chọn "Tôi là ...".');
+    async createHousehold(myName, otherName, syncFolder) {
+      const settings = requireSettings();
+      if (get().data) throw new DomainError('Máy này đã có dữ liệu, hãy chọn "Tôi là ...".');
       if (!myName.trim() || !otherName.trim()) throw new DomainError('Hãy nhập tên cả 2 người.');
       if (myName.trim() === otherName.trim()) throw new DomainError('Tên 2 người phải khác nhau.');
 
@@ -122,7 +201,21 @@ export const useDataStore = create<DataState>()((set, get) => {
         now: new Date(),
         newId: () => crypto.randomUUID(),
       });
-      const nextSettings = { ...settings, userId: myUserId };
+      const nextSettings = { ...settings, userId: myUserId, syncFolder };
+      await saveData(data);
+      await saveSettings(nextSettings);
+      set({ data, settings: nextSettings, status: 'ready', saveError: null });
+    },
+
+    async joinHousehold(data, userId, syncFolder) {
+      const settings = requireSettings();
+      if (get().data) throw new DomainError('Máy này đã có dữ liệu, hãy chọn "Tôi là ...".');
+      if (data.deviceId !== settings.deviceId) throw new DomainError('Dữ liệu không đúng máy.');
+      if (!active(data.users).some((u) => u.id === userId)) {
+        throw new DomainError('Không tìm thấy người dùng.');
+      }
+      householdUsers(data); // phải đúng 2 người
+      const nextSettings = { ...settings, userId, syncFolder };
       await saveData(data);
       await saveSettings(nextSettings);
       set({ data, settings: nextSettings, status: 'ready', saveError: null });
@@ -139,45 +232,174 @@ export const useDataStore = create<DataState>()((set, get) => {
       set({ settings: nextSettings, status: 'ready' });
     },
 
+    applyMerged(data) {
+      set({ data });
+      save(data);
+    },
+
+    async updateSettings(changes) {
+      // Cập nhật bộ nhớ trước để hai lần gọi liền nhau không làm mất thay đổi của nhau;
+      // các lần ghi file đi theo hàng đợi nên bản ghi sau cùng có đủ mọi thay đổi.
+      const nextSettings = { ...requireSettings(), ...changes };
+      set({ settings: nextSettings });
+      await saveSettings(nextSettings);
+    },
+
+    context,
+
+    // --- Khoản chi và tháng
+
     addTransaction(input) {
-      const ctx = context();
+      const ctx = authorized('transaction:create');
       const tx = createTransaction(input, ctx, crypto.randomUUID());
       commit({ ...ctx.data, transactions: upsert(ctx.data.transactions, tx) });
       return tx.id;
     },
 
     updateTransaction(id, input) {
-      const ctx = context();
-      const tx = updateTransaction(findTransaction(ctx, id), input, ctx);
+      const existing = transaction(id);
+      const ctx = authorized('transaction:edit', existing);
+      const tx = updateTransaction(existing, input, ctx);
       commit({ ...ctx.data, transactions: upsert(ctx.data.transactions, tx) });
     },
 
     deleteTransaction(id) {
-      const ctx = context();
-      const tx = deleteTransaction(findTransaction(ctx, id), ctx);
+      const existing = transaction(id);
+      const ctx = authorized('transaction:edit', existing);
+      const tx = deleteTransaction(existing, ctx);
       commit({ ...ctx.data, transactions: upsert(ctx.data.transactions, tx) });
     },
 
     unlockMonth(month) {
-      const ctx = context();
-      requireAdmin(ctx);
+      const ctx = authorized('month:unlock');
       const record = unlockMonth(ctx.data.months, month, ctx.userId, ctx.now);
       commit({ ...ctx.data, months: upsert(ctx.data.months, record) });
     },
 
     relockMonth(month) {
-      const ctx = context();
-      requireAdmin(ctx);
+      const ctx = authorized('month:unlock');
       const record = relockMonth(ctx.data.months, month, ctx.userId, ctx.now);
       commit({ ...ctx.data, months: upsert(ctx.data.months, record) });
     },
 
     markSettled(month) {
-      const ctx = context();
+      const ctx = authorized('month:settle');
       const [a, b] = householdUsers(ctx.data);
       const settlement = computeSettlement(ctx.data.transactions, [a.id, b.id], month);
       const record = markSettled(ctx.data.months, settlement, ctx.userId, ctx.now);
       commit({ ...ctx.data, months: upsert(ctx.data.months, record) });
+    },
+
+    // --- Danh mục
+
+    addCategory(input) {
+      const ctx = authorized('categories:manage');
+      const category = createCategory(input, ctx, crypto.randomUUID());
+      commit({ ...ctx.data, categories: upsert(ctx.data.categories, category) });
+      return category.id;
+    },
+
+    updateCategory(id, input) {
+      const ctx = authorized('categories:manage');
+      const category = updateCategory(find(ctx.data.categories, id, 'danh mục'), input, ctx);
+      commit({ ...ctx.data, categories: upsert(ctx.data.categories, category) });
+    },
+
+    setCategoryHidden(id, hidden) {
+      const ctx = authorized('categories:manage');
+      const category = setCategoryHidden(find(ctx.data.categories, id, 'danh mục'), hidden, ctx);
+      commit({ ...ctx.data, categories: upsert(ctx.data.categories, category) });
+    },
+
+    deleteCategory(id) {
+      const ctx = authorized('categories:manage');
+      const category = deleteCategory(find(ctx.data.categories, id, 'danh mục'), ctx);
+      commit({ ...ctx.data, categories: upsert(ctx.data.categories, category) });
+    },
+
+    reorderCategories(orderedIds) {
+      const ctx = authorized('categories:manage');
+      const changed = reorderCategories(orderedIds, ctx);
+      if (changed.length > 0) {
+        commit({ ...ctx.data, categories: upsertAll(ctx.data.categories, changed) });
+      }
+    },
+
+    // --- Ngân sách
+
+    setBudget(month, categoryId, amount) {
+      const ctx = authorized('budgets:manage');
+      const budget = setBudget(month, categoryId, amount, ctx);
+      if (budget) commit({ ...ctx.data, budgets: upsert(ctx.data.budgets, budget) });
+    },
+
+    // --- Chi tiêu định kỳ
+
+    addRecurring(input) {
+      const ctx = authorized('recurring:manage');
+      const template = createRecurring(input, ctx, crypto.randomUUID());
+      commit({ ...ctx.data, recurring: upsert(ctx.data.recurring, template) });
+      get().generateRecurring();
+      return template.id;
+    },
+
+    updateRecurring(id, input) {
+      const ctx = authorized('recurring:manage');
+      const template = updateRecurring(find(ctx.data.recurring, id, 'mẫu định kỳ'), input, ctx);
+      commit({ ...ctx.data, recurring: upsert(ctx.data.recurring, template) });
+      get().generateRecurring();
+    },
+
+    deleteRecurring(id) {
+      const ctx = authorized('recurring:manage');
+      const template = deleteRecurring(find(ctx.data.recurring, id, 'mẫu định kỳ'), ctx);
+      commit({ ...ctx.data, recurring: upsert(ctx.data.recurring, template) });
+    },
+
+    generateRecurring() {
+      const { data } = get();
+      if (!data) return 0;
+      const generated = generateRecurring(data, new Date());
+      if (generated.length > 0) {
+        commit({ ...data, transactions: upsertAll(data.transactions, generated) });
+      }
+      return generated.length;
+    },
+
+    // --- Người dùng
+
+    updateUser(id, input) {
+      const ctx = authorized('users:manage');
+      const user = updateUser(find(ctx.data.users, id, 'người dùng'), input, ctx);
+      commit({ ...ctx.data, users: upsert(ctx.data.users, user) });
+    },
+
+    transferAdmin(userId) {
+      const ctx = authorized('users:manage');
+      commit({ ...ctx.data, users: upsertAll(ctx.data.users, transferAdmin(userId, ctx)) });
+    },
+
+    // --- Import và khôi phục: luôn tạo backup trước khi ghi (SPEC mục 8, 9)
+
+    async importCsv(text) {
+      const before = authorized('csv:import');
+      await createSnapshot(before.data);
+      // Dữ liệu có thể vừa đổi (sync) trong lúc ghi backup: kiểm tra lại trên bản mới nhất.
+      const ctx = authorized('csv:import');
+      const imported = importTransactions(prepareImport(text, ctx), ctx, () => crypto.randomUUID());
+      if (imported.length > 0) {
+        commit({ ...ctx.data, transactions: upsertAll(ctx.data.transactions, imported) });
+      }
+      return imported.length;
+    },
+
+    async restore(snapshot) {
+      const before = authorized('backup:restore');
+      await createSnapshot(before.data);
+      const ctx = authorized('backup:restore');
+      const plan = planRestore(ctx.data, snapshot, ctx.userId, ctx.now);
+      commit(plan.data);
+      return plan;
     },
   };
 });

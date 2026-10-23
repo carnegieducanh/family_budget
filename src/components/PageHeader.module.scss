@@ -1,0 +1,17 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 36px;
+  margin-bottom: var(--space-5);
+}
+
+.title {
+  margin-right: auto;
+  font-size: var(--font-size-xl);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+}
