@@ -233,7 +233,7 @@ Bản phát hành do GitHub Actions build (`.github/workflows/release.yml`) khi 
 1. Thêm mục `## X.Y.Z` vào đầu `docs/CHANGELOG.md`: vài dòng ngắn cho người dùng, đây là ghi chú hiện trong banner cập nhật. Commit.
 2. Tăng phiên bản: `npm version X.Y.Z` (ví dụ `npm version 0.2.0`). Lệnh này sửa `package.json`, `package-lock.json`, tạo commit và tag `vX.Y.Z`. Phiên bản app chỉ lấy từ `package.json` (`tauri.conf.json` trỏ tới file này); số trong `Cargo.toml` không dùng.
 3. `git push --follow-tags`.
-4. Theo dõi ở tab **Actions** của repo (khoảng 15–20 phút). Workflow chạy lần lượt: kiểm tra code (typecheck, lint, format, test) → tạo release nháp → build Windows và macOS song song → bỏ trạng thái nháp. Release chỉ được đăng khi cả hai bản build xong, nên `latest.json` luôn có đủ hai nền tảng.
+4. Theo dõi ở tab **Actions** của repo (khoảng 15–20 phút). Workflow chạy lần lượt: kiểm tra code (typecheck, lint, format, test) → tạo release nháp → build Windows và macOS song song → bỏ trạng thái nháp. Release chỉ được đăng khi cả hai bản build xong và `latest.json` có đủ hai nền tảng (workflow kiểm tra trước khi đăng).
 5. Xong: app trên 2 máy thấy banner khi mở lại, hoặc trong vòng 24 giờ.
 
 Workflow dừng sớm và báo lỗi nếu tag không khớp `version` trong `package.json`, hoặc `docs/CHANGELOG.md` chưa có mục cho phiên bản đó. Nếu một bước build lỗi, release vẫn là nháp (người dùng không thấy). Sửa lỗi, xóa release nháp trên GitHub và xóa tag (`git push --delete origin vX.Y.Z`, `git tag -d vX.Y.Z`), rồi tạo lại tag ở commit đã sửa.

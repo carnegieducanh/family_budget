@@ -261,7 +261,7 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 ### Cập nhật app và phát hành
 
 - **Endpoint cập nhật: `https://github.com/carnegieducanh/family_budget/releases/latest/download/latest.json`, tức repo public `carnegieducanh/family_budget`.** Chưa làm phương án repo private + repo public chỉ chứa releases; INSTALL.md mục 3.1 ghi các chỗ cần sửa nếu chọn phương án đó.
-  Lý do: tên tài khoản lấy từ remote của dự án DayTask trên máy này (cũng phát hành qua GitHub Releases), tên repo theo tên package. Repo public là phương án đơn giản nhất SPEC nêu. Đổi tên repo phải sửa endpoint trước bản phát hành đầu tiên.
+  Lý do: repo do người dùng tạo sẵn, tên `family_budget` (gạch dưới, khác tên package `family-budget`); GitHub coi hai tên này là hai repo khác nhau. Repo public là phương án đơn giản nhất SPEC nêu. Đổi tên repo phải sửa endpoint trước bản phát hành đầu tiên.
 
 - **Khóa ký bản cập nhật không đặt mật khẩu, lưu ở `~/.tauri/family-budget.key` (ngoài repo); public key ở `plugins.updater.pubkey`. Workflow đọc secret `TAURI_SIGNING_PRIVATE_KEY` (và `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` nếu sau này có).**
   Lý do: giống các dự án khác trên máy này (`atomic`, `daytask`). Private key không vào repo theo SPEC mục 9.
@@ -280,6 +280,9 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 - **Workflow `.github/workflows/release.yml` chạy khi đẩy tag `v*.*.*`: kiểm tra code (typecheck, lint, format, test) → tạo release nháp → build Windows (`windows-latest`) và macOS (`macos-latest`, `--target aarch64-apple-darwin`) song song bằng `tauri-action` → bỏ nháp. macOS dùng ad-hoc signing có sẵn trong cấu hình.**
   Lý do: release chỉ hiện khi cả hai bản đã lên, nên `latest.json` không bao giờ thiếu một nền tảng; build lỗi thì người dùng không thấy gì.
+
+- **Id của release nháp lấy từ phản hồi của lệnh tạo (`gh api` POST), không tìm lại trong danh sách releases. Trước khi bỏ nháp, workflow tải `latest.json` về và dừng nếu thiếu file hoặc thiếu bản Windows/macOS.**
+  Lý do: lần chạy đầu (v0.1.0, 2026-10-24) mọi bước đều xanh nhưng release được đăng mà không có file nào: `tauri-action` không nhận được `releaseId` nên build xong rồi bỏ qua bước tải lên, không báo lỗi. Kiểm tra ở bước đăng bắt được cả những nguyên nhân khác khiến release thiếu file.
 
 - **Kiểm tra cập nhật khi mở app (cả ở màn hình thiết lập lần đầu) và mỗi 24 giờ. Lỗi kiểm tra lúc mở app không hiện banner, chỉ ghi ở thẻ "Phiên bản app" trong Cài đặt. Banner có thêm nút "Để sau" (ẩn đến lần mở app sau; bấm "Kiểm tra cập nhật" thì hiện lại).**
   Lý do: máy mới cài bản cũ có thể cần cập nhật mới tham gia được thư mục của máy kia. Mất mạng không phải lỗi người dùng cần xử lý.

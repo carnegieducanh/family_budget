@@ -65,11 +65,16 @@ jobs:
         id: create
         env:
           GH_TOKEN: ${{ github.token }}
+        # Lấy id từ chính phản hồi lúc tạo: danh sách releases có thể chưa kịp có bản nháp
+        # vừa tạo, mà tauri-action thiếu releaseId thì vẫn build xong nhưng không tải file lên.
         run: |
-          gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
-            --title "Family Budget $GITHUB_REF_NAME" --notes-file notes.md
           id=$(gh api "repos/$GITHUB_REPOSITORY/releases" \
-            --jq ".[] | select(.tag_name == \"$GITHUB_REF_NAME\") | .id")
+            -f tag_name="$GITHUB_REF_NAME" -f name="Family Budget $GITHUB_REF_NAME" \
+            -F body=@notes.md -F draft=true --jq .id)
+          if [ -z "$id" ]; then
+            echo "::error::Không lấy được id của release nháp."
+            exit 1
+          fi
           echo "release_id=$id" >> "$GITHUB_OUTPUT"
 
   build:
@@ -123,6 +128,21 @@ jobs:
     needs: [create-release, build]
     runs-on: ubuntu-latest
     steps:
+      - name: Kiểm tra latest.json có đủ Windows và macOS
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if ! gh release download "$GITHUB_REF_NAME" --pattern latest.json; then
+            echo "::error::Release nháp không có latest.json, các bản build chưa tải file lên."
+            exit 1
+          fi
+          cat latest.json
+          if ! jq -e '.platforms | keys | any(startswith("windows-x86_64")) and any(startswith("darwin-aarch64"))' latest.json; then
+            echo "::error::latest.json thiếu bản Windows hoặc macOS."
+            exit 1
+          fi
+
       - name: Bỏ trạng thái nháp
         env:
           GH_TOKEN: ${{ github.token }}
