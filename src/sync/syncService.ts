@@ -1,4 +1,5 @@
 import { serializeDataFile } from '../core/dataFile';
+import { parseDeviceFileName } from '../core/deviceFiles';
 import {
   mergeRemoteFiles,
   type RemoteFile,
@@ -6,6 +7,7 @@ import {
   type RemoteProblem,
 } from '../core/sync';
 import type { DataFile } from '../core/types';
+import { DecryptError, decryptFile, encryptFile, type FileKey } from '../storage/crypto';
 import type { SyncAdapter } from '../storage/SyncAdapter';
 
 // Lượt sync và lịch sync (SPEC mục 5). Chỉ làm việc qua SyncAdapter và các hàm được
@@ -26,9 +28,21 @@ export type SyncOutcome =
       clockSkew: boolean;
     };
 
+/** Nơi sync và khóa mã hóa, lấy cùng lúc từ cài đặt hiện tại. */
+export interface SyncTarget {
+  adapter: SyncAdapter;
+  /** Khóa đọc file `.enc.json` của máy khác; null nếu máy này chưa có mật khẩu. */
+  readKey: FileKey | null;
+  /**
+   * Khóa mã hóa file của máy này; null thì ghi dạng thường. Adapter phải được tạo để ghi
+   * đúng tên file tương ứng (`.enc.json` hoặc `.json`).
+   */
+  writeKey: FileKey | null;
+}
+
 export interface SyncEnv {
-  /** Adapter theo cài đặt hiện tại; null khi chưa chọn thư mục Drive. */
-  adapter(): SyncAdapter | null;
+  /** Nơi sync theo cài đặt hiện tại; null khi chưa chọn thư mục Drive. */
+  target(): Promise<SyncTarget | null>;
   /** Dữ liệu local mới nhất trong bộ nhớ. */
   getData(): DataFile;
   /** Snapshot dữ liệu local trước khi bị thay bằng kết quả merge. */
@@ -46,9 +60,12 @@ function failed(label: string, error: unknown): SyncOutcome {
   return { kind: 'failed', message: `${label}: ${errorMessage(error)}` };
 }
 
+/** File đọc từ thư mục Drive: nội dung thô (có thể đã mã hóa) hoặc lỗi khi đọc. */
+export type RawRemoteFile = { name: string; content: string } | { name: string; error: string };
+
 /** Đọc mọi file của máy khác. File đọc lỗi được ghi lại lỗi, không làm hỏng cả lượt. */
-export async function readRemoteFiles(adapter: SyncAdapter): Promise<RemoteFile[]> {
-  const files: RemoteFile[] = [];
+export async function readRemoteFiles(adapter: SyncAdapter): Promise<RawRemoteFile[]> {
+  const files: RawRemoteFile[] = [];
   for (const { name } of await adapter.listRemote()) {
     try {
       files.push({ name, content: await adapter.readRemote(name) });
@@ -59,15 +76,51 @@ export async function readRemoteFiles(adapter: SyncAdapter): Promise<RemoteFile[
   return files;
 }
 
-/** Một lượt sync: đọc file máy khác, gộp, backup + lưu nếu có thay đổi, ghi file của mình. */
+export const NEEDS_PASSWORD_MESSAGE =
+  'Máy kia đã bật mã hóa. Nhập mật khẩu chung ở Cài đặt → Mã hóa để đọc file này.';
+
+/**
+ * Giải mã các file `.enc.json` bằng khóa của máy này (SPEC mục 9). File không giải mã được
+ * (chưa có mật khẩu, sai mật khẩu, sai cấu trúc) thành lý do bỏ qua, không bao giờ được gộp.
+ */
+export function openRemoteFiles(
+  files: readonly RawRemoteFile[],
+  key: FileKey | null,
+): Promise<RemoteFile[]> {
+  return Promise.all(
+    files.map(async (file): Promise<RemoteFile> => {
+      const { name } = file;
+      if ('error' in file) return { name, reason: 'unreadable', message: file.error };
+      if (!parseDeviceFileName(name)?.encrypted) return file;
+      if (!key) return { name, reason: 'encrypted', message: NEEDS_PASSWORD_MESSAGE };
+      try {
+        return { name, content: await decryptFile(file.content, key) };
+      } catch (error) {
+        const reason = error instanceof DecryptError ? 'decrypt-failed' : 'invalid';
+        return { name, reason, message: errorMessage(error) };
+      }
+    }),
+  );
+}
+
+/**
+ * Một lượt sync: đọc và giải mã file máy khác, gộp, backup + lưu nếu có thay đổi, rồi ghi
+ * file của mình (mã hóa nếu máy này bật mã hóa).
+ */
 export async function syncOnce(env: SyncEnv): Promise<SyncOutcome> {
-  const adapter = env.adapter();
-  if (!adapter) return { kind: 'not-configured' };
+  let target: SyncTarget | null;
+  try {
+    target = await env.target();
+  } catch (error) {
+    return failed('Không đọc được khóa mã hóa trên máy này', error);
+  }
+  if (!target) return { kind: 'not-configured' };
+  const { adapter, readKey, writeKey } = target;
   if (!(await adapter.isReady())) return { kind: 'folder-missing' };
 
   let files: RemoteFile[];
   try {
-    files = await readRemoteFiles(adapter);
+    files = await openRemoteFiles(await readRemoteFiles(adapter), readKey);
   } catch (error) {
     return failed('Không đọc được thư mục Drive', error);
   }
@@ -90,7 +143,8 @@ export async function syncOnce(env: SyncEnv): Promise<SyncOutcome> {
 
   const now = env.now();
   try {
-    await adapter.writeOwn(serializeDataFile({ ...env.getData(), writtenAt: now.toISOString() }));
+    const json = serializeDataFile({ ...env.getData(), writtenAt: now.toISOString() });
+    await adapter.writeOwn(writeKey ? await encryptFile(json, writeKey) : json);
   } catch (error) {
     return failed('Không ghi được file lên thư mục Drive', error);
   }

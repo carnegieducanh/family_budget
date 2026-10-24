@@ -3,6 +3,7 @@ import { Button } from './components/Button';
 import { isAnyModalOpen } from './components/modalStack';
 import { canOpen } from './components/navigation';
 import { Sidebar } from './components/Sidebar';
+import { UpdateBanner } from './components/UpdateBanner';
 import { BudgetScreen } from './features/budget/BudgetScreen';
 import { CategoriesScreen } from './features/categories/CategoriesScreen';
 import { OverviewScreen } from './features/overview/OverviewScreen';
@@ -18,13 +19,17 @@ import { useSyncStore } from './state/syncStore';
 import { useUiStore, type Screen } from './state/uiStore';
 import { getDataFilePath } from './storage/localStore';
 import { startSync } from './sync/appSync';
+import { startUpdateChecks } from './update/appUpdate';
 import styles from './App.module.scss';
 
 function App() {
   const status = useDataStore((s) => s.status);
 
+  // Kiểm tra bản cập nhật ngay và mỗi 24 giờ (SPEC mục 9), kể cả khi đang thiết lập lần đầu:
+  // máy mới cài bản cũ có thể cần cập nhật mới đọc được dữ liệu của máy kia.
   useEffect(() => {
     void useDataStore.getState().init();
+    startUpdateChecks();
   }, []);
 
   if (status === 'loading') return <div className={styles.center}>Đang mở dữ liệu...</div>;
@@ -75,6 +80,7 @@ function MainLayout() {
     <div className={styles.layout}>
       <Sidebar />
       <main className={styles.content}>
+        <UpdateBanner />
         {saveError && (
           <div className={styles.saveError} role="alert">
             <span>Không lưu được dữ liệu xuống máy: {saveError}. Thay đổi vẫn còn trong app.</span>
@@ -94,10 +100,28 @@ function MainLayout() {
 /** Cảnh báo sync cần người dùng xử lý; các cảnh báo nhẹ chỉ hiện ở góc sidebar. */
 function SyncBanner() {
   const last = useSyncStore((s) => s.last);
+  const screen = useUiStore((s) => s.screen);
   if (last?.kind === 'schema-too-new') {
     return (
       <div className={styles.banner} role="alert">
         Máy kia đang dùng bản mới hơn, hãy cập nhật app. Đồng bộ tạm dừng cho đến khi cập nhật.
+      </div>
+    );
+  }
+  const reasons = last?.kind === 'ok' ? last.problems.map((p) => p.reason) : [];
+  if (reasons.includes('encrypted') || reasons.includes('decrypt-failed')) {
+    return (
+      <div className={`${styles.banner} ${styles.warning}`} role="alert">
+        <span>
+          {reasons.includes('encrypted')
+            ? 'Máy kia đã mã hóa dữ liệu trên Drive. Nhập mật khẩu chung ở Cài đặt → Mã hóa để tiếp tục nhận dữ liệu từ máy kia.'
+            : 'Không giải mã được dữ liệu từ máy kia, kiểm tra mật khẩu ở Cài đặt → Mã hóa.'}
+        </span>
+        {screen !== 'settings' && (
+          <Button size="sm" onClick={() => useUiStore.getState().setScreen('settings')}>
+            Mở Cài đặt
+          </Button>
+        )}
       </div>
     );
   }

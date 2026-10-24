@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Family Budget",
-  "version": "0.1.0",
+  "version": "../package.json",
   "identifier": "com.familybudget.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -23,17 +23,29 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' data:; style-src 'self' 'unsafe-inline'",
+      "devCsp": null
     }
   },
   "plugins": {
     "fs": {
       "requireLiteralLeadingDot": false
+    },
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDE5MTNDNjEzNUMyMjZDMUUKUldRZWJDSmNFOFlUR2RXV1VsMUEvWmI2ZVJUN1p3NStLeGRKOTNlQ2U0alBSWHI0blpJODRqalgK",
+      "endpoints": [
+        "https://github.com/carnegieducanh/family_budget/releases/latest/download/latest.json"
+      ],
+      "requireSignedVersion": true,
+      "windows": {
+        "installMode": "passive"
+      }
     }
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis", "app", "dmg"],
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

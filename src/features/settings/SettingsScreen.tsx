@@ -13,11 +13,14 @@ import { useNow } from '../../state/useNow';
 import { getBackupDir } from '../../storage/backup';
 import { pickSyncFolder, resolveDataDir } from '../../storage/driveFolderAdapter';
 import { getDataFilePath } from '../../storage/localStore';
-import { inspectFolder, syncNow } from '../../sync/appSync';
+import { inspectFolder, settingsKey, syncNow } from '../../sync/appSync';
+import { openRemoteFiles } from '../../sync/syncService';
 import { describeSyncStatus } from '../../sync/syncStatus';
 import { BackupPanel } from '../data/BackupPanel';
 import { CsvExport } from '../data/CsvExport';
 import { CsvImport } from '../data/CsvImport';
+import { AppVersionSettings } from './AppVersionSettings';
+import { EncryptionSettings } from './EncryptionSettings';
 import styles from './SettingsScreen.module.scss';
 import { UsersSettings } from './UsersSettings';
 
@@ -27,7 +30,7 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-/** Cài đặt (SPEC mục 8, màn hình 9). Mã hóa và cập nhật app thêm ở giai đoạn 4. */
+/** Cài đặt (SPEC mục 8, màn hình 9). */
 export function SettingsScreen() {
   const { me } = useReadyData();
   const month = useUiStore((s) => s.month);
@@ -37,6 +40,7 @@ export function SettingsScreen() {
       <div className={styles.cards}>
         <UsersSettings />
         <SyncSettings />
+        <EncryptionSettings />
         <Card title="Backup">
           <BackupPanel />
         </Card>
@@ -49,6 +53,7 @@ export function SettingsScreen() {
           )}
         </Card>
         <DeviceInfo />
+        <AppVersionSettings />
       </div>
     </div>
   );
@@ -89,8 +94,9 @@ function SyncSettings() {
       if (!folder) return;
       setBusy(true);
       const contents = await inspectFolder(folder, deviceId);
+      const files = await openRemoteFiles(contents.rawFiles, await settingsKey(settings));
       const data = useDataStore.getState().data;
-      const problem = data && connectProblem(data, contents.remoteFiles, new Date());
+      const problem = data && connectProblem(data, files, new Date());
       if (problem) {
         setError(problem);
         return;

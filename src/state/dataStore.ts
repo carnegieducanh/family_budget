@@ -36,6 +36,13 @@ import type {
 } from '../core/types';
 import { transferAdmin, updateUser, type UserInput } from '../core/users';
 import { createSnapshot } from '../storage/backup';
+import {
+  checkNewPassword,
+  createFileKey,
+  exportFileKey,
+  fileKeyFromPassword,
+  type StoredKey,
+} from '../storage/crypto';
 import { loadData, loadSettings, saveData, saveSettings } from '../storage/localStore';
 
 export type LoadStatus = 'loading' | 'setup' | 'ready' | 'error';
@@ -57,8 +64,16 @@ interface DataState {
   retrySave(): void;
   /** Máy admin, thiết lập lần đầu: tạo 2 người (người tạo là admin) và chọn thư mục Drive. */
   createHousehold(myName: string, otherName: string, syncFolder: string): Promise<void>;
-  /** Máy thứ hai: dùng dữ liệu đọc từ thư mục Drive và chọn "Tôi là ...". */
-  joinHousehold(data: DataFile, userId: string, syncFolder: string): Promise<void>;
+  /**
+   * Máy thứ hai: dùng dữ liệu đọc từ thư mục Drive và chọn "Tôi là ...". `encryption`: khóa
+   * dẫn xuất từ mật khẩu chung, nếu dữ liệu trong thư mục đã được mã hóa.
+   */
+  joinHousehold(
+    data: DataFile,
+    userId: string,
+    syncFolder: string,
+    encryption: StoredKey | null,
+  ): Promise<void>;
   /** Máy đã có data.json nhưng chưa biết là của ai: chọn "Tôi là ...". */
   chooseUser(userId: string): Promise<void>;
   /** Thay dữ liệu bằng kết quả merge của lượt sync (đã backup trước đó). */
@@ -67,6 +82,14 @@ interface DataState {
   updateSettings(changes: Partial<Omit<Settings, 'deviceId'>>): Promise<void>;
   /** Dữ liệu, người dùng của máy này và thời điểm hiện tại, để xem trước một thao tác. */
   context(): MutationContext;
+
+  // Mã hóa file trên Drive (SPEC mục 9). Khóa lưu trong settings.json, không lưu mật khẩu.
+  /** Admin đặt mật khẩu mới (bật mã hóa hoặc đổi mật khẩu): khóa mới với salt mới. */
+  setEncryptionPassword(password: string, confirm: string): Promise<void>;
+  /** Nhập mật khẩu chung đã đặt ở máy kia; kiểm tra bằng các file mã hóa của máy kia. */
+  enterEncryptionPassword(password: string, envelopes: readonly string[]): Promise<void>;
+  /** Admin tắt mã hóa: ghi file dạng thường, vẫn giữ khóa để đọc file mã hóa của máy kia. */
+  disableEncryption(): Promise<void>;
 
   // Các thao tác dưới đây kiểm tra quyền (SPEC mục 7) và luật khóa tháng,
   // ném DomainError (thông báo tiếng Việt) khi bị từ chối.
@@ -207,7 +230,7 @@ export const useDataStore = create<DataState>()((set, get) => {
       set({ data, settings: nextSettings, status: 'ready', saveError: null });
     },
 
-    async joinHousehold(data, userId, syncFolder) {
+    async joinHousehold(data, userId, syncFolder, encryption) {
       const settings = requireSettings();
       if (get().data) throw new DomainError('Máy này đã có dữ liệu, hãy chọn "Tôi là ...".');
       if (data.deviceId !== settings.deviceId) throw new DomainError('Dữ liệu không đúng máy.');
@@ -215,7 +238,12 @@ export const useDataStore = create<DataState>()((set, get) => {
         throw new DomainError('Không tìm thấy người dùng.');
       }
       householdUsers(data); // phải đúng 2 người
-      const nextSettings = { ...settings, userId, syncFolder };
+      const nextSettings: Settings = {
+        ...settings,
+        userId,
+        syncFolder,
+        ...(encryption ? { encryption: { enabled: true, ...encryption } } : {}),
+      };
       await saveData(data);
       await saveSettings(nextSettings);
       set({ data, settings: nextSettings, status: 'ready', saveError: null });
@@ -246,6 +274,25 @@ export const useDataStore = create<DataState>()((set, get) => {
     },
 
     context,
+
+    async setEncryptionPassword(password, confirm) {
+      authorized('encryption:manage');
+      checkNewPassword(password, confirm);
+      const key = await exportFileKey(await createFileKey(password));
+      await get().updateSettings({ encryption: { enabled: true, ...key } });
+    },
+
+    async enterEncryptionPassword(password, envelopes) {
+      context();
+      const key = await exportFileKey(await fileKeyFromPassword(password, envelopes));
+      await get().updateSettings({ encryption: { enabled: true, ...key } });
+    },
+
+    async disableEncryption() {
+      authorized('encryption:manage');
+      const { encryption } = requireSettings();
+      await get().updateSettings({ encryption: { ...encryption, enabled: false } });
+    },
 
     // --- Khoản chi và tháng
 

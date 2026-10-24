@@ -1,6 +1,6 @@
 import { basename, join } from '@tauri-apps/api/path';
 import { open } from '@tauri-apps/plugin-dialog';
-import { exists, mkdir, readDir, readTextFile } from '@tauri-apps/plugin-fs';
+import { exists, mkdir, readDir, readTextFile, remove } from '@tauri-apps/plugin-fs';
 import {
   SYNC_SUBFOLDER,
   deviceFileName,
@@ -39,7 +39,16 @@ export async function listDeviceFiles(syncFolder: string): Promise<DeviceFileInf
     .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 }
 
-export function createDriveFolderAdapter(syncFolder: string, deviceId: string): SyncAdapter {
+/**
+ * `encrypted`: file của máy này là `device-<id>.enc.json` (nội dung đã mã hóa) thay cho
+ * `device-<id>.json`. Sau khi ghi, bản kia của chính máy này bị xóa, để file dạng thường
+ * không còn nằm lại trên Drive sau khi bật mã hóa, và máy kia không đọc nhầm bản cũ.
+ */
+export function createDriveFolderAdapter(
+  syncFolder: string,
+  deviceId: string,
+  encrypted = false,
+): SyncAdapter {
   let dataDirPromise: Promise<string> | null = null;
   const dataDir = () => (dataDirPromise ??= resolveDataDir(syncFolder));
 
@@ -66,7 +75,10 @@ export function createDriveFolderAdapter(syncFolder: string, deviceId: string): 
     async writeOwn(content) {
       const dir = await dataDir();
       await mkdir(dir, { recursive: true });
-      await writeFileAtomic(dir, deviceFileName(deviceId), content);
+      await writeFileAtomic(dir, deviceFileName(deviceId, encrypted), content);
+      // Nội dung bản kia đã có đủ trong file vừa ghi và trong data.json trên máy.
+      const other = await join(dir, deviceFileName(deviceId, !encrypted));
+      if (await exists(other)) await remove(other);
     },
   };
 }

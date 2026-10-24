@@ -11,7 +11,7 @@ function ok(patch: Partial<Extract<SyncOutcome, { kind: 'ok' }>> = {}): SyncOutc
     kind: 'ok',
     at: localTime(2026, 10, 23, 14, 5).toISOString(),
     changed: false,
-    remotes: [{ name: 'device-b.json', deviceId: 'b', writtenAt: minutesAgo(3) }],
+    remotes: [{ name: 'device-b.json', deviceId: 'b', writtenAt: minutesAgo(3), encrypted: false }],
     problems: [],
     clockSkew: false,
     ...patch,
@@ -77,6 +77,19 @@ describe('describeSyncStatus', () => {
     expect(status.extra).toEqual([
       { text: 'Bỏ qua 1 file lỗi, xem Cài đặt', tone: 'warning' },
       { text: 'Giờ trên hai máy lệch nhau', tone: 'warning' },
+    ]);
+  });
+
+  it('file mã hóa chưa có hoặc sai mật khẩu → dòng riêng, không tính vào file lỗi', () => {
+    const problems = [
+      { name: 'device-b.enc.json', reason: 'encrypted' as const, message: '' },
+      { name: 'device-c.enc.json', reason: 'decrypt-failed' as const, message: '' },
+      { name: 'device-d.json', reason: 'invalid' as const, message: '' },
+    ];
+    expect(view(ok({ problems }), minutesAgo(25)).extra).toEqual([
+      { text: 'Máy kia đã mã hóa dữ liệu, cần nhập mật khẩu', tone: 'warning' },
+      { text: 'Không giải mã được dữ liệu từ máy kia', tone: 'warning' },
+      { text: 'Bỏ qua 1 file lỗi, xem Cài đặt', tone: 'warning' },
     ]);
   });
 

@@ -1,14 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseDataFile, serializeDataFile } from '../core/dataFile';
 import { deviceFileName, parseDeviceFileName } from '../core/deviceFiles';
 import { active, upsert } from '../core/records';
 import { NOW, makeData } from '../core/testing';
 import { createTransaction, deleteTransaction, updateTransaction } from '../core/transactions';
 import type { DataFile, Transaction, TransactionInput } from '../core/types';
+import { createFileKey, decryptFile, type FileKey } from '../storage/crypto';
 import type { SyncAdapter } from '../storage/SyncAdapter';
 import {
   FOCUS_MIN_GAP_MS,
   LOCAL_CHANGE_DELAY_MS,
+  NEEDS_PASSWORD_MESSAGE,
   createSyncScheduler,
   syncOnce,
   type SyncEnv,
@@ -21,7 +23,8 @@ class FakeFolder {
   ready = true;
   failWrites = false;
 
-  adapter(deviceId: string): SyncAdapter {
+  /** Giống driveFolderAdapter: ghi `.enc.json` hoặc `.json`, rồi xóa bản kia của máy này. */
+  adapter(deviceId: string, encrypted = false): SyncAdapter {
     return {
       isReady: async () => this.ready,
       listRemote: async () =>
@@ -36,7 +39,8 @@ class FakeFolder {
       },
       writeOwn: async (content) => {
         if (this.failWrites) throw new Error('Ổ đĩa đầy');
-        this.files.set(deviceFileName(deviceId), content);
+        this.files.set(deviceFileName(deviceId, encrypted), content);
+        this.files.delete(deviceFileName(deviceId, !encrypted));
       },
     };
   }
@@ -48,11 +52,23 @@ function tick(minutes = 1): Date {
   return clock;
 }
 
-/** Một máy: dữ liệu trong bộ nhớ, danh sách backup đã tạo, và người dùng của máy. */
+/**
+ * Một máy: dữ liệu trong bộ nhớ, danh sách backup đã tạo, người dùng của máy, và cài đặt
+ * mã hóa (`key`: khóa đọc file mã hóa; `encrypt`: ghi file của mình dạng mã hóa).
+ */
 function machine(folder: FakeFolder | null, deviceId: string, userId: string, data: DataFile) {
-  const state = { data: { ...data, deviceId }, backups: [] as DataFile[] };
+  const state = {
+    data: { ...data, deviceId },
+    backups: [] as DataFile[],
+    key: null as FileKey | null,
+    encrypt: false,
+  };
   const env: SyncEnv = {
-    adapter: () => folder?.adapter(deviceId) ?? null,
+    target: async () => {
+      if (!folder) return null;
+      const writeKey = state.encrypt ? state.key : null;
+      return { adapter: folder.adapter(deviceId, writeKey !== null), readKey: state.key, writeKey };
+    },
     getData: () => state.data,
     backup: async (snapshot) => {
       state.backups.push(snapshot);
@@ -224,6 +240,128 @@ describe('syncOnce', () => {
     const written = parseDataFile(folder.files.get('device-device-a.json') as string);
     expect(content(written)).toEqual(content(a.state.data));
     expect(serializeDataFile(written)).toContain('4321');
+  });
+});
+
+describe('syncOnce với mã hóa (SPEC mục 9)', () => {
+  let key: FileKey;
+  let otherKey: FileKey;
+  beforeAll(async () => {
+    key = await createFileKey('mật khẩu chung');
+    otherKey = await createFileKey('mật khẩu khác');
+  });
+
+  /** A đã bật mã hóa; B có cùng khóa hay chưa tùy test. */
+  function encryptedHousehold() {
+    const setup = household();
+    setup.a.state.key = key;
+    setup.a.state.encrypt = true;
+    return setup;
+  }
+
+  it('bật mã hóa → ghi file .enc.json, xóa file thường cũ, nội dung không đọc được', async () => {
+    const { folder, a } = household();
+    a.add(input(4321));
+    await a.sync();
+    expect([...folder.files.keys()]).toEqual(['device-device-a.json']);
+
+    a.state.key = key;
+    a.state.encrypt = true;
+    await a.sync();
+    expect([...folder.files.keys()]).toEqual(['device-device-a.enc.json']);
+    const encrypted = folder.files.get('device-device-a.enc.json') as string;
+    expect(encrypted).not.toContain('4321');
+    expect(JSON.parse(encrypted)).toMatchObject({ v: 1, alg: 'AES-GCM', salt: key.saltB64 });
+    // Giải mã ra đúng dữ liệu của A.
+    const written = parseDataFile(await decryptFile(encrypted, key));
+    expect(content(written)).toEqual(content(a.state.data));
+  });
+
+  it('máy kia có cùng mật khẩu → đọc và gộp được, ghi lại cũng mã hóa', async () => {
+    const { folder, a, b } = encryptedHousehold();
+    b.state.key = key;
+    b.state.encrypt = true;
+    a.add(input(1500));
+    await a.sync();
+
+    const outcome = await b.sync();
+    expect(outcome).toMatchObject({ kind: 'ok', changed: true, problems: [] });
+    expect(outcome.kind === 'ok' && outcome.remotes.map((r) => r.encrypted)).toEqual([true]);
+    expect(b.amounts()).toEqual([1500]);
+
+    b.add(input(800, 'user-b'));
+    await b.sync();
+    await a.sync();
+    expect(a.amounts().sort((x, y) => x - y)).toEqual([800, 1500]);
+    expect([...folder.files.keys()].sort()).toEqual([
+      'device-device-a.enc.json',
+      'device-device-b.enc.json',
+    ]);
+  });
+
+  it('máy kia chưa nhập mật khẩu → bỏ qua file mã hóa, dữ liệu không đổi', async () => {
+    const { a, b } = encryptedHousehold();
+    a.add(input(1500));
+    await a.sync();
+    const before = b.state.data;
+
+    const outcome = await b.sync();
+    expect(outcome).toMatchObject({ kind: 'ok', changed: false, remotes: [] });
+    expect(outcome.kind === 'ok' && outcome.problems).toEqual([
+      { name: 'device-device-a.enc.json', reason: 'encrypted', message: NEEDS_PASSWORD_MESSAGE },
+    ]);
+    expect(b.state.data).toBe(before);
+  });
+
+  it('sai mật khẩu → báo không giải mã được, không gộp file đó', async () => {
+    const { a, b } = encryptedHousehold();
+    b.state.key = otherKey;
+    a.add(input(1500));
+    await a.sync();
+    const before = b.state.data;
+
+    const outcome = await b.sync();
+    expect(outcome.kind === 'ok' && outcome.problems).toEqual([
+      {
+        name: 'device-device-a.enc.json',
+        reason: 'decrypt-failed',
+        message: 'Không giải mã được dữ liệu từ máy kia, kiểm tra mật khẩu.',
+      },
+    ]);
+    expect(b.state.data).toBe(before);
+    expect(b.state.backups).toEqual([]);
+  });
+
+  it('máy có khóa vẫn đọc được file thường của máy chưa bật mã hóa', async () => {
+    const { a, b } = encryptedHousehold();
+    b.add(input(600, 'user-b'));
+    await b.sync();
+    const outcome = await a.sync();
+    expect(outcome.kind === 'ok' && outcome.remotes.map((r) => r.encrypted)).toEqual([false]);
+    expect(a.amounts()).toEqual([600]);
+  });
+
+  it('tắt mã hóa (giữ khóa) → ghi lại file thường, vẫn đọc file mã hóa của máy kia', async () => {
+    const { folder, a, b } = encryptedHousehold();
+    b.state.key = key;
+    b.state.encrypt = true;
+    b.add(input(900, 'user-b'));
+    await b.sync();
+
+    a.state.encrypt = false;
+    await a.sync();
+    expect([...folder.files.keys()].sort()).toEqual([
+      'device-device-a.json',
+      'device-device-b.enc.json',
+    ]);
+    expect(a.amounts()).toEqual([900]);
+  });
+
+  it('file .enc.json sai cấu trúc → bỏ qua như file hỏng', async () => {
+    const { folder, a } = encryptedHousehold();
+    folder.files.set('device-device-b.enc.json', '{"v":1}');
+    const outcome = await a.sync();
+    expect(outcome.kind === 'ok' && outcome.problems.map((p) => p.reason)).toEqual(['invalid']);
   });
 });
 

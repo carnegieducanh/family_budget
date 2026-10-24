@@ -1,10 +1,11 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { DEFAULT_SYNC_INTERVAL_MIN } from '../core/defaults';
-import type { DeviceFileInfo } from '../core/deviceFiles';
-import type { RemoteFile } from '../core/sync';
+import { parseDeviceFileName, type DeviceFileInfo } from '../core/deviceFiles';
+import type { Settings } from '../core/types';
 import { useDataStore } from '../state/dataStore';
 import { useSyncStore } from '../state/syncStore';
 import { createSnapshot } from '../storage/backup';
+import { importFileKey, type FileKey } from '../storage/crypto';
 import {
   createDriveFolderAdapter,
   listDeviceFiles,
@@ -14,6 +15,7 @@ import {
   createSyncScheduler,
   readRemoteFiles,
   syncOnce,
+  type RawRemoteFile,
   type SyncEnv,
   type SyncOutcome,
   type SyncScheduler,
@@ -21,12 +23,29 @@ import {
 
 // Nối syncService với store và thư mục Drive. Chạy một lần khi dữ liệu đã sẵn sàng.
 
+let cachedKey: { id: string; key: Promise<FileKey> } | null = null;
+
+/** Khóa mã hóa lưu trong settings.json của máy này; null nếu máy chưa có mật khẩu. */
+export function settingsKey(settings: Settings | null): Promise<FileKey | null> {
+  const { keyB64, saltB64 } = settings?.encryption ?? {};
+  if (!keyB64 || !saltB64) return Promise.resolve(null);
+  const id = `${saltB64}:${keyB64}`;
+  if (cachedKey?.id !== id) cachedKey = { id, key: importFileKey({ keyB64, saltB64 }) };
+  return cachedKey.key;
+}
+
 const env: SyncEnv = {
-  adapter() {
+  async target() {
+    // Thư mục, khóa và chế độ ghi lấy từ cùng một bản settings, để tên file luôn khớp nội dung.
     const { settings } = useDataStore.getState();
-    return settings?.syncFolder
-      ? createDriveFolderAdapter(settings.syncFolder, settings.deviceId)
-      : null;
+    if (!settings?.syncFolder) return null;
+    const readKey = await settingsKey(settings);
+    const writeKey = settings.encryption.enabled ? readKey : null;
+    return {
+      adapter: createDriveFolderAdapter(settings.syncFolder, settings.deviceId, writeKey !== null),
+      readKey,
+      writeKey,
+    };
   },
   getData() {
     const { data } = useDataStore.getState();
@@ -53,6 +72,13 @@ function onFinish(outcome: SyncOutcome): void {
       .updateSettings({ lastSyncAt: outcome.at })
       .catch((error: unknown) => console.warn('Không lưu được lastSyncAt:', error));
   }
+}
+
+/** Nội dung các file mã hóa của máy khác trong thư mục, để kiểm tra mật khẩu nhập vào. */
+export function encryptedContents(files: readonly RawRemoteFile[]): string[] {
+  return files.flatMap((file) =>
+    'content' in file && parseDeviceFileName(file.name)?.encrypted ? [file.content] : [],
+  );
 }
 
 /** Bắt đầu lịch sync: sync ngay khi mở app, định kỳ, khi focus lại, sau thay đổi local. */
@@ -111,14 +137,17 @@ export interface FolderContents {
   dataDir: string;
   /** Mọi file `device-*.json`, kể cả của máy này. */
   deviceFiles: DeviceFileInfo[];
-  /** Nội dung các file của máy khác. */
-  remoteFiles: RemoteFile[];
+  /** Nội dung thô các file của máy khác; file `.enc.json` chưa giải mã. */
+  rawFiles: RawRemoteFile[];
 }
 
-/** Đọc thư mục Drive vừa chọn, để kiểm tra trước khi tạo mới, tham gia hoặc kết nối. */
+/**
+ * Đọc thư mục Drive vừa chọn, để kiểm tra trước khi tạo mới, tham gia hoặc kết nối; cũng
+ * dùng để lấy file mã hóa của máy kia khi nhập mật khẩu chung.
+ */
 export async function inspectFolder(folder: string, deviceId: string): Promise<FolderContents> {
   const dataDir = await resolveDataDir(folder);
   const deviceFiles = await listDeviceFiles(folder);
-  const remoteFiles = await readRemoteFiles(createDriveFolderAdapter(folder, deviceId));
-  return { folder, dataDir, deviceFiles, remoteFiles };
+  const rawFiles = await readRemoteFiles(createDriveFolderAdapter(folder, deviceId));
+  return { folder, dataDir, deviceFiles, rawFiles };
 }

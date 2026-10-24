@@ -7,13 +7,17 @@ import { SchemaTooNewError } from './migrations';
 import { active } from './records';
 import type { DataFile } from './types';
 
-// Bước 3–5 của một lượt sync (SPEC mục 5), dạng hàm thuần: nhận nội dung thô các file
-// của máy khác, trả về dữ liệu đã gộp. Việc đọc ghi file nằm ở sync/syncService.ts.
+// Bước 3–5 của một lượt sync (SPEC mục 5), dạng hàm thuần: nhận nội dung các file của máy
+// khác, trả về dữ liệu đã gộp. Việc đọc ghi file và giải mã nằm ở sync/syncService.ts.
 
-/** Một file của máy khác: nội dung thô, hoặc lỗi khi đọc file đó. */
-export type RemoteFile = { name: string; content: string } | { name: string; error: string };
-
-export type RemoteProblemReason = 'unreadable' | 'invalid' | 'encrypted' | 'other-household';
+export type RemoteProblemReason =
+  | 'unreadable'
+  | 'invalid'
+  /** File mã hóa mà máy này chưa có mật khẩu. */
+  | 'encrypted'
+  /** File mã hóa mà khóa của máy này không giải mã được (sai hoặc đã đổi mật khẩu). */
+  | 'decrypt-failed'
+  | 'other-household';
 
 /** File bị bỏ qua trong lượt sync này. */
 export interface RemoteProblem {
@@ -22,11 +26,19 @@ export interface RemoteProblem {
   message: string;
 }
 
+/**
+ * Một file của máy khác: nội dung JSON (file `.enc.json` đã được giải mã trước khi tới đây),
+ * hoặc lý do không đọc được file đó.
+ */
+export type RemoteFile = { name: string; content: string } | RemoteProblem;
+
 /** Một file đọc và gộp được. */
 export interface RemoteInfo {
   name: string;
   deviceId: string;
   writtenAt: string;
+  /** Máy kia ghi file dạng mã hóa. */
+  encrypted: boolean;
 }
 
 export type RemoteMergeResult =
@@ -43,8 +55,8 @@ export type RemoteMergeResult =
 
 /**
  * Gộp các file của máy khác vào dữ liệu local.
- * - File hỏng, sai cấu trúc hoặc của gia đình khác → bỏ qua file đó, ghi vào `problems`;
- *   không bao giờ dùng dữ liệu hỏng để ghi đè local.
+ * - File không đọc hoặc không giải mã được, hỏng, sai cấu trúc hoặc của gia đình khác → bỏ qua
+ *   file đó, ghi vào `problems`; không bao giờ dùng dữ liệu hỏng để ghi đè local.
  * - File có schemaVersion lớn hơn bản app hỗ trợ → dừng cả lượt sync, không gộp gì.
  * Local chưa có người dùng (máy đang tham gia) thì file đầu tiên quyết định gia đình.
  */
@@ -60,16 +72,8 @@ export function mergeRemoteFiles(
   let clockSkew = false;
 
   for (const file of sorted) {
-    if ('error' in file) {
-      problems.push({ name: file.name, reason: 'unreadable', message: file.error });
-      continue;
-    }
-    if (parseDeviceFileName(file.name)?.encrypted) {
-      problems.push({
-        name: file.name,
-        reason: 'encrypted',
-        message: 'File đã mã hóa, máy này chưa bật mã hóa nên không đọc được.',
-      });
+    if ('reason' in file) {
+      problems.push(file);
       continue;
     }
 
@@ -96,7 +100,12 @@ export function mergeRemoteFiles(
 
     clockSkew ||= hasClockSkew(remote, now);
     result = merge(result, remote);
-    remotes.push({ name: file.name, deviceId: remote.deviceId, writtenAt: remote.writtenAt });
+    remotes.push({
+      name: file.name,
+      deviceId: remote.deviceId,
+      writtenAt: remote.writtenAt,
+      encrypted: parseDeviceFileName(file.name)?.encrypted ?? false,
+    });
   }
 
   return {
@@ -111,6 +120,9 @@ export function mergeRemoteFiles(
 
 export const SCHEMA_TOO_NEW_MESSAGE = 'Máy kia đang dùng bản mới hơn, hãy cập nhật app.';
 
+export const JOIN_NEEDS_PASSWORD_MESSAGE =
+  'Dữ liệu trong thư mục này đã được mã hóa. Nhập mật khẩu chung mà admin đã đặt để tham gia.';
+
 export type JoinResult =
   | { kind: 'ok'; data: DataFile; problems: RemoteProblem[] }
   | { kind: 'error'; message: string; problems: RemoteProblem[] };
@@ -122,6 +134,9 @@ export function dataForJoin(deviceId: string, files: readonly RemoteFile[], now:
     return { kind: 'error', message: SCHEMA_TOO_NEW_MESSAGE, problems: [] };
   }
   const { problems } = result;
+  if (result.remotes.length === 0 && problems.some((p) => p.reason === 'encrypted')) {
+    return { kind: 'error', message: JOIN_NEEDS_PASSWORD_MESSAGE, problems };
+  }
   if (result.remotes.length === 0) {
     return {
       kind: 'error',

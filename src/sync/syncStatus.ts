@@ -69,11 +69,17 @@ export function describeSyncStatus(input: SyncStatusInput, now: Date): SyncStatu
       return { main: { text: `Lỗi: ${last.message}`, tone: 'error' }, extra: lastSuccess };
     case 'ok': {
       const extra: StatusLine[] = [];
-      if (last.problems.length > 0) {
-        extra.push({
-          text: `Bỏ qua ${last.problems.length} file lỗi, xem Cài đặt`,
-          tone: 'warning',
-        });
+      const reasons = last.problems.map((p) => p.reason);
+      // Lỗi mã hóa cần người dùng nhập mật khẩu nên có dòng riêng; banner ở App nói chi tiết.
+      if (reasons.includes('encrypted')) {
+        extra.push({ text: 'Máy kia đã mã hóa dữ liệu, cần nhập mật khẩu', tone: 'warning' });
+      }
+      if (reasons.includes('decrypt-failed')) {
+        extra.push({ text: 'Không giải mã được dữ liệu từ máy kia', tone: 'warning' });
+      }
+      const others = reasons.filter((r) => r !== 'encrypted' && r !== 'decrypt-failed').length;
+      if (others > 0) {
+        extra.push({ text: `Bỏ qua ${others} file lỗi, xem Cài đặt`, tone: 'warning' });
       }
       if (last.clockSkew) extra.push({ text: 'Giờ trên hai máy lệch nhau', tone: 'warning' });
 

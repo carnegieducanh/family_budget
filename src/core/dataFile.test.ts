@@ -59,4 +59,21 @@ describe('parseSettings', () => {
   it('thiếu deviceId → lỗi', () => {
     expect(() => parseSettings('{"userId":"x"}')).toThrow('deviceId');
   });
+
+  it('giữ khóa mã hóa và salt đi kèm', () => {
+    const encryption = { enabled: true, keyB64: 'a2V5', saltB64: 'c2FsdA==' };
+    const settings = { ...createSettings('device-1'), encryption };
+    expect(parseSettings(serializeSettings(settings)).encryption).toEqual(encryption);
+    // Đã tắt mã hóa nhưng vẫn giữ khóa để đọc file mã hóa của máy kia.
+    const disabled = { ...settings, encryption: { ...encryption, enabled: false } };
+    expect(parseSettings(serializeSettings(disabled)).encryption.keyB64).toBe('a2V5');
+  });
+
+  it('bật mã hóa mà thiếu khóa hoặc salt → coi như tắt', () => {
+    const json = (encryption: object) => JSON.stringify({ deviceId: 'device-1', encryption });
+    expect(parseSettings(json({ enabled: true })).encryption).toEqual({ enabled: false });
+    expect(parseSettings(json({ enabled: true, keyB64: 'a2V5' })).encryption).toEqual({
+      enabled: false,
+    });
+  });
 });

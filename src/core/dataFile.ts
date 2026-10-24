@@ -129,6 +129,10 @@ export function parseSettings(json: string): Settings {
     throw new DomainError('settings.json sai cấu trúc: thiếu deviceId.');
   }
   const encryption = isObject(raw.encryption) ? raw.encryption : {};
+  const key =
+    typeof encryption.keyB64 === 'string' && typeof encryption.saltB64 === 'string'
+      ? { keyB64: encryption.keyB64, saltB64: encryption.saltB64 }
+      : null;
   return {
     deviceId: raw.deviceId,
     userId: typeof raw.userId === 'string' ? raw.userId : null,
@@ -137,10 +141,8 @@ export function parseSettings(json: string): Settings {
       typeof raw.syncIntervalMin === 'number' && raw.syncIntervalMin > 0
         ? raw.syncIntervalMin
         : DEFAULT_SYNC_INTERVAL_MIN,
-    encryption: {
-      enabled: encryption.enabled === true,
-      ...(typeof encryption.keyB64 === 'string' ? { keyB64: encryption.keyB64 } : {}),
-    },
+    // Không có khóa thì không ghi mã hóa được, dù file ghi `enabled: true`.
+    encryption: { enabled: encryption.enabled === true && key !== null, ...key },
     ...(typeof raw.lastSyncAt === 'string' ? { lastSyncAt: raw.lastSyncAt } : {}),
   };
 }

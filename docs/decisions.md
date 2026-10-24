@@ -223,3 +223,80 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
   Lý do: theo thứ tự ở SPEC mục 8, màn hình 9.
 
 - **Thêm quyền `dialog:allow-save`** (lưu CSV, lưu backup JSON). Hộp mở/lưu file chỉ cấp quyền cho đúng file được chọn.
+
+## 2026-10-23 — Giai đoạn 4
+
+### Mã hóa file trên Drive
+
+- **Hai máy dùng chung một salt: admin tạo salt ngẫu nhiên 16 byte khi đặt mật khẩu; máy kia lấy salt từ file `.enc.json` của máy admin rồi dẫn xuất lại khóa từ mật khẩu nhập vào. `Settings.encryption` thêm trường `saltB64` cạnh `keyB64`.**
+  Lý do: SPEC chỉ cho lưu khóa đã dẫn xuất, không lưu mật khẩu. Nếu mỗi máy dùng salt riêng thì hai máy ra hai khóa khác nhau và không đọc được file của nhau. Settings không đồng bộ nên thêm trường không cần tăng `schemaVersion`.
+
+- **File mã hóa phải đúng `v: 1`, `alg: "AES-GCM"`, `kdf: "PBKDF2-SHA256"`, `iter: 600000`, salt 16 byte, IV 12 byte; khác đi là "File mã hóa sai cấu trúc" và file bị bỏ qua như file hỏng.**
+  Lý do: khóa lưu trên máy không kèm số vòng, nên mọi máy phải dẫn xuất với cùng số vòng; cũng chặn file lạ đòi số vòng rất lớn làm treo app.
+
+- **Mật khẩu ít nhất 8 ký tự, nhập hai lần khi đặt mới.** Đặt hoặc đổi mật khẩu luôn tạo salt mới.
+  Lý do: SPEC không nói; đây là mức tối thiểu phổ biến. Nhập hai lần tránh gõ nhầm mật khẩu mà máy kia phải nhập lại đúng.
+
+- **Bật mã hóa: máy ghi `device-<id>.enc.json`, ghi xong thì xóa `device-<id>.json` của chính máy đó (tắt mã hóa thì ngược lại).** Lỗi khi xóa làm lượt sync báo lỗi và thử lại ở lượt sau.
+  Lý do: để file dạng thường nằm lại trên Drive thì bật mã hóa không có tác dụng, và máy kia vẫn đọc bản cũ. Đây là bản sao để đồng bộ do chính máy này ghi, không phải dữ liệu người dùng: nội dung đã có đủ trong `data.json` và file vừa ghi, nên không trái nguyên tắc 7. Google Drive còn giữ file đã xóa trong Thùng rác 30 ngày.
+
+- **Mã hóa là cài đặt của từng máy (`settings.json`). Admin bật, đổi mật khẩu, tắt (quyền mới `encryption:manage`). Mọi máy đều nhập được mật khẩu chung khi không đọc được file mã hóa của máy kia (chưa có khóa, hoặc khóa không giải mã được); nhập đúng thì máy đó cũng ghi file mã hóa. Thành viên không tắt được mã hóa.**
+  Lý do: SPEC mục 7 chỉ cho admin quản lý mật khẩu, mục 9 cho máy thứ hai nhập cùng mật khẩu. Nhập mật khẩu được kiểm tra bằng chính file của máy kia nên không đặt được mật khẩu mới.
+
+- **Tắt mã hóa vẫn giữ khóa trên máy (`enabled: false`, còn `keyB64`, `saltB64`).**
+  Lý do: máy kia vẫn đang ghi file mã hóa; giữ khóa thì máy admin vẫn đọc được, đồng bộ không bị gián đoạn.
+
+- **Máy chưa nhập mật khẩu vẫn ghi file dạng thường và vẫn đồng bộ một chiều (máy admin đọc được file của nó). Máy đó hiện banner "Máy kia đã mã hóa dữ liệu trên Drive..." kèm nút "Mở Cài đặt"; thẻ Mã hóa trên máy admin báo "File của máy kia trên Drive chưa mã hóa".**
+  Lý do: dừng hẳn đồng bộ khi chưa có mật khẩu thì máy admin cũng mất dữ liệu của máy kia. Khoảng thời gian chưa nhập mật khẩu thường ngắn và cả hai máy đều được báo.
+
+- **Thiết lập lần đầu (tham gia) mà thư mục có file mã hóa: bắt buộc nhập mật khẩu trước khi chọn "Tôi là ...", kể cả khi thư mục còn file dạng thường. App thử mọi file mã hóa trong thư mục (mỗi salt dẫn xuất một lần).**
+  Lý do: máy mới cũng phải ghi file mã hóa ngay. Thư mục có thể còn file của máy cũ đã cài lại với mật khẩu khác.
+
+- **Giải mã nằm ở `sync/syncService.ts` (`openRemoteFiles`, giữa bước đọc file và bước gộp), `core/sync.ts` chỉ nhận nội dung JSON đã giải mã. Lý do bỏ qua file có thêm `encrypted` (chưa có mật khẩu) và `decrypt-failed` (sai mật khẩu, thông báo đúng câu của SPEC). Sidebar có dòng riêng cho hai lý do này, không tính vào "Bỏ qua N file lỗi".**
+  Lý do: Web Crypto là bất đồng bộ, còn `mergeRemoteFiles` là hàm thuần đồng bộ. `storage/crypto.ts` chỉ dùng Web Crypto nên test được bằng Vitest trong Node.
+
+- **Thư mục, khóa đọc và khóa ghi lấy cùng lúc từ một bản settings (`SyncEnv.target()`), adapter được tạo theo chế độ mã hóa của bản settings đó. Khóa trong settings hỏng thì lượt sync báo lỗi, không ghi file dạng thường thay thế.**
+  Lý do: tên file (`.enc.json` hay `.json`) luôn khớp với nội dung; không bao giờ vô tình ghi dữ liệu không mã hóa khi người dùng đã bật mã hóa.
+
+### Cập nhật app và phát hành
+
+- **Endpoint cập nhật: `https://github.com/carnegieducanh/family_budget/releases/latest/download/latest.json`, tức repo public `carnegieducanh/family_budget`.** Chưa làm phương án repo private + repo public chỉ chứa releases; INSTALL.md mục 3.1 ghi các chỗ cần sửa nếu chọn phương án đó.
+  Lý do: tên tài khoản lấy từ remote của dự án DayTask trên máy này (cũng phát hành qua GitHub Releases), tên repo theo tên package. Repo public là phương án đơn giản nhất SPEC nêu. Đổi tên repo phải sửa endpoint trước bản phát hành đầu tiên.
+
+- **Khóa ký bản cập nhật không đặt mật khẩu, lưu ở `~/.tauri/family-budget.key` (ngoài repo); public key ở `plugins.updater.pubkey`. Workflow đọc secret `TAURI_SIGNING_PRIVATE_KEY` (và `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` nếu sau này có).**
+  Lý do: giống các dự án khác trên máy này (`atomic`, `daytask`). Private key không vào repo theo SPEC mục 9.
+
+- **Giữ `requireSignedVersion: true` (do `tauri add updater` bật).**
+  Lý do: chống hạ cấp: chữ ký phải ghi đúng số phiên bản mà `latest.json` công bố. App chưa có bản phát hành cũ nào thiếu thông tin này; CLI hiện tại ghi `version:x.y.z` vào chữ ký (đã kiểm tra).
+
+- **Chỉ build NSIS trên Windows (`bundle.targets: ["nsis", "app", "dmg"]`, không có MSI); cài cho người dùng hiện tại; cập nhật chạy trình cài ở chế độ `passive` (hiện tiến trình, không cần bấm).**
+  Lý do: SPEC mục 9 chỉ cần NSIS `.exe`. Cài cho người dùng hiện tại không cần quyền quản trị.
+
+- **Phiên bản app chỉ lấy từ `package.json` (`tauri.conf.json` → `"version": "../package.json"`); tăng bằng `npm version X.Y.Z`. Số trong `Cargo.toml` không dùng.**
+  Lý do: một nguồn duy nhất, `npm version` tạo luôn commit và tag `vX.Y.Z` mà workflow cần.
+
+- **Ghi chú phát hành lấy từ mục `## X.Y.Z` trong `docs/CHANGELOG.md` (thêm file này). Workflow dừng nếu thiếu mục đó, hoặc tag khác `version` trong `package.json`.**
+  Lý do: banner cập nhật cần ghi chú thay đổi (SPEC mục 9), và `latest.json` được tạo lúc build nên ghi chú phải có trước khi build.
+
+- **Workflow `.github/workflows/release.yml` chạy khi đẩy tag `v*.*.*`: kiểm tra code (typecheck, lint, format, test) → tạo release nháp → build Windows (`windows-latest`) và macOS (`macos-latest`, `--target aarch64-apple-darwin`) song song bằng `tauri-action` → bỏ nháp. macOS dùng ad-hoc signing có sẵn trong cấu hình.**
+  Lý do: release chỉ hiện khi cả hai bản đã lên, nên `latest.json` không bao giờ thiếu một nền tảng; build lỗi thì người dùng không thấy gì.
+
+- **Kiểm tra cập nhật khi mở app (cả ở màn hình thiết lập lần đầu) và mỗi 24 giờ. Lỗi kiểm tra lúc mở app không hiện banner, chỉ ghi ở thẻ "Phiên bản app" trong Cài đặt. Banner có thêm nút "Để sau" (ẩn đến lần mở app sau; bấm "Kiểm tra cập nhật" thì hiện lại).**
+  Lý do: máy mới cài bản cũ có thể cần cập nhật mới tham gia được thư mục của máy kia. Mất mạng không phải lỗi người dùng cần xử lý.
+
+- **Bấm "Cập nhật": tải (có tiến trình), chờ các lần ghi `data.json` đang xếp hàng xong (`flushWrites`), rồi cài và khởi động lại (`plugin-process`, chỉ cấp quyền `process:allow-restart`). Không chạy thêm lượt sync trước khi cài.**
+  Lý do: trên Windows plugin thoát app ngay khi mở trình cài. Lượt sync khi mở lại app sẽ ghi file Drive.
+
+- **Thêm `src/update/appUpdate.ts` (gọi plugin) và `state/updateStore.ts` (trạng thái hiển thị), ngoài cây thư mục ở SPEC mục 3.**
+  Lý do: giống cách `sync/appSync.ts` nối lịch sync với store; không trộn lệnh Tauri vào store dữ liệu.
+
+- **Bật CSP cho bản build: `default-src 'self' ipc: http://ipc.localhost; img-src 'self' data:; style-src 'self' 'unsafe-inline'`; `devCsp: null`.**
+  Lý do: app không tải gì từ ngoài, CSP chặn thêm một lớp nếu có nội dung lạ được chèn vào trang. Tắt ở chế độ dev vì Vite chèn style và HMR. Đã kiểm tra trên bản release: không có vi phạm CSP, CSS và biểu đồ hiển thị đúng.
+
+- **Gộp quyền của updater vào `capabilities/default.json` (bỏ file `desktop.json` mà `tauri add` tạo); đăng ký updater và process sau persisted-scope.**
+  Lý do: app chỉ chạy desktop; một file capability dễ xem hơn. Giữ đúng thứ tự fs → dialog → persisted-scope của giai đoạn 2.
+
+### Kiểm chứng
+
+- **Đã thử thật trên Windows 11 (một máy):** mã hóa với 3 instance app và một thư mục local đóng vai Drive (bật, nhập sai và đúng mật khẩu, dữ liệu đi hai chiều qua file mã hóa, đổi mật khẩu, máy mới tham gia thư mục đã mã hóa, tắt mã hóa); cập nhật thật từ bản release 0.1.0 lên 0.1.1 qua `latest.json` trên server local (banner kèm ghi chú, chữ ký sai bị từ chối, cài passive, app tự mở lại ở 0.1.1, dữ liệu còn nguyên); `npm run tauri build` ra file NSIS và `.sig` có ghi phiên bản.
+- **Chưa kiểm chứng:** workflow GitHub Actions (repo chưa có trên GitHub, máy không có `gh`), bản build macOS và các bước Gatekeeper, cập nhật trên macOS, Google Drive for Desktop thật.

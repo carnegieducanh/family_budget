@@ -18,6 +18,8 @@ export type Action =
   | 'backup:restore'
   | 'reports:view'
   | 'users:manage'
+  /** Bật, tắt mã hóa, đặt hoặc đổi mật khẩu (máy thứ hai nhập mật khẩu đã đặt thì không cần). */
+  | 'encryption:manage'
   | 'sync:configure';
 
 /** Thao tác người dùng thường cũng làm được. */

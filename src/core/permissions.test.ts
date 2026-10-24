@@ -22,6 +22,7 @@ const TABLE: Array<[Action, boolean, boolean]> = [
   ['csv:export', true, true],
   ['reports:view', true, true],
   ['users:manage', true, false],
+  ['encryption:manage', true, false],
   ['sync:configure', true, true],
 ];
 

@@ -1,13 +1,21 @@
-import { useState, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from 'react';
 import { householdUsers } from '../../core/household';
 import { active } from '../../core/records';
 import { dataForJoin, type RemoteProblem } from '../../core/sync';
 import type { DataFile } from '../../core/types';
 import { Button } from '../../components/Button';
+import { UpdateBanner } from '../../components/UpdateBanner';
 import { UserName } from '../../components/UserDot';
 import { useDataStore } from '../../state/dataStore';
+import {
+  exportFileKey,
+  fileKeyFromPassword,
+  type FileKey,
+  type StoredKey,
+} from '../../storage/crypto';
 import { pickSyncFolder } from '../../storage/driveFolderAdapter';
-import { inspectFolder, type FolderContents } from '../../sync/appSync';
+import { encryptedContents, inspectFolder, type FolderContents } from '../../sync/appSync';
+import { openRemoteFiles } from '../../sync/syncService';
 import styles from './SetupScreen.module.scss';
 
 type Mode = 'choose' | 'create' | 'join';
@@ -29,6 +37,7 @@ export function SetupScreen() {
   return (
     <div className={styles.page}>
       <div className={styles.panel}>
+        <UpdateBanner />
         <h1 className={styles.title}>Chào mừng đến Family Budget</h1>
         {hasLocalData ? (
           <ChooseUser />
@@ -188,16 +197,37 @@ function CreateHousehold({ onBack }: { onBack: () => void }) {
 interface JoinCandidate {
   folder: FolderContents;
   data: DataFile;
-  problems: RemoteProblem[];
+  /** Khóa dẫn xuất từ mật khẩu chung, nếu dữ liệu trong thư mục đã được mã hóa. */
+  key: StoredKey | null;
 }
 
 function JoinHousehold({ onBack }: { onBack: () => void }) {
+  const id = useId();
   const [folder, setFolder] = useState<FolderContents | null>(null);
   const [candidate, setCandidate] = useState<JoinCandidate | null>(null);
   const [problems, setProblems] = useState<RemoteProblem[]>([]);
+  const [needsPassword, setNeedsPassword] = useState(false);
+  const [password, setPassword] = useState('');
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  /** Đọc dữ liệu gia đình từ các file trong thư mục (giải mã bằng `fileKey` nếu có). */
+  async function evaluate(contents: FolderContents, fileKey: FileKey | null) {
+    const deviceId = useDataStore.getState().settings?.deviceId ?? '';
+    const files = await openRemoteFiles(contents.rawFiles, fileKey);
+    const result = dataForJoin(deviceId, files, new Date());
+    // File mã hóa chưa mở được đã có ô nhập mật khẩu, không cần liệt kê là file lỗi.
+    setProblems(result.problems.filter((p) => p.reason !== 'encrypted'));
+    if (result.kind === 'error') {
+      setCandidate(null);
+      setError(result.message);
+      return;
+    }
+    const key = fileKey ? await exportFileKey(fileKey) : null;
+    setCandidate({ folder: contents, data: result.data, key });
+    setError(null);
+  }
 
   async function pick() {
     setError(null);
@@ -206,17 +236,35 @@ function JoinHousehold({ onBack }: { onBack: () => void }) {
       const contents = await pickAndInspect(folder?.folder ?? null);
       if (!contents) return;
       setFolder(contents);
-      const deviceId = useDataStore.getState().settings?.deviceId ?? '';
-      const result = dataForJoin(deviceId, contents.remoteFiles, new Date());
-      setProblems(result.problems);
-      if (result.kind === 'error') {
-        setCandidate(null);
-        setError(result.message);
+      setCandidate(null);
+      setPassword('');
+      // Gia đình đã bật mã hóa: máy mới phải có mật khẩu chung mới tham gia được, để
+      // file của máy này trên Drive cũng được mã hóa.
+      const encrypted = encryptedContents(contents.rawFiles).length > 0;
+      setNeedsPassword(encrypted);
+      if (encrypted) {
+        setProblems([]);
         return;
       }
-      setCandidate({ folder: contents, data: result.data, problems: result.problems });
+      await evaluate(contents, null);
     } catch (e) {
       setCandidate(null);
+      setError(errorMessage(e));
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  async function unlock(event: FormEvent) {
+    event.preventDefault();
+    if (!folder) return;
+    setError(null);
+    setChecking(true);
+    try {
+      const fileKey = await fileKeyFromPassword(password, encryptedContents(folder.rawFiles));
+      await evaluate(folder, fileKey);
+      setNeedsPassword(false);
+    } catch (e) {
       setError(errorMessage(e));
     } finally {
       setChecking(false);
@@ -227,7 +275,9 @@ function JoinHousehold({ onBack }: { onBack: () => void }) {
     if (!candidate) return;
     setSaving(true);
     try {
-      await useDataStore.getState().joinHousehold(candidate.data, userId, candidate.folder.folder);
+      await useDataStore
+        .getState()
+        .joinHousehold(candidate.data, userId, candidate.folder.folder, candidate.key);
     } catch (e) {
       setError(errorMessage(e));
       setSaving(false);
@@ -241,6 +291,33 @@ function JoinHousehold({ onBack }: { onBack: () => void }) {
         đó là thư mục admin đã chia sẻ và bạn đã “Thêm lối tắt vào Drive”.
       </p>
       <FolderField folder={folder} checking={checking} onPick={() => void pick()} />
+      {needsPassword && (
+        <form onSubmit={unlock} className={styles.form}>
+          <div className={styles.field}>
+            <label htmlFor={`${id}-password`}>Mật khẩu mã hóa</label>
+            <input
+              id={`${id}-password`}
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+              autoComplete="off"
+              aria-describedby={`${id}-hint`}
+            />
+            <span id={`${id}-hint`} className={styles.hint}>
+              Dữ liệu trong thư mục này đã được mã hóa. Nhập mật khẩu chung mà admin đã đặt.
+            </span>
+          </div>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={checking || !password}
+            className={styles.pick}
+          >
+            {checking ? 'Đang kiểm tra...' : 'Mở khóa dữ liệu'}
+          </Button>
+        </form>
+      )}
       {error && <p className={styles.error}>{error}</p>}
       {problems.length > 0 && (
         <ul className={styles.problems}>
@@ -254,7 +331,8 @@ function JoinHousehold({ onBack }: { onBack: () => void }) {
       {candidate && (
         <>
           <p className={styles.found}>
-            Tìm thấy dữ liệu của gia đình ({active(candidate.data.transactions).length} khoản chi).
+            Tìm thấy dữ liệu của gia đình ({active(candidate.data.transactions).length} khoản chi
+            {candidate.key && ', đã giải mã'}).
           </p>
           <p className={styles.lead}>Bạn là ai?</p>
           {householdUsers(candidate.data).map((user) => (

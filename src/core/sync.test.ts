@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { serializeDataFile } from './dataFile';
 import { createEmptyData, createInitialData } from './defaults';
 import { NOW, makeData, makeTx } from './testing';
-import { connectProblem, dataForJoin, mergeRemoteFiles, type RemoteFile } from './sync';
+import {
+  JOIN_NEEDS_PASSWORD_MESSAGE,
+  connectProblem,
+  dataForJoin,
+  mergeRemoteFiles,
+  type RemoteFile,
+} from './sync';
 import type { DataFile } from './types';
 
 function setup() {
@@ -48,7 +54,12 @@ describe('mergeRemoteFiles', () => {
     expect(result.data.deviceId).toBe('device-a');
     expect(result.data.transactions.map((t) => t.id)).toEqual(['tx-b']);
     expect(result.remotes).toEqual([
-      { name: 'device-device-b.json', deviceId: 'device-b', writtenAt: NOW.toISOString() },
+      {
+        name: 'device-device-b.json',
+        deviceId: 'device-b',
+        writtenAt: NOW.toISOString(),
+        encrypted: false,
+      },
     ]);
   });
 
@@ -111,19 +122,30 @@ describe('mergeRemoteFiles', () => {
     expect(result.problems.map((p) => p.reason)).toEqual(['other-household']);
   });
 
-  it('file không đọc được hoặc đã mã hóa → bỏ qua và ghi lại lý do', () => {
-    const { local, remote } = setup();
-    const result = mergeRemoteFiles(
-      local,
-      [{ name: 'device-b.json', error: 'Permission denied' }, file(remote, 'device-c.enc.json')],
-      NOW,
-    );
+  it('file không đọc hoặc không giải mã được → bỏ qua và giữ nguyên lý do', async () => {
+    const { local } = setup();
+    const unreadable: RemoteFile = {
+      name: 'device-b.json',
+      reason: 'unreadable',
+      message: 'Permission denied',
+    };
+    const encrypted: RemoteFile = {
+      name: 'device-c.enc.json',
+      reason: 'encrypted',
+      message: 'Máy kia đã bật mã hóa.',
+    };
+    const result = mergeRemoteFiles(local, [unreadable, encrypted], NOW);
     if (result.kind !== 'merged') throw new Error(result.kind);
     expect(result.changed).toBe(false);
-    expect(result.problems.map((p) => [p.name, p.reason])).toEqual([
-      ['device-b.json', 'unreadable'],
-      ['device-c.enc.json', 'encrypted'],
-    ]);
+    expect(result.problems).toEqual([unreadable, encrypted]);
+  });
+
+  it('file mã hóa đã giải mã → gộp như file thường, ghi nhận máy kia đang mã hóa', () => {
+    const { local, remote } = setup();
+    const result = mergeRemoteFiles(local, [file(remote, 'device-device-b.enc.json')], NOW);
+    if (result.kind !== 'merged') throw new Error(result.kind);
+    expect(result.data.transactions.map((t) => t.id)).toEqual(['tx-b']);
+    expect(result.remotes.map((r) => [r.deviceId, r.encrypted])).toEqual([['device-b', true]]);
   });
 
   it('báo lệch giờ khi máy kia ghi ở thời điểm vượt quá 5 phút', () => {
@@ -164,6 +186,15 @@ describe('dataForJoin', () => {
     const result = dataForJoin('device-new', [{ name: 'device-b.json', content: '{' }], NOW);
     expect(result.kind).toBe('error');
     expect(result.problems.map((p) => p.reason)).toEqual(['invalid']);
+  });
+
+  it('chỉ có file mã hóa mà chưa nhập mật khẩu → báo cần mật khẩu', () => {
+    const result = dataForJoin(
+      'device-new',
+      [{ name: 'device-b.enc.json', reason: 'encrypted', message: '' }],
+      NOW,
+    );
+    expect(result).toMatchObject({ kind: 'error', message: JOIN_NEEDS_PASSWORD_MESSAGE });
   });
 
   it('file của bản app mới hơn → báo cần cập nhật', () => {

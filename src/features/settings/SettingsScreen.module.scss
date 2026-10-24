@@ -59,6 +59,11 @@
   color: var(--color-danger-text);
 }
 
+.okMessage {
+  margin: var(--space-2) 0 0;
+  color: var(--color-success-text);
+}
+
 // Màu theo trạng thái sync (SyncTone).
 .ok {
   color: var(--color-success-text);
@@ -119,4 +124,36 @@
 .role {
   min-width: 120px;
   color: var(--color-text-muted);
+}
+
+// --- Mã hóa: hộp nhập mật khẩu
+
+.dialogForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+
+  p {
+    margin: 0;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+
+  > label {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-muted);
+  }
+}
+
+.notice {
+  padding: var(--space-3);
+  background: var(--color-warning-soft);
+  border-radius: var(--radius-sm);
+  color: var(--color-warning-text);
+  font-size: var(--font-size-sm);
 }

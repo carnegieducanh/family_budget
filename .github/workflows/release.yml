@@ -1,0 +1,130 @@
+# Phát hành bản mới: đẩy tag vX.Y.Z (trùng "version" trong package.json) thì GitHub Actions
+# kiểm tra code, build bản Windows (NSIS .exe) và macOS Apple Silicon (.dmg + .app.tar.gz),
+# ký file cập nhật, rồi đăng lên GitHub Releases kèm latest.json cho plugin-updater.
+# Release được tạo ở dạng nháp và chỉ được đăng khi cả hai bản build xong, nên latest.json
+# không bao giờ thiếu một nền tảng. Chuẩn bị khóa ký và secret: docs/INSTALL.md mục 3.
+
+name: Phát hành
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    name: Kiểm tra code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+
+  create-release:
+    name: Tạo release nháp
+    needs: check
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create.outputs.release_id }}
+      notes: ${{ steps.notes.outputs.notes }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Kiểm tra số phiên bản, lấy ghi chú từ docs/CHANGELOG.md
+        id: notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          package_version=$(node -p "require('./package.json').version")
+          if [ "$package_version" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME không khớp version $package_version trong package.json."
+            exit 1
+          fi
+          # Nội dung mục "## <version>" cho tới mục "## " tiếp theo.
+          awk -v v="$version" '/^## /{p = ($2 == v); next} p' docs/CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "::error::docs/CHANGELOG.md chưa có mục '## $version'."
+            exit 1
+          fi
+          {
+            echo 'notes<<NOTES_EOF'
+            cat notes.md
+            echo 'NOTES_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Tạo release nháp
+        id: create
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
+            --title "Family Budget $GITHUB_REF_NAME" --notes-file notes.md
+          id=$(gh api "repos/$GITHUB_REPOSITORY/releases" \
+            --jq ".[] | select(.tag_name == \"$GITHUB_REF_NAME\") | .id")
+          echo "release_id=$id" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            platform: windows-latest
+            rust-targets: ''
+            args: ''
+          - name: macOS Apple Silicon
+            platform: macos-latest
+            rust-targets: aarch64-apple-darwin
+            args: --target aarch64-apple-darwin
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - run: npm ci
+
+      # Ký file cập nhật bằng khóa trong secret; macOS dùng ad-hoc signing
+      # (bundle.macOS.signingIdentity = "-"), không cần tài khoản Apple Developer.
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          releaseBody: ${{ needs.create-release.outputs.notes }}
+          args: ${{ matrix.args }}
+
+  publish:
+    name: Đăng release
+    needs: [create-release, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bỏ trạng thái nháp
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release edit "$GITHUB_REF_NAME" --draft=false --latest

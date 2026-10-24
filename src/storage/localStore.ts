@@ -41,6 +41,15 @@ function enqueue<T>(task: () => Promise<T>): Promise<T> {
   return run;
 }
 
+/** Chờ các lần ghi đang xếp hàng xong (trước khi app thoát để cài bản cập nhật). */
+export async function flushWrites(): Promise<void> {
+  let queue: Promise<unknown>;
+  do {
+    queue = writeQueue;
+    await queue;
+  } while (queue !== writeQueue);
+}
+
 /**
  * Ghi nguyên tử: ghi ra file tạm cùng thư mục rồi rename đè lên file đích.
  * Nếu app tắt giữa chừng thì file đích vẫn là bản cũ nguyên vẹn (SPEC mục 5).

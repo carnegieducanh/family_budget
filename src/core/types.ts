@@ -77,7 +77,12 @@ export interface Settings {
   userId: string | null; // máy này là của ai
   syncFolder: string | null; // đường dẫn thư mục Drive
   syncIntervalMin: number; // mặc định 5
-  encryption: { enabled: boolean; keyB64?: string };
+  /**
+   * Mã hóa file trên Drive (SPEC mục 9). `enabled`: ghi file của máy này dạng mã hóa.
+   * `keyB64` + `saltB64`: khóa đã dẫn xuất từ mật khẩu chung (không lưu mật khẩu) và salt đi
+   * kèm, dùng để đọc file mã hóa của máy kia và để ghi khi `enabled`.
+   */
+  encryption: { enabled: boolean; keyB64?: string; saltB64?: string };
   lastSyncAt?: string;
 }
 
