@@ -41,7 +41,7 @@ export function MonthHeader({ title }: { title: string }) {
 
       <div className={styles.picker}>
         {month !== currentMonth && (
-          <Button variant="ghost" size="sm" onClick={() => setMonth(currentMonth)}>
+          <Button variant="secondary" size="sm" onClick={() => setMonth(currentMonth)}>
             Về tháng này
           </Button>
         )}

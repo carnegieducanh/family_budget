@@ -74,66 +74,68 @@ export function BudgetScreen() {
       )}
 
       <Card>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Danh mục</th>
-              <th className={styles.num}>Mặc định hàng tháng</th>
-              <th className={styles.num}>Riêng {formatMonthLabel(month).toLowerCase()}</th>
-              <th className={styles.num}>Đang áp dụng</th>
-              <th className={styles.num}>Đã chi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(({ categoryId, spent: spentAmount }) => {
-              const effective = getBudgetAmount(data.budgets, month, categoryId);
-              return (
-                <tr key={categoryId ?? 'total'} className={categoryId ? undefined : styles.total}>
-                  <td>
-                    {categoryId ? (
-                      <CategoryLabel category={categoriesById.get(categoryId)} />
-                    ) : (
-                      'Tổng ngân sách'
-                    )}
-                  </td>
-                  <td className={styles.num}>
-                    <BudgetInput
-                      budget={findBudget(data.budgets, DEFAULT_BUDGET_MONTH, categoryId)}
-                      label="Mức mặc định"
-                      onSave={(amount) => save(DEFAULT_BUDGET_MONTH, categoryId, amount)}
-                      onInvalid={invalid}
-                    />
-                  </td>
-                  <td className={styles.num}>
-                    <BudgetInput
-                      budget={findBudget(data.budgets, month, categoryId)}
-                      label={`Mức riêng ${formatMonthLabel(month)}`}
-                      placeholder="Theo mặc định"
-                      disabled={locked}
-                      onSave={(amount) => save(month, categoryId, amount)}
-                      onInvalid={invalid}
-                    />
-                  </td>
-                  <td className={styles.num}>
-                    {effective === null ? (
-                      <span className={styles.muted}>—</span>
-                    ) : (
-                      formatYen(effective)
-                    )}
-                  </td>
-                  <td className={styles.num}>
-                    {formatYen(spentAmount)}
-                    {effective !== null && spentAmount > effective && (
-                      <span className={styles.over}>
-                        <OctagonAlert size={12} aria-hidden="true" /> vượt
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Danh mục</th>
+                <th className={styles.num}>Mặc định hàng tháng</th>
+                <th className={styles.num}>Riêng {formatMonthLabel(month).toLowerCase()}</th>
+                <th className={styles.num}>Đang áp dụng</th>
+                <th className={styles.num}>Đã chi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ categoryId, spent: spentAmount }) => {
+                const effective = getBudgetAmount(data.budgets, month, categoryId);
+                return (
+                  <tr key={categoryId ?? 'total'} className={categoryId ? undefined : styles.total}>
+                    <td>
+                      {categoryId ? (
+                        <CategoryLabel category={categoriesById.get(categoryId)} />
+                      ) : (
+                        'Tổng ngân sách'
+                      )}
+                    </td>
+                    <td className={styles.num}>
+                      <BudgetInput
+                        budget={findBudget(data.budgets, DEFAULT_BUDGET_MONTH, categoryId)}
+                        label="Mức mặc định"
+                        onSave={(amount) => save(DEFAULT_BUDGET_MONTH, categoryId, amount)}
+                        onInvalid={invalid}
+                      />
+                    </td>
+                    <td className={styles.num}>
+                      <BudgetInput
+                        budget={findBudget(data.budgets, month, categoryId)}
+                        label={`Mức riêng ${formatMonthLabel(month)}`}
+                        placeholder="Theo mặc định"
+                        disabled={locked}
+                        onSave={(amount) => save(month, categoryId, amount)}
+                        onInvalid={invalid}
+                      />
+                    </td>
+                    <td className={styles.num}>
+                      {effective === null ? (
+                        <span className={styles.muted}>—</span>
+                      ) : (
+                        formatYen(effective)
+                      )}
+                    </td>
+                    <td className={styles.num}>
+                      {formatYen(spentAmount)}
+                      {effective !== null && spentAmount > effective && (
+                        <span className={styles.over}>
+                          <OctagonAlert size={12} aria-hidden="true" /> vượt
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
         {locked && (
           <p className={styles.note}>
             <Lock size={13} aria-hidden="true" /> {formatMonthLabel(month)} đã khóa nên không sửa

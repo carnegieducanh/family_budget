@@ -6,6 +6,7 @@
 }
 
 .content {
+  @include m.brand-band;
   flex: 1;
   min-width: 0;
   overflow: auto;

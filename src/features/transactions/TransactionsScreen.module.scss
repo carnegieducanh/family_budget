@@ -33,6 +33,10 @@
   padding-left: 34px;
 }
 
+.tableWrap {
+  @include m.table-scroll;
+}
+
 .table {
   @include m.data-table;
 }
@@ -56,8 +60,30 @@
   color: var(--color-text-muted);
 }
 
+// Tên danh mục không xuống dòng; quá dài thì cắt bằng "…", tooltip có tên đủ.
+.category {
+  display: block;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Ghi chú nhận phần bề rộng còn lại của bảng và là cột co lại khi cửa sổ hẹp.
 .note {
-  max-width: 260px;
+  width: 100%;
+}
+
+.noteRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+// width: 0 để ghi chú dài không làm bảng rộng ra; flex-grow cho nó lấp phần còn lại của ô.
+.noteText {
+  flex: 1 1 0;
+  width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -65,13 +91,23 @@
 
 .tag {
   @include m.badge(primary);
-  margin-left: var(--space-2);
+  flex: none;
 }
 
 .actions {
   width: 1%;
   white-space: nowrap;
   text-align: right;
+}
+
+.rowActions {
+  display: inline-flex;
+  gap: 2px;
+
+  // Cao hơn .ghost:hover của Button để icon thùng rác đổi sang màu đỏ khi trỏ chuột.
+  .deleteButton:hover:not(:disabled) {
+    color: var(--color-danger-text);
+  }
 }
 
 .empty {

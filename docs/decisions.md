@@ -90,7 +90,7 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 - **Ngưỡng màu ngân sách: trên 80% là cảnh báo, trên 100% là vượt; dùng đúng 100% vẫn chỉ là cảnh báo.** Đã có `core/budget.ts` để đọc ngân sách (mức của tháng, nếu không có thì mức mặc định); màn hình đặt ngân sách làm ở giai đoạn 3.
   Lý do: "vượt" nghĩa là lớn hơn hẳn. Tổng quan cần đọc ngân sách ngay từ giai đoạn 1.
 
-- **Biểu đồ tròn của Tổng quan là dạng donut, tối đa 6 lát: 5 danh mục lớn nhất có màu riêng, phần còn lại gộp thành lát xám.** Bên cạnh luôn có bảng liệt kê mọi danh mục kèm số tiền và %. Màu lấy từ bảng màu đã kiểm bằng validator (đạt kiểm tra mù màu ở cả nền sáng và tối) và gán theo thứ hạng trong tháng.
+- **Biểu đồ tròn của Tổng quan là dạng donut, tối đa 6 lát: 5 danh mục lớn nhất có màu riêng, phần còn lại gộp thành lát xám.** Bên cạnh luôn có bảng liệt kê mọi danh mục kèm số tiền và %. Màu lấy từ bảng màu đã kiểm bằng validator (đạt kiểm tra mù màu ở cả nền sáng và tối) và gán theo thứ hạng trong tháng. _(Đã thay: còn tối đa 5 lát, xem mục "2026-10-25 — Bảng màu theo app ゆうちょ銀行".)_
   Lý do: SPEC yêu cầu biểu đồ tròn; donut quá 6 lát khó đọc. 12 danh mục nhiều hơn số màu phân biệt được, nên không gán cố định một màu cho mỗi danh mục; tên danh mục luôn hiện cạnh màu.
 
 - **Thiết lập lần đầu rút gọn: "Tên của bạn (admin)" và "Tên người còn lại".** Màu mặc định `#4F7DF3` cho người tạo, `#E8618C` cho người kia. Nếu máy đã có `data.json` mà chưa có `userId` thì chỉ cho chọn "Tôi là ...", không tạo dữ liệu mới đè lên.
@@ -332,3 +332,31 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 - **Nội dung chính rộng tối đa 1180 px, căn giữa; hộp thoại có nút Đóng (X) ngoài phím Esc và bấm ra ngoài.**
   Lý do: trên màn hình rộng, bảng và thẻ không bị kéo quá dài; nút Đóng là cách quen thuộc với người không biết phím tắt.
+
+## 2026-10-25 — Bảng màu theo app ゆうちょ銀行
+
+- **Theme sáng lấy màu của app ゆうちょ通帳アプリ, đo trên ảnh chụp màn hình chính thức (App Store) và CSS của jp-bank.japanpost.jp: xanh chủ đạo `#009900` (số dư, nút gạt, tab đang chọn; website cũng dùng đúng màu này), gradient phần đầu màn hình `#75c667 → #a6d570`, nền xanh nhạt của khung thoại `#dff1d3`, chữ `#39414a`, chữ phụ `#667366`; nền trang `#f6f7ef`, viền `#e4e6d9` / `#cdceca` lấy từ website. Logo dùng gradient của icon app (`#40b340` → `#a0d04e` theo đường chéo).**
+  Lý do: người dùng muốn màu chủ đạo và gradient giống hệt app ゆうちょ.
+
+- **Chữ trắng trên `#009900` chỉ đạt 3.8:1 (dưới mức 4.5:1 của WCAG AA cho chữ thường). Nút vẫn dùng đúng `#009900` như app gốc; chữ xanh cỡ nhỏ (menu đang chọn, nhãn) dùng `--color-primary-strong` `#007a00` (≥ 4.5:1 trên nền trắng và nền `#dff1d3`). Số tiền lớn dùng `--color-primary-large`.**
+  Lý do: giữ đúng màu thương hiệu ở chỗ dễ thấy, nhưng chữ nhỏ vẫn đọc được.
+
+- **App ゆうちょ không có theme tối, nên theme tối tự dựng: nền tối ngả xanh lá (`#0f130f`, card `#171d17`), nút vẫn `#009900`, chữ xanh `#75c667` (màu đầu của gradient sáng), gradient cùng hướng và sắc nhưng tối (`#1e4d1d → #3a5419`).**
+  Lý do: giữ nhận diện xanh ゆうちょ ở cả hai theme; chữ sáng đọc được trên gradient tối.
+
+- **Gradient đặt thành dải cao 280 px ở đầu vùng nội dung (mixin `brand-band`), nhạt dần về màu nền, cuộn theo nội dung; card nằm đè lên phần nhạt dần như card số dư trong app. Nút "Về tháng này" ở tiêu đề đổi từ ghost sang secondary, lỗi ở tiêu đề có nền riêng.**
+  Lý do: chữ xám và chữ đỏ không có nền riêng không đủ tương phản trên nền xanh.
+
+- **Biểu đồ: slot 1 là `#009900`. Donut còn tối đa 4 danh mục có màu riêng (xanh lá, xanh dương, hồng, tím), phần còn lại gộp thành lát xám (≤ 5 lát, trước đây 6). Biểu đồ cột theo tháng dùng `#009900` ở cả hai theme. Đã chạy validator của skill dataviz trên nền card mới (sáng `#ffffff`, tối `#171d17`): với mọi số lát 2–4, mọi cặp kề nhau trên vòng tròn, kể cả cặp nối vòng lát cuối ↔ slot 1, đạt cổng CVD và normal-vision.**
+  Lý do: lát lớn nhất luôn ở slot 1 nên luôn kề với mọi lát khác qua cặp nối vòng. Cam và đỏ lẫn với `#009900` khi mù màu đỏ-lục (ΔE < 5), vàng tối trùng độ sáng với xanh (ΔE 0.1), xanh ngọc quá gần xanh lá với mắt thường; không tìm được cách xếp 5 màu nào đạt cả hai theme. Thay cho quyết định "tối đa 6 lát" ở mục Giai đoạn 1.
+
+## 2026-10-25 — Bảng vừa cửa sổ hẹp
+
+- **Bảng Khoản chi: cột Ngày chỉ ghi `25/10` (tháng đã có ở bộ chọn tháng), Sửa / Xóa / Xem thành nút icon có tooltip, tên danh mục không xuống dòng (dài quá 160 px thì cắt "…"), Ghi chú nhận phần bề rộng còn lại và là cột co lại khi cửa sổ hẹp (cắt "…", tooltip có đủ ghi chú). Nhãn "định kỳ" đứng trước ghi chú.**
+  Lý do: ở bề rộng tối thiểu 1024 px, 7 cột không xuống dòng rộng hơn card khoảng 40 px nên bảng tràn ra ngoài, nút Xóa sát mép, danh mục bị bẻ 3 dòng.
+
+- **Bảng Ngân sách: tiêu đề cột được xuống dòng, ô nhập 120 px (trước 140 px).**
+  Lý do: cùng lỗi, nặng hơn: bảng tràn khỏi cửa sổ, cột Đã chi bị che.
+
+- **Mọi bảng số liệu dùng lề ô 8 px khi cửa sổ hẹp hơn 1200 px (mixin `data-table`). Bảng Khoản chi và Ngân sách được bọc trong khung cuộn ngang (mixin `table-scroll`).**
+  Lý do: khung cuộn là lớp dự phòng khi dữ liệu cực dài (tên người, số tiền hàng triệu): bảng cuộn trong card thay vì tràn ra ngoài và làm cả màn hình cuộn ngang.

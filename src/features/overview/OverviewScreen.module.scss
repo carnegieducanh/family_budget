@@ -10,12 +10,13 @@
   grid-column: 1 / -1;
 }
 
-// Con số chính của màn hình: chữ lớn, số tỉ lệ (không tabular).
+// Con số chính của màn hình: chữ lớn màu xanh như số dư trong app ゆうちょ, số tỉ lệ (không tabular).
 .hero {
   font-size: var(--font-size-hero);
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.03em;
+  color: var(--color-primary-large);
 }
 
 .sub {

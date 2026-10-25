@@ -66,9 +66,10 @@
   font-size: var(--font-size-sm);
 }
 
+// Tiêu đề nằm trên dải gradient: lỗi cần nền riêng để đủ tương phản.
 .error {
+  @include m.callout(danger);
   flex-basis: 100%;
   margin: 0;
-  color: var(--color-danger-text);
   font-size: var(--font-size-sm);
 }

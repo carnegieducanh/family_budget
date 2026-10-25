@@ -7,9 +7,7 @@
   height: 100%;
   overflow: auto;
   padding: var(--space-6);
-  background:
-    radial-gradient(1200px 600px at 50% -10%, var(--color-primary-soft), transparent 70%),
-    var(--color-bg);
+  @include m.brand-band(420px);
 }
 
 .theme {

@@ -9,8 +9,18 @@
   color: var(--color-danger-text);
 }
 
+.tableWrap {
+  @include m.table-scroll;
+}
+
 .table {
   @include m.data-table;
+
+  // Tiêu đề cột dài ("Mặc định hàng tháng", "Riêng tháng 10/2026") xuống dòng khi cửa sổ hẹp.
+  th {
+    white-space: normal;
+    vertical-align: bottom;
+  }
 }
 
 .total td {
@@ -22,8 +32,11 @@
   @include m.num;
 }
 
+// Lề trong nhỏ để chữ gợi ý "Theo mặc định" vừa ô 120 px.
 .input {
-  width: 140px;
+  width: 120px;
+  padding-left: var(--space-2);
+  padding-right: var(--space-2);
   text-align: right;
   font-variant-numeric: tabular-nums;
 }

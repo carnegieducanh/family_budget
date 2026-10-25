@@ -1,4 +1,4 @@
-import { Plus, Search } from 'lucide-react';
+import { Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { formatYen } from '../../core/money';
 import { formatDate, formatMonthLabel } from '../../core/month';
@@ -133,65 +133,102 @@ export function TransactionsScreen() {
         ) : rows.length === 0 ? (
           <p className={styles.empty}>Không có khoản nào khớp bộ lọc.</p>
         ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Ngày</th>
-                <th>Danh mục</th>
-                <th>Ghi chú</th>
-                <th className={styles.num}>Số tiền</th>
-                <th>Người trả</th>
-                <th>Người nhập</th>
-                {!locked && <th aria-label="Thao tác" />}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((tx) => (
-                <tr
-                  key={tx.id}
-                  className={locked ? undefined : styles.clickable}
-                  onClick={locked ? undefined : () => openEdit(tx.id)}
-                >
-                  <td className={styles.date}>{formatDate(tx.date)}</td>
-                  <td>
-                    <CategoryLabel category={categoriesById.get(tx.categoryId)} />
-                  </td>
-                  <td className={styles.note}>
-                    {tx.note}
-                    {tx.recurringId && <span className={styles.tag}>định kỳ</span>}
-                  </td>
-                  <td className={styles.amount}>{formatYen(tx.amount)}</td>
-                  <td>
-                    <UserName user={usersById.get(tx.paidBy)} />
-                  </td>
-                  <td>
-                    <UserDot
-                      user={usersById.get(tx.createdBy)}
-                      title={`Nhập bởi ${usersById.get(tx.createdBy)?.name ?? 'không rõ'}`}
-                    />
-                  </td>
-                  {!locked && (
-                    <td className={styles.actions} onClick={(e) => e.stopPropagation()}>
-                      {can(me, 'transaction:edit', tx) ? (
-                        <>
-                          <Button variant="ghost" size="sm" onClick={() => openEdit(tx.id)}>
-                            Sửa
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setDeleting(tx)}>
-                            Xóa
-                          </Button>
-                        </>
-                      ) : (
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(tx.id)}>
-                          Xem
-                        </Button>
-                      )}
-                    </td>
-                  )}
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Ngày</th>
+                  <th>Danh mục</th>
+                  <th>Ghi chú</th>
+                  <th className={styles.num}>Số tiền</th>
+                  <th>Người trả</th>
+                  <th>Người nhập</th>
+                  {!locked && <th aria-label="Thao tác" />}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((tx) => (
+                  <tr
+                    key={tx.id}
+                    className={locked ? undefined : styles.clickable}
+                    onClick={locked ? undefined : () => openEdit(tx.id)}
+                  >
+                    <td className={styles.date}>{formatDate(tx.date).slice(0, 5)}</td>
+                    <td>
+                      <span
+                        className={styles.category}
+                        title={categoriesById.get(tx.categoryId)?.name}
+                      >
+                        <CategoryLabel category={categoriesById.get(tx.categoryId)} />
+                      </span>
+                    </td>
+                    <td className={styles.note}>
+                      <span className={styles.noteRow}>
+                        {tx.recurringId && <span className={styles.tag}>định kỳ</span>}
+                        {tx.note && (
+                          <span className={styles.noteText} title={tx.note}>
+                            {tx.note}
+                          </span>
+                        )}
+                      </span>
+                    </td>
+                    <td className={styles.amount}>{formatYen(tx.amount)}</td>
+                    <td>
+                      <UserName user={usersById.get(tx.paidBy)} />
+                    </td>
+                    <td>
+                      <UserDot
+                        user={usersById.get(tx.createdBy)}
+                        title={`Nhập bởi ${usersById.get(tx.createdBy)?.name ?? 'không rõ'}`}
+                      />
+                    </td>
+                    {!locked && (
+                      <td className={styles.actions} onClick={(e) => e.stopPropagation()}>
+                        <span className={styles.rowActions}>
+                          {can(me, 'transaction:edit', tx) ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                iconOnly
+                                onClick={() => openEdit(tx.id)}
+                                aria-label="Sửa"
+                                title="Sửa"
+                              >
+                                <Pencil size={15} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                iconOnly
+                                className={styles.deleteButton}
+                                onClick={() => setDeleting(tx)}
+                                aria-label="Xóa"
+                                title="Xóa"
+                              >
+                                <Trash2 size={15} />
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              iconOnly
+                              onClick={() => openEdit(tx.id)}
+                              aria-label="Xem"
+                              title="Xem"
+                            >
+                              <Eye size={15} />
+                            </Button>
+                          )}
+                        </span>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
         {monthTransactions.length > 0 && (
           <p className={styles.summary}>

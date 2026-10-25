@@ -2,12 +2,11 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { formatYen } from '../../core/money';
 import { formatMonthLabel } from '../../core/month';
 import type { MonthTotal } from '../../core/queries';
-import { useColorScheme } from '../../components/useColorScheme';
 import styles from './ReportsScreen.module.scss';
 
-// Một chuỗi số liệu nên một màu: slot 1 của bảng màu đã kiểm cho nền card (xem
-// CategoryBreakdown). Không cần chú thích vì tiêu đề card đã nói biểu đồ là gì.
-const BAR_COLOR = { light: '#2a78d6', dark: '#3987e5' } as const;
+// Một chuỗi số liệu nên một màu: slot 1 (xanh ゆうちょ) của bảng màu đã kiểm cho nền card ở cả
+// hai theme (xem CategoryBreakdown). Không cần chú thích vì tiêu đề card đã nói biểu đồ là gì.
+const BAR_COLOR = '#009900';
 
 const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
 
@@ -25,8 +24,6 @@ interface MonthlyChartProps {
 
 /** Biểu đồ cột tổng chi theo tháng. Bấm vào cột để chọn tháng đó. */
 export function MonthlyChart({ totals, selected, onSelect }: MonthlyChartProps) {
-  const scheme = useColorScheme();
-
   return (
     <div className={styles.chart}>
       <ResponsiveContainer width="100%" height={240}>
@@ -70,7 +67,7 @@ export function MonthlyChart({ totals, selected, onSelect }: MonthlyChartProps) 
           />
           <Bar
             dataKey="total"
-            fill={BAR_COLOR[scheme]}
+            fill={BAR_COLOR}
             radius={[4, 4, 0, 0]}
             maxBarSize={24}
             isAnimationActive={false}

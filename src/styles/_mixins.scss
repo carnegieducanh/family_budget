@@ -2,6 +2,19 @@
 //   @use '../../styles/mixins' as m;
 //   .table { @include m.data-table; }
 
+/**
+ * Dải gradient xanh ở đầu vùng cuộn, nhạt dần về màu nền như phần đầu màn hình chính của app
+ * ゆうちょ. Cuộn theo nội dung (background-attachment: local), card nằm đè lên phần nhạt dần.
+ */
+@mixin brand-band($height: 280px) {
+  background-color: var(--color-bg);
+  background-image:
+    linear-gradient(to bottom, transparent 35%, var(--color-bg)), var(--gradient-brand);
+  background-repeat: no-repeat;
+  background-size: 100% $height;
+  background-attachment: local;
+}
+
 /** Bảng số liệu: tiêu đề cột chữ nhỏ in hoa, dòng cách nhau bằng đường kẻ mảnh. */
 @mixin data-table {
   width: 100%;
@@ -29,6 +42,20 @@
   tbody tr:last-child td {
     border-bottom: none;
   }
+
+  // Cửa sổ hẹp (gần bề rộng tối thiểu 1024 px): lề ô nhỏ lại để các cột vừa card.
+  @media (max-width: 1199px) {
+    th,
+    td {
+      padding-left: var(--space-2);
+      padding-right: var(--space-2);
+    }
+  }
+}
+
+/** Khung bọc bảng: bảng vẫn rộng hơn card (tên hoặc số rất dài) thì cuộn ngang trong card. */
+@mixin table-scroll {
+  overflow-x: auto;
 }
 
 /** Dòng bấm được trong bảng. */
