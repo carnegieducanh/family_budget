@@ -74,6 +74,12 @@
     background-color var(--transition-fast),
     color var(--transition-fast);
 
+  // Nét icon luôn màu xanh chủ đạo, chữ vẫn xám cho dễ đọc.
+  svg {
+    flex-shrink: 0;
+    color: var(--color-primary);
+  }
+
   &:hover {
     background: var(--color-surface-hover);
     color: var(--color-text);
@@ -84,6 +90,11 @@
   background: var(--color-primary-soft);
   color: var(--color-primary-strong);
   font-weight: 600;
+
+  // Mục đang chọn: icon cùng màu với chữ.
+  svg {
+    color: currentColor;
+  }
 
   &:hover {
     background: var(--color-primary-soft);

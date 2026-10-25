@@ -1,8 +1,10 @@
 import { useId, useState, type FormEvent } from 'react';
+import { USER_COLORS } from '../../core/defaults';
 import { householdUsers } from '../../core/household';
 import { active } from '../../core/records';
 import { dataForJoin, type RemoteProblem } from '../../core/sync';
-import type { DataFile } from '../../core/types';
+import type { DataFile, User } from '../../core/types';
+import { AvatarPicker } from '../../components/AvatarPicker';
 import { BrandMark } from '../../components/BrandMark';
 import { Button } from '../../components/Button';
 import { ThemeSwitcher } from '../../components/ThemeSwitcher';
@@ -119,6 +121,7 @@ const FOLDER_HAS_DATA =
 
 function CreateHousehold({ onBack }: { onBack: () => void }) {
   const [myName, setMyName] = useState('');
+  const [myAvatar, setMyAvatar] = useState<string | undefined>();
   const [otherName, setOtherName] = useState('');
   const [folder, setFolder] = useState<FolderContents | null>(null);
   const [checking, setChecking] = useState(false);
@@ -146,6 +149,10 @@ function CreateHousehold({ onBack }: { onBack: () => void }) {
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (!myAvatar) {
+      setError('Hãy chọn ảnh đại diện cho bạn.');
+      return;
+    }
     if (!folder) {
       setError('Hãy chọn thư mục Google Drive.');
       return;
@@ -156,7 +163,7 @@ function CreateHousehold({ onBack }: { onBack: () => void }) {
       const deviceId = useDataStore.getState().settings?.deviceId ?? '';
       const latest = await inspectFolder(folder.folder, deviceId);
       if (latest.deviceFiles.length > 0) throw new Error(FOLDER_HAS_DATA);
-      await useDataStore.getState().createHousehold(myName, otherName, folder.folder);
+      await useDataStore.getState().createHousehold(myName, otherName, myAvatar, folder.folder);
     } catch (e) {
       setError(errorMessage(e));
       setSaving(false);
@@ -179,6 +186,16 @@ function CreateHousehold({ onBack }: { onBack: () => void }) {
           placeholder="Ví dụ: Huy"
         />
       </label>
+      <div className={styles.field}>
+        <span>Ảnh đại diện của bạn</span>
+        <AvatarPicker
+          user={{ name: myName, color: USER_COLORS[0], avatar: myAvatar }}
+          onChange={(next) => setMyAvatar(next ?? undefined)}
+        />
+        <span className={styles.hint}>
+          Người còn lại tự chọn ảnh của mình khi tham gia trên máy thứ hai.
+        </span>
+      </div>
       <label className={styles.field}>
         <span>Tên người còn lại</span>
         <input
@@ -219,6 +236,7 @@ function JoinHousehold({ onBack }: { onBack: () => void }) {
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [chosen, setChosen] = useState<User | null>(null);
 
   /** Đọc dữ liệu gia đình từ các file trong thư mục (giải mã bằng `fileKey` nếu có). */
   async function evaluate(contents: FolderContents, fileKey: FileKey | null) {
@@ -279,17 +297,32 @@ function JoinHousehold({ onBack }: { onBack: () => void }) {
     }
   }
 
-  async function choose(userId: string) {
+  async function finish(user: User, avatar: string) {
     if (!candidate) return;
     setSaving(true);
     try {
       await useDataStore
         .getState()
-        .joinHousehold(candidate.data, userId, candidate.folder.folder, candidate.key);
+        .joinHousehold(candidate.data, user.id, avatar, candidate.folder.folder, candidate.key);
     } catch (e) {
       setError(errorMessage(e));
       setSaving(false);
     }
+  }
+
+  if (chosen && candidate) {
+    return (
+      <AvatarStep
+        user={chosen}
+        saving={saving}
+        error={error}
+        onBack={() => {
+          setChosen(null);
+          setError(null);
+        }}
+        onDone={(avatar) => void finish(chosen, avatar)}
+      />
+    );
   }
 
   return (
@@ -346,7 +379,7 @@ function JoinHousehold({ onBack }: { onBack: () => void }) {
           {householdUsers(candidate.data).map((user) => (
             <Button
               key={user.id}
-              onClick={() => void choose(user.id)}
+              onClick={() => setChosen(user)}
               disabled={saving}
               className={styles.choice}
             >
@@ -368,26 +401,88 @@ function JoinHousehold({ onBack }: { onBack: () => void }) {
 function ChooseUser() {
   const data = useDataStore((s) => s.data);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [chosen, setChosen] = useState<User | null>(null);
   const users = data ? active(data.users) : [];
 
-  async function choose(userId: string) {
+  async function finish(user: User, avatar: string) {
+    setSaving(true);
     try {
-      await useDataStore.getState().chooseUser(userId);
+      await useDataStore.getState().chooseUser(user.id, avatar);
     } catch (e) {
       setError(errorMessage(e));
+      setSaving(false);
     }
+  }
+
+  if (chosen) {
+    return (
+      <AvatarStep
+        user={chosen}
+        saving={saving}
+        error={error}
+        onBack={() => {
+          setChosen(null);
+          setError(null);
+        }}
+        onDone={(avatar) => void finish(chosen, avatar)}
+      />
+    );
   }
 
   return (
     <div className={styles.form}>
       <p className={styles.lead}>Máy này đã có dữ liệu. Bạn là ai?</p>
       {users.map((user) => (
-        <Button key={user.id} onClick={() => choose(user.id)} className={styles.choice}>
+        <Button key={user.id} onClick={() => setChosen(user)} className={styles.choice}>
           Tôi là&nbsp;
           <UserName user={user} />
         </Button>
       ))}
       {error && <p className={styles.error}>{error}</p>}
+    </div>
+  );
+}
+
+/**
+ * Bước cuối khi tham gia hoặc chọn "Tôi là ...": người dùng máy này chọn ảnh đại diện của
+ * mình (bắt buộc). Đã có ảnh (đặt từ trước) thì chọn sẵn, chỉ cần bấm Hoàn tất.
+ */
+function AvatarStep({
+  user,
+  saving,
+  error,
+  onBack,
+  onDone,
+}: {
+  user: User;
+  saving: boolean;
+  error: string | null;
+  onBack: () => void;
+  onDone: (avatar: string) => void;
+}) {
+  const [avatar, setAvatar] = useState(user.avatar);
+
+  return (
+    <div className={styles.form}>
+      <p className={styles.lead}>
+        Chào <strong>{user.name}</strong>! Chọn ảnh đại diện của bạn. Ảnh hiện cạnh tên bạn trong
+        app, trên cả máy kia.
+      </p>
+      <AvatarPicker user={{ ...user, avatar }} onChange={(next) => setAvatar(next ?? undefined)} />
+      {error && <p className={styles.error}>{error}</p>}
+      <div className={styles.buttons}>
+        <Button onClick={onBack} disabled={saving}>
+          Quay lại
+        </Button>
+        <Button
+          variant="primary"
+          disabled={saving || !avatar}
+          onClick={() => avatar && onDone(avatar)}
+        >
+          {saving ? 'Đang lưu...' : 'Hoàn tất'}
+        </Button>
+      </div>
     </div>
   );
 }

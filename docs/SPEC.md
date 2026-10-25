@@ -120,6 +120,7 @@ interface User extends BaseRecord {
   name: string;
   role: 'admin' | 'member';
   color: string;       // màu hiển thị, ví dụ '#4F7DF3'
+  avatar?: string;     // ảnh đại diện: ảnh vuông 128 px dạng data URL JPEG, hoặc 1 emoji; không có thì hiện chữ cái đầu
 }
 
 interface Category extends BaseRecord {
@@ -262,8 +263,8 @@ Chỉ một lượt sync chạy tại một thời điểm (mutex trong `syncSer
 
 **Thiết lập lần đầu:**
 
-1. Máy admin: chọn "Tạo dữ liệu mới", nhập tên 2 người, chọn mình là admin, chọn thư mục Drive. App tạo danh mục mặc định và ghi `device-<id>.json`.
-2. Máy thứ hai: chọn "Tham gia", chọn cùng thư mục Drive. App đọc file của máy admin, hiện danh sách người dùng để chọn "Tôi là ...", rồi merge và ghi file của mình.
+1. Máy admin: chọn "Tạo dữ liệu mới", nhập tên 2 người, chọn ảnh đại diện của mình (bắt buộc), chọn thư mục Drive. App tạo danh mục mặc định và ghi `device-<id>.json`.
+2. Máy thứ hai: chọn "Tham gia", chọn cùng thư mục Drive. App đọc file của máy admin, hiện danh sách người dùng để chọn "Tôi là ...", chọn ảnh đại diện của mình (bắt buộc), rồi merge và ghi file của mình.
 3. Không cho tạo dữ liệu mới nếu thư mục đã có file `device-*.json` (tránh hai bộ dữ liệu song song).
 
 **Chuẩn bị Google Drive (ghi vào `docs/INSTALL.md`):** cài Google Drive for Desktop trên cả 2 máy. Nếu dùng 2 tài khoản Google khác nhau: admin tạo thư mục, chia sẻ quyền chỉnh sửa cho người kia; người kia chọn "Thêm lối tắt vào Drive". Bật "Có sẵn ngoại tuyến" cho thư mục này.
@@ -334,6 +335,7 @@ Admin quản lý cấu hình và có thể sửa mọi dữ liệu; người dù
 | Import CSV, khôi phục backup | Có | Không |
 | Export CSV, xem báo cáo, xem tất toán | Có | Có |
 | Cài đặt người dùng, vai trò, mật khẩu mã hóa | Có | Không |
+| Đổi ảnh đại diện | Của cả hai người | Của mình |
 | Cài đặt thư mục sync, chu kỳ sync của máy mình | Có | Có |
 
 Viết các hàm `can(user, action, record?)` trong `core/permissions.ts`, dùng chung cho UI (ẩn hoặc vô hiệu nút) và store (chặn thao tác). Vai trò được đặt khi thiết lập lần đầu; admin có thể chuyển vai trò trong Cài đặt, nhưng luôn phải còn đúng một admin.
@@ -346,8 +348,8 @@ Bố cục chung: cửa sổ tối thiểu 1024 × 700, sidebar điều hướng
 
 1. **Thiết lập lần đầu** (chỉ hiện khi chưa có `userId`)
    - Chọn "Tạo dữ liệu mới (admin)" hoặc "Tham gia (máy thứ hai)".
-   - Tạo mới: nhập tên 2 người, chọn mình là ai, chọn thư mục Drive.
-   - Tham gia: chọn thư mục Drive, chọn "Tôi là ..." từ danh sách đọc được.
+   - Tạo mới: nhập tên 2 người, chọn ảnh đại diện của mình, chọn thư mục Drive.
+   - Tham gia: chọn thư mục Drive, chọn "Tôi là ..." từ danh sách đọc được, rồi chọn ảnh đại diện của mình.
    - Kiểm tra thư mục hợp lệ trước khi cho tiếp tục (mục 5).
 2. **Tổng quan tháng** (màn hình chính)
    - Tổng chi tháng, ngân sách còn lại dạng thanh tiến độ (đổi màu khi vượt 80% và 100%).
@@ -375,7 +377,7 @@ Bố cục chung: cửa sổ tối thiểu 1024 × 700, sidebar điều hướng
 8. **Chi tiêu định kỳ** (admin)
    - Danh sách mẫu: tên, số tiền, danh mục, người trả, ngày trong tháng, bật/tắt.
 9. **Cài đặt**
-   - Người dùng và vai trò (admin).
+   - Người dùng và vai trò (admin). Ảnh đại diện: bấm vào ảnh để đổi (ảnh trên máy hoặc emoji); mỗi người đổi được ảnh của mình.
    - Sync: thư mục Drive, chu kỳ sync, trạng thái chi tiết, nút "Sync ngay".
    - Mã hóa (admin, giai đoạn 4).
    - Backup: danh sách snapshot, khôi phục (admin), export/import backup JSON.

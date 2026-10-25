@@ -1,19 +1,26 @@
+import { Pencil } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { can } from '../../core/permissions';
+import { can, canEditAvatar } from '../../core/permissions';
 import type { User } from '../../core/types';
+import { AvatarPicker } from '../../components/AvatarPicker';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { UserDot } from '../../components/UserDot';
+import { Modal } from '../../components/Modal';
+import { UserAvatar, UserDot } from '../../components/UserDot';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import styles from './SettingsScreen.module.scss';
 
-/** Người dùng và vai trò (admin sửa được; luôn có đúng một admin — SPEC mục 7). */
+/**
+ * Người dùng và vai trò (admin sửa được; luôn có đúng một admin — SPEC mục 7). Ảnh đại diện
+ * thì mỗi người tự đổi được của mình.
+ */
 export function UsersSettings() {
   const { me, users } = useReadyData();
   const editable = can(me, 'users:manage');
   const [error, setError] = useState<string | null>(null);
   const [transferTo, setTransferTo] = useState<User | null>(null);
+  const [avatarOf, setAvatarOf] = useState<User | null>(null);
 
   function run(action: () => void): boolean {
     try {
@@ -31,6 +38,22 @@ export function UsersSettings() {
       <ul className={styles.users}>
         {users.map((user) => (
           <li key={user.id}>
+            {canEditAvatar(me, user) ? (
+              <button
+                type="button"
+                className={styles.avatarButton}
+                onClick={() => setAvatarOf(user)}
+                aria-label={`Đổi ảnh đại diện của ${user.name}`}
+                title="Đổi ảnh đại diện"
+              >
+                <UserAvatar user={user} size={40} />
+                <span className={styles.avatarBadge} aria-hidden="true">
+                  <Pencil size={10} strokeWidth={2.4} />
+                </span>
+              </button>
+            ) : (
+              <UserAvatar user={user} size={40} />
+            )}
             {editable ? (
               <UserFields user={user} onSave={run} />
             ) : (
@@ -55,8 +78,10 @@ export function UsersSettings() {
       <p className={styles.hint}>
         {editable
           ? 'Admin quản lý danh mục, ngân sách, chi tiêu định kỳ, import CSV, khôi phục backup và sửa được mọi khoản chi. Thành viên chỉ sửa, xóa được khoản do mình nhập.'
-          : 'Chỉ admin đổi được tên, màu và vai trò.'}
+          : 'Chỉ admin đổi được tên, màu và vai trò. Ảnh đại diện của mình thì bạn tự đổi được: bấm vào ảnh.'}
       </p>
+
+      {avatarOf && <AvatarDialog user={avatarOf} onClose={() => setAvatarOf(null)} />}
 
       {transferTo && (
         <ConfirmDialog
@@ -74,6 +99,44 @@ export function UsersSettings() {
         </ConfirmDialog>
       )}
     </Card>
+  );
+}
+
+/** Chọn ảnh đại diện, chỉ lưu khi bấm Lưu. */
+function AvatarDialog({ user, onClose }: { user: User; onClose: () => void }) {
+  const [avatar, setAvatar] = useState(user.avatar);
+  const [error, setError] = useState<string | null>(null);
+
+  function save() {
+    try {
+      useDataStore.getState().setAvatar(user.id, avatar ?? null);
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  return (
+    <Modal
+      title={`Ảnh đại diện của ${user.name}`}
+      onClose={onClose}
+      width={460}
+      footer={
+        <>
+          <Button onClick={onClose}>Hủy</Button>
+          <Button variant="primary" onClick={save} disabled={avatar === user.avatar}>
+            Lưu
+          </Button>
+        </>
+      }
+    >
+      <AvatarPicker
+        user={{ ...user, avatar }}
+        onChange={(next) => setAvatar(next ?? undefined)}
+        allowClear
+      />
+      {error && <p className={styles.errorMessage}>{error}</p>}
+    </Modal>
   );
 }
 

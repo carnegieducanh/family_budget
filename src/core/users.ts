@@ -1,3 +1,4 @@
+import { checkAvatar } from './avatar';
 import { DomainError } from './errors';
 import { active, touch } from './records';
 import type { MutationContext, User } from './types';
@@ -22,6 +23,15 @@ export function updateUser(existing: User, input: UserInput, ctx: MutationContex
   }
   if (!COLOR_RE.test(input.color)) throw new DomainError('Màu không hợp lệ.');
   return touch(existing, { name, color: input.color.toUpperCase() }, ctx.userId, ctx.now);
+}
+
+/** Đặt ảnh đại diện, hoặc bỏ (`null`) để hiện lại chữ cái đầu của tên. */
+export function setAvatar(existing: User, avatar: string | null, ctx: MutationContext): User {
+  if (existing.deleted) throw new DomainError('Không tìm thấy người dùng.');
+  const next = touch(existing, {}, ctx.userId, ctx.now);
+  if (avatar === null) delete next.avatar;
+  else next.avatar = checkAvatar(avatar);
+  return next;
 }
 
 /**

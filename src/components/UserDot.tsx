@@ -1,5 +1,9 @@
+import { viewAvatar } from '../core/avatar';
 import type { User } from '../core/types';
 import styles from './UserDot.module.scss';
+
+/** Những gì cần để vẽ avatar; màn thiết lập dùng cả khi người dùng chưa được tạo. */
+export type AvatarUser = Pick<User, 'name' | 'color' | 'avatar'>;
 
 /** Chấm màu của một người. Luôn đặt cạnh tên, hoặc có tooltip tên, để màu không đứng một mình. */
 export function UserDot({ user, title }: { user: User | undefined; title?: string }) {
@@ -13,13 +17,42 @@ export function UserDot({ user, title }: { user: User | undefined; title?: strin
   );
 }
 
-/** Ô tròn màu của người, chữ cái đầu của tên ở giữa. Luôn đặt cạnh tên. */
-export function UserAvatar({ user }: { user: User | undefined }) {
+/**
+ * Ảnh đại diện tròn của người: ảnh, emoji trên nền nhạt màu của người đó, hoặc chữ cái đầu
+ * của tên trên nền màu nếu chưa đặt. Luôn đặt cạnh tên.
+ */
+export function UserAvatar({ user, size = 32 }: { user: AvatarUser | undefined; size?: number }) {
+  const color = user?.color ?? 'var(--color-text-muted)';
+  const view = viewAvatar(user?.avatar);
+  const box = { width: size, height: size };
+
+  if (view.kind === 'image') {
+    return (
+      <span className={`${styles.avatar} ${styles.photo}`} style={box} aria-hidden="true">
+        <img src={view.src} alt="" draggable={false} />
+      </span>
+    );
+  }
+  if (view.kind === 'emoji') {
+    return (
+      <span
+        className={`${styles.avatar} ${styles.emoji}`}
+        style={{
+          ...box,
+          fontSize: Math.round(size * 0.56),
+          background: `color-mix(in srgb, ${color} 22%, var(--color-surface))`,
+        }}
+        aria-hidden="true"
+      >
+        {view.emoji}
+      </span>
+    );
+  }
   const initial = user?.name.trim().charAt(0).toUpperCase() || '?';
   return (
     <span
       className={styles.avatar}
-      style={{ background: user?.color ?? 'var(--color-text-muted)' }}
+      style={{ ...box, fontSize: Math.round(size * 0.42), background: color }}
       aria-hidden="true"
     >
       {initial}

@@ -23,6 +23,7 @@ const COLLECTION_FIELDS: Record<string, FieldCheck[]> = {
     ['name', 'string'],
     ['role', 'string'],
     ['color', 'string'],
+    ['avatar', 'string', true],
   ],
   categories: [
     ['name', 'string'],

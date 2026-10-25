@@ -381,3 +381,19 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 - **Bảng Ngân sách chỉ còn cột "Đang áp dụng" (ô nhập, hoặc số lấy từ Định kỳ) và "Đã chi". Số nhập vào là mức chung cho mọi tháng (bản ghi `budget-default-…`). Bỏ cột "Mặc định hàng tháng" và cột mức riêng của tháng đang xem, nên không còn đặt ngân sách riêng cho từng tháng từ giao diện; bỏ luôn dòng ghi chú "tháng đã khóa nên không sửa được mức riêng".** Khác SPEC mục 8 màn hình 6 ("mức mặc định hàng tháng và ghi đè cho từng tháng").
   Lý do: user thấy 2 cột là đủ, 4 cột rối. Dữ liệu và `core/budget.ts` vẫn hiểu mức riêng của tháng (`getBudgetAmount` ưu tiên mức riêng nếu có), để bản cũ v0.1.0 lỡ tạo mức riêng thì vẫn đọc đúng; lúc đổi, dữ liệu bản A/B không có mức riêng nào.
+
+## 2026-10-26 — Ảnh đại diện
+
+- **Mỗi người có ảnh đại diện (`User.avatar`, không bắt buộc trong dữ liệu): ảnh chọn từ máy, hoặc một trong 24 emoji gợi ý. Ảnh được cắt vuông lấy phần giữa, thu nhỏ còn 128 × 128 px, lưu thẳng trong bản ghi người dùng dạng data URL JPEG (thường 2–10 KB), nên đi theo file sync và backup như mọi trường khác. Chưa đặt thì vẫn hiện chữ cái đầu trên nền màu như trước.**
+  Lý do: app không có server hay thư mục ảnh riêng; một file ảnh riêng cạnh `device-*.json` sẽ phải sync, backup, khôi phục riêng. Ảnh 128 px đủ nét cho ô 64 px trên màn hình 2x. Không có bước kéo chọn vùng ảnh: cắt phần giữa đủ cho ảnh chân dung, đổi lại form đơn giản.
+
+- **Ảnh đại diện thay chữ cái đầu ở mọi chỗ trước đây hiện chữ cái (góc dưới sidebar, thẻ "Mỗi người đã trả" ở Tổng quan) và hiện ở Cài đặt → Người dùng. Chấm màu cạnh tên trong các bảng (Khoản chi, Tất toán, Định kỳ...) giữ nguyên.**
+  Lý do: user yêu cầu thay chỗ hiện chữ cái đầu; chấm màu trong bảng nhỏ hơn mức ảnh còn nhận ra được.
+
+- **Đổi ảnh: mỗi người tự đổi ảnh của mình, admin đổi được của cả hai (`canEditAvatar`).** Khác bảng phân quyền SPEC mục 7 ban đầu ("cài đặt người dùng" chỉ admin); tên, màu, vai trò vẫn chỉ admin đổi.
+  Lý do: ảnh là thứ riêng của mỗi người, người dùng thường cũng phải đặt được ảnh của mình lúc tham gia.
+
+- **Thiết lập lần đầu bắt buộc chọn ảnh: admin chọn ảnh của mình ngay trong form "Tạo dữ liệu mới"; máy thứ hai và máy chọn lại "Tôi là ..." có thêm bước chọn ảnh sau khi chọn người (đã có ảnh thì chọn sẵn, bấm Hoàn tất). Người đã thiết lập từ trước (dữ liệu v0.1.0) không bị hỏi lại, đặt ở Cài đặt khi muốn.**
+  Lý do: user yêu cầu khi khởi tạo tài khoản phải thiết lập ảnh; mỗi người chỉ chọn ảnh của chính mình, nên admin không chọn hộ người còn lại.
+
+- **Không tăng `schemaVersion`.** `avatar` là trường thêm, không bắt buộc; bản v0.1.0 không kiểm tra trường lạ và khi sửa người dùng vẫn giữ nguyên các trường khác của bản ghi, nên đọc và ghi lại dữ liệu có ảnh mà không làm mất ảnh (chỉ không hiện ảnh). Giá trị ảnh đọc từ máy kia chỉ được đưa vào `<img>` khi đúng dạng `data:image/jpeg|png|webp;base64,...` và không quá 150.000 ký tự; giá trị khác hiện như chưa có ảnh.

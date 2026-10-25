@@ -38,6 +38,12 @@ export function can(user: User | undefined, action: Action, record?: Transaction
   return MEMBER_ACTIONS.has(action);
 }
 
+/** Ảnh đại diện: mỗi người tự đổi của mình, admin đổi được của cả hai. */
+export function canEditAvatar(user: User | undefined, target: User): boolean {
+  if (!user || user.deleted) return false;
+  return user.id === target.id || can(user, 'users:manage');
+}
+
 const DENIED_MESSAGE: Partial<Record<Action, string>> = {
   'transaction:edit': 'Bạn chỉ sửa, xóa được khoản do chính mình nhập.',
 };

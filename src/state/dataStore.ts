@@ -8,12 +8,13 @@ import {
   updateCategory,
   type CategoryInput,
 } from '../core/categories';
+import { checkAvatar } from '../core/avatar';
 import { importTransactions, prepareImport } from '../core/csv';
 import { createInitialData } from '../core/defaults';
 import { DomainError } from '../core/errors';
 import { householdUsers } from '../core/household';
 import { relockMonth, unlockMonth } from '../core/monthLock';
-import { assertCan, type Action } from '../core/permissions';
+import { assertCan, canEditAvatar, type Action } from '../core/permissions';
 import { active, upsert } from '../core/records';
 import {
   createRecurring,
@@ -35,7 +36,7 @@ import type {
   TransactionInput,
   User,
 } from '../core/types';
-import { transferAdmin, updateUser, type UserInput } from '../core/users';
+import { setAvatar, transferAdmin, updateUser, type UserInput } from '../core/users';
 import { createSnapshot } from '../storage/backup';
 import {
   checkNewPassword,
@@ -63,20 +64,29 @@ interface DataState {
   init(): Promise<void>;
   /** Ghi lại data.json sau khi lần ghi trước bị lỗi. */
   retrySave(): void;
-  /** Máy admin, thiết lập lần đầu: tạo 2 người (người tạo là admin) và chọn thư mục Drive. */
-  createHousehold(myName: string, otherName: string, syncFolder: string): Promise<void>;
   /**
-   * Máy thứ hai: dùng dữ liệu đọc từ thư mục Drive và chọn "Tôi là ...". `encryption`: khóa
-   * dẫn xuất từ mật khẩu chung, nếu dữ liệu trong thư mục đã được mã hóa.
+   * Máy admin, thiết lập lần đầu: tạo 2 người (người tạo là admin, kèm ảnh đại diện) và chọn
+   * thư mục Drive.
+   */
+  createHousehold(
+    myName: string,
+    otherName: string,
+    myAvatar: string,
+    syncFolder: string,
+  ): Promise<void>;
+  /**
+   * Máy thứ hai: dùng dữ liệu đọc từ thư mục Drive, chọn "Tôi là ..." và đặt ảnh đại diện.
+   * `encryption`: khóa dẫn xuất từ mật khẩu chung, nếu dữ liệu trong thư mục đã được mã hóa.
    */
   joinHousehold(
     data: DataFile,
     userId: string,
+    avatar: string,
     syncFolder: string,
     encryption: StoredKey | null,
   ): Promise<void>;
-  /** Máy đã có data.json nhưng chưa biết là của ai: chọn "Tôi là ...". */
-  chooseUser(userId: string): Promise<void>;
+  /** Máy đã có data.json nhưng chưa biết là của ai: chọn "Tôi là ..." và đặt ảnh đại diện. */
+  chooseUser(userId: string, avatar: string): Promise<void>;
   /** Thay dữ liệu bằng kết quả merge của lượt sync (đã backup trước đó). */
   applyMerged(data: DataFile): void;
   /** Cài đặt riêng của máy này (thư mục sync, chu kỳ sync...). */
@@ -117,6 +127,8 @@ interface DataState {
   generateRecurring(): number;
 
   updateUser(id: string, input: UserInput): void;
+  /** Đặt ảnh đại diện, `null` là bỏ. Mỗi người tự đổi của mình, admin đổi được của cả hai. */
+  setAvatar(id: string, avatar: string | null): void;
   transferAdmin(userId: string): void;
 
   /** Nhập CSV (đã xem trước), tạo backup trước khi ghi. Trả về số khoản đã nhập. */
@@ -137,6 +149,14 @@ function find<T extends BaseRecord>(list: readonly T[], id: string, what: string
   const record = list.find((r) => r.id === id);
   if (!record) throw new DomainError(`Không tìm thấy ${what}.`);
   return record;
+}
+
+/** Dữ liệu sau khi người dùng máy này đặt ảnh đại diện của mình lúc thiết lập. */
+function withAvatar(data: DataFile, userId: string, avatar: string): DataFile {
+  const user = find(active(data.users), userId, 'người dùng');
+  if (user.avatar === avatar) return data;
+  const updated = setAvatar(user, avatar, { data, userId, now: new Date() });
+  return { ...data, users: upsert(data.users, updated) };
 }
 
 // React StrictMode chạy effect 2 lần khi dev; nếu init chạy 2 lần song song ở lần mở đầu
@@ -219,7 +239,7 @@ export const useDataStore = create<DataState>()((set, get) => {
       if (data) commit(data);
     },
 
-    async createHousehold(myName, otherName, syncFolder) {
+    async createHousehold(myName, otherName, myAvatar, syncFolder) {
       const settings = requireSettings();
       if (get().data) throw new DomainError('Máy này đã có dữ liệu, hãy chọn "Tôi là ...".');
       if (!myName.trim() || !otherName.trim()) throw new DomainError('Hãy nhập tên cả 2 người.');
@@ -229,6 +249,7 @@ export const useDataStore = create<DataState>()((set, get) => {
         deviceId: settings.deviceId,
         myName,
         otherName,
+        myAvatar: checkAvatar(myAvatar),
         now: new Date(),
         newId: () => crypto.randomUUID(),
       });
@@ -238,14 +259,12 @@ export const useDataStore = create<DataState>()((set, get) => {
       set({ data, settings: nextSettings, status: 'ready', saveError: null });
     },
 
-    async joinHousehold(data, userId, syncFolder, encryption) {
+    async joinHousehold(joined, userId, avatar, syncFolder, encryption) {
       const settings = requireSettings();
       if (get().data) throw new DomainError('Máy này đã có dữ liệu, hãy chọn "Tôi là ...".');
-      if (data.deviceId !== settings.deviceId) throw new DomainError('Dữ liệu không đúng máy.');
-      if (!active(data.users).some((u) => u.id === userId)) {
-        throw new DomainError('Không tìm thấy người dùng.');
-      }
-      householdUsers(data); // phải đúng 2 người
+      if (joined.deviceId !== settings.deviceId) throw new DomainError('Dữ liệu không đúng máy.');
+      householdUsers(joined); // phải đúng 2 người
+      const data = withAvatar(joined, userId, avatar);
       const nextSettings: Settings = {
         ...settings,
         userId,
@@ -257,15 +276,14 @@ export const useDataStore = create<DataState>()((set, get) => {
       set({ data, settings: nextSettings, status: 'ready', saveError: null });
     },
 
-    async chooseUser(userId) {
-      const { settings, data } = get();
-      if (!settings || !data) throw new DomainError('Chưa có dữ liệu.');
-      if (!active(data.users).some((u) => u.id === userId)) {
-        throw new DomainError('Không tìm thấy người dùng.');
-      }
+    async chooseUser(userId, avatar) {
+      const { settings, data: current } = get();
+      if (!settings || !current) throw new DomainError('Chưa có dữ liệu.');
+      const data = withAvatar(current, userId, avatar);
       const nextSettings = { ...settings, userId };
+      if (data !== current) await saveData(data);
       await saveSettings(nextSettings);
-      set({ settings: nextSettings, status: 'ready' });
+      set({ data, settings: nextSettings, status: 'ready' });
     },
 
     applyMerged(data) {
@@ -426,6 +444,20 @@ export const useDataStore = create<DataState>()((set, get) => {
       const ctx = authorized('users:manage');
       const user = updateUser(find(ctx.data.users, id, 'người dùng'), input, ctx);
       commit({ ...ctx.data, users: upsert(ctx.data.users, user) });
+    },
+
+    setAvatar(id, avatar) {
+      const ctx = context();
+      const target = find(ctx.data.users, id, 'người dùng');
+      if (
+        !canEditAvatar(
+          ctx.data.users.find((u) => u.id === ctx.userId),
+          target,
+        )
+      ) {
+        throw new DomainError('Chỉ admin đổi được ảnh đại diện của người kia.');
+      }
+      commit({ ...ctx.data, users: upsert(ctx.data.users, setAvatar(target, avatar, ctx)) });
     },
 
     transferAdmin(userId) {

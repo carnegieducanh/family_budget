@@ -3,7 +3,7 @@ import { householdUsers } from './household';
 import { upsert } from './records';
 import { NOW, makeData } from './testing';
 import type { MutationContext, User } from './types';
-import { transferAdmin, updateUser } from './users';
+import { setAvatar, transferAdmin, updateUser } from './users';
 
 function setup() {
   const { data, a, b } = makeData();
@@ -27,6 +27,33 @@ describe('updateUser', () => {
     expect(() => updateUser(member, { name: '', color: '#123456' }, ctx)).toThrow('tên');
     expect(() => updateUser(member, { name: 'an', color: '#123456' }, ctx)).toThrow('khác nhau');
     expect(() => updateUser(member, { name: 'Bình', color: 'red' }, ctx)).toThrow('Màu');
+  });
+});
+
+describe('setAvatar', () => {
+  it('đặt emoji, đổi sang ảnh, rồi bỏ ảnh', () => {
+    const { ctx, member } = setup();
+    const withEmoji = setAvatar(member, '🐻', ctx);
+    expect(withEmoji).toMatchObject({ avatar: '🐻', updatedBy: 'user-a' });
+    expect(withEmoji.updatedAt).toBe(NOW.toISOString());
+
+    const image = 'data:image/jpeg;base64,/9j/4AAQ';
+    expect(setAvatar(withEmoji, image, ctx).avatar).toBe(image);
+
+    const cleared = setAvatar(withEmoji, null, ctx);
+    expect('avatar' in cleared).toBe(false);
+    expect(cleared.name).toBe(member.name);
+  });
+
+  it('từ chối giá trị không phải ảnh hay emoji', () => {
+    const { ctx, member } = setup();
+    expect(() => setAvatar(member, 'abc', ctx)).toThrow('emoji');
+  });
+
+  it('đổi tên và màu vẫn giữ ảnh đại diện', () => {
+    const { ctx, member } = setup();
+    const withEmoji = setAvatar(member, '🐻', ctx);
+    expect(updateUser(withEmoji, { name: 'Bình', color: '#123456' }, ctx).avatar).toBe('🐻');
   });
 });
 

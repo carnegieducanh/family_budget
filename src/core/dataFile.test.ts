@@ -11,6 +11,16 @@ describe('parseDataFile', () => {
     expect(parseDataFile(serializeDataFile(data))).toEqual(data);
   });
 
+  it('ảnh đại diện là trường không bắt buộc, nhưng có thì phải là chuỗi', () => {
+    const { data } = makeData();
+    data.users[0] = { ...data.users[0]!, avatar: '🐻' };
+    expect(parseDataFile(serializeDataFile(data)).users[0]?.avatar).toBe('🐻');
+    expect(parseDataFile(serializeDataFile(data)).users[1]?.avatar).toBeUndefined();
+    const raw = JSON.parse(serializeDataFile(data));
+    raw.users[0].avatar = 1;
+    expect(() => parseDataFile(JSON.stringify(raw))).toThrow('users[0].avatar');
+  });
+
   it('JSON hỏng → lỗi', () => {
     expect(() => parseDataFile('{"schemaVersion": 1, ')).toThrow('file JSON bị hỏng');
   });

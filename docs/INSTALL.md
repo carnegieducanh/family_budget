@@ -148,13 +148,13 @@ macOS có thể hỏi "Family Budget muốn truy cập tệp trong Google Drive"
 
 ### 2.3. Thiết lập lần đầu
 
-1. **Máy admin:** mở app → **Tạo dữ liệu mới (admin)** → nhập tên của mình và tên người còn lại → **Chọn thư mục...** và chọn thư mục `Family Budget` ở bước 2.2 → **Tạo dữ liệu**.
+1. **Máy admin:** mở app → **Tạo dữ liệu mới (admin)** → nhập tên của mình và tên người còn lại → chọn ảnh đại diện (**Chọn ảnh từ máy...** hoặc một emoji) → **Chọn thư mục...** và chọn thư mục `Family Budget` ở bước 2.2 → **Tạo dữ liệu**.
 
    App tạo thư mục con `FamilyBudget` bên trong và ghi file `device-<mã máy>.json`. Góc dưới bên trái hiện "Chưa thấy dữ liệu từ máy kia" là bình thường ở bước này.
 
 2. Chờ Google Drive tải file lên (biểu tượng Google Drive trên khay hệ thống / thanh menu báo đã đồng bộ xong).
 
-3. **Máy thứ hai:** mở app → **Tham gia (máy thứ hai)** → **Chọn thư mục...** và chọn đúng thư mục đó (hoặc lối tắt, nếu dùng 2 tài khoản) → chọn **Tôi là ...**.
+3. **Máy thứ hai:** mở app → **Tham gia (máy thứ hai)** → **Chọn thư mục...** và chọn đúng thư mục đó (hoặc lối tắt, nếu dùng 2 tài khoản) → chọn **Tôi là ...** → chọn ảnh đại diện → **Hoàn tất**.
 
    Nếu admin đã bật mã hóa (mục 2.4), app hỏi **Mật khẩu mã hóa** trước: nhập mật khẩu admin đã đặt → **Mở khóa dữ liệu**.
 

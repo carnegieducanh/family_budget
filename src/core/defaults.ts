@@ -58,6 +58,8 @@ export interface InitialDataInput {
   deviceId: string;
   myName: string;
   otherName: string;
+  /** Ảnh đại diện của người tạo (đã kiểm tra bằng `checkAvatar`). */
+  myAvatar?: string;
   now: Date;
   newId: () => string;
 }
@@ -75,7 +77,12 @@ export function createInitialData(input: InitialDataInput): { data: DataFile; my
   const otherUserId = newId();
   const me = createRecord<User>(
     myUserId,
-    { name: myName, role: 'admin', color: USER_COLORS[0] },
+    {
+      name: myName,
+      role: 'admin',
+      color: USER_COLORS[0],
+      ...(input.myAvatar ? { avatar: input.myAvatar } : {}),
+    },
     myUserId,
     now,
   );

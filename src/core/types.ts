@@ -15,6 +15,8 @@ export interface User extends BaseRecord {
   name: string;
   role: Role;
   color: string; // màu hiển thị, ví dụ '#4F7DF3'
+  /** Ảnh đại diện: ảnh vuông đã thu nhỏ (data URL JPEG/PNG/WebP) hoặc một emoji. Không có thì hiện chữ cái đầu. */
+  avatar?: string;
 }
 
 export interface Category extends BaseRecord {
