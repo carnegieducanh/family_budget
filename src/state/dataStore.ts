@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { setBudget } from '../core/budget';
+import { applyRecurringToBudgets, setManualBudget } from '../core/budget';
 import {
   createCategory,
   deleteCategory,
@@ -29,6 +29,7 @@ import type {
   BaseRecord,
   DataFile,
   MutationContext,
+  RecurringTemplate,
   Settings,
   Transaction,
   TransactionInput,
@@ -172,6 +173,13 @@ export const useDataStore = create<DataState>()((set, get) => {
   function commit(data: DataFile): void {
     set((s) => ({ data, localRevision: s.localRevision + 1 }));
     save(data);
+  }
+
+  /** Lưu mẫu định kỳ cùng ngân sách của danh mục, luôn bằng tổng các mẫu đang bật. */
+  function commitRecurring(ctx: MutationContext, template: RecurringTemplate): void {
+    const recurring = upsert(ctx.data.recurring, template);
+    const budgets = applyRecurringToBudgets(ctx.data.recurring, recurring, ctx);
+    commit({ ...ctx.data, recurring, budgets: upsertAll(ctx.data.budgets, budgets) });
   }
 
   function requireSettings(): Settings {
@@ -376,7 +384,7 @@ export const useDataStore = create<DataState>()((set, get) => {
 
     setBudget(month, categoryId, amount) {
       const ctx = authorized('budgets:manage');
-      const budget = setBudget(month, categoryId, amount, ctx);
+      const budget = setManualBudget(month, categoryId, amount, ctx);
       if (budget) commit({ ...ctx.data, budgets: upsert(ctx.data.budgets, budget) });
     },
 
@@ -385,7 +393,7 @@ export const useDataStore = create<DataState>()((set, get) => {
     addRecurring(input) {
       const ctx = authorized('recurring:manage');
       const template = createRecurring(input, ctx, crypto.randomUUID());
-      commit({ ...ctx.data, recurring: upsert(ctx.data.recurring, template) });
+      commitRecurring(ctx, template);
       get().generateRecurring();
       return template.id;
     },
@@ -393,14 +401,13 @@ export const useDataStore = create<DataState>()((set, get) => {
     updateRecurring(id, input) {
       const ctx = authorized('recurring:manage');
       const template = updateRecurring(find(ctx.data.recurring, id, 'mẫu định kỳ'), input, ctx);
-      commit({ ...ctx.data, recurring: upsert(ctx.data.recurring, template) });
+      commitRecurring(ctx, template);
       get().generateRecurring();
     },
 
     deleteRecurring(id) {
       const ctx = authorized('recurring:manage');
-      const template = deleteRecurring(find(ctx.data.recurring, id, 'mẫu định kỳ'), ctx);
-      commit({ ...ctx.data, recurring: upsert(ctx.data.recurring, template) });
+      commitRecurring(ctx, deleteRecurring(find(ctx.data.recurring, id, 'mẫu định kỳ'), ctx));
     },
 
     generateRecurring() {

@@ -1,10 +1,13 @@
-import { Lock, OctagonAlert } from 'lucide-react';
+import { OctagonAlert } from 'lucide-react';
 import { useState, type KeyboardEvent } from 'react';
-import { DEFAULT_BUDGET_MONTH, findBudget, getBudgetAmount } from '../../core/budget';
+import {
+  DEFAULT_BUDGET_MONTH,
+  findBudget,
+  getBudgetAmount,
+  recurringTotals,
+} from '../../core/budget';
 import { sortedCategories } from '../../core/categories';
 import { formatYen, parseYen } from '../../core/money';
-import { formatMonthLabel } from '../../core/month';
-import { findMonthRecord, isLocked } from '../../core/monthLock';
 import { spendingByCategory, sumAmounts, transactionsInMonth } from '../../core/queries';
 import type { Budget } from '../../core/types';
 import { Card } from '../../components/Card';
@@ -12,7 +15,6 @@ import { CategoryLabel } from '../../components/CategoryLabel';
 import { MonthHeader } from '../../components/MonthHeader';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import { useUiStore } from '../../state/uiStore';
-import { useNow } from '../../state/useNow';
 import styles from './BudgetScreen.module.scss';
 
 function errorMessage(error: unknown): string {
@@ -20,16 +22,14 @@ function errorMessage(error: unknown): string {
 }
 
 /**
- * Ngân sách (admin): ngân sách tổng và theo danh mục, mức mặc định hàng tháng và mức
- * riêng cho từng tháng (SPEC mục 8, màn hình 6).
+ * Ngân sách (admin): ngân sách tổng và theo danh mục, một mức chung cho mọi tháng, so với số
+ * đã chi của tháng đang xem (SPEC mục 8, màn hình 6; bỏ mức riêng từng tháng, xem decisions.md).
  */
 export function BudgetScreen() {
   const month = useUiStore((s) => s.month);
   const { data } = useReadyData();
-  const now = useNow();
   const [error, setError] = useState<string | null>(null);
 
-  const locked = isLocked(month, now, findMonthRecord(data.months, month));
   const spent = new Map(
     spendingByCategory(data.transactions, month).map((s) => [s.categoryId, s.amount]),
   );
@@ -46,6 +46,7 @@ export function BudgetScreen() {
     ...categories.map((c) => ({ categoryId: c.id, spent: spent.get(c.id) ?? 0 })),
   ];
   const categoriesById = new Map(data.categories.map((c) => [c.id, c]));
+  const fixedTotals = recurringTotals(data.recurring);
 
   function save(target: string, categoryId: string | null, amount: number | null): boolean {
     try {
@@ -64,8 +65,8 @@ export function BudgetScreen() {
     <>
       <MonthHeader title="Ngân sách" />
       <p className={styles.lead}>
-        Mức mặc định áp dụng cho mọi tháng chưa đặt mức riêng. Để trống ô của tháng để dùng mức mặc
-        định; để trống cả hai là không đặt ngân sách.
+        Ngân sách áp dụng cho mọi tháng; để trống là không đặt ngân sách. Danh mục có khoản định kỳ
+        (như tiền nhà) lấy ngân sách bằng tổng các khoản đó; muốn đổi thì sửa ở màn hình Định kỳ.
       </p>
       {error && (
         <p className={styles.error} role="alert">
@@ -79,8 +80,6 @@ export function BudgetScreen() {
             <thead>
               <tr>
                 <th>Danh mục</th>
-                <th className={styles.num}>Mặc định hàng tháng</th>
-                <th className={styles.num}>Riêng {formatMonthLabel(month).toLowerCase()}</th>
                 <th className={styles.num}>Đang áp dụng</th>
                 <th className={styles.num}>Đã chi</th>
               </tr>
@@ -88,6 +87,7 @@ export function BudgetScreen() {
             <tbody>
               {rows.map(({ categoryId, spent: spentAmount }) => {
                 const effective = getBudgetAmount(data.budgets, month, categoryId);
+                const fixed = categoryId ? fixedTotals.get(categoryId) : undefined;
                 return (
                   <tr key={categoryId ?? 'total'} className={categoryId ? undefined : styles.total}>
                     <td>
@@ -98,28 +98,21 @@ export function BudgetScreen() {
                       )}
                     </td>
                     <td className={styles.num}>
-                      <BudgetInput
-                        budget={findBudget(data.budgets, DEFAULT_BUDGET_MONTH, categoryId)}
-                        label="Mức mặc định"
-                        onSave={(amount) => save(DEFAULT_BUDGET_MONTH, categoryId, amount)}
-                        onInvalid={invalid}
-                      />
-                    </td>
-                    <td className={styles.num}>
-                      <BudgetInput
-                        budget={findBudget(data.budgets, month, categoryId)}
-                        label={`Mức riêng ${formatMonthLabel(month)}`}
-                        placeholder="Theo mặc định"
-                        disabled={locked}
-                        onSave={(amount) => save(month, categoryId, amount)}
-                        onInvalid={invalid}
-                      />
-                    </td>
-                    <td className={styles.num}>
-                      {effective === null ? (
-                        <span className={styles.muted}>—</span>
+                      {fixed === undefined ? (
+                        <BudgetInput
+                          budget={findBudget(data.budgets, DEFAULT_BUDGET_MONTH, categoryId)}
+                          label="Ngân sách"
+                          onSave={(amount) => save(DEFAULT_BUDGET_MONTH, categoryId, amount)}
+                          onInvalid={invalid}
+                        />
                       ) : (
-                        formatYen(effective)
+                        <span
+                          className={styles.fixed}
+                          title="Bằng tổng khoản định kỳ của danh mục này; sửa ở màn hình Định kỳ."
+                        >
+                          <span className={styles.tag}>định kỳ</span>
+                          {formatYen(fixed)}
+                        </span>
                       )}
                     </td>
                     <td className={styles.num}>
@@ -136,12 +129,6 @@ export function BudgetScreen() {
             </tbody>
           </table>
         </div>
-        {locked && (
-          <p className={styles.note}>
-            <Lock size={13} aria-hidden="true" /> {formatMonthLabel(month)} đã khóa nên không sửa
-            được mức riêng của tháng này.
-          </p>
-        )}
       </Card>
     </>
   );
@@ -155,15 +142,11 @@ function formatAmount(budget: Budget | undefined): string {
 function BudgetInput({
   budget,
   label,
-  placeholder = '—',
-  disabled = false,
   onSave,
   onInvalid,
 }: {
   budget: Budget | undefined;
   label: string;
-  placeholder?: string;
-  disabled?: boolean;
   onSave: (amount: number | null) => boolean;
   onInvalid: () => void;
 }) {
@@ -202,8 +185,7 @@ function BudgetInput({
       className={styles.input}
       inputMode="numeric"
       value={text}
-      placeholder={placeholder}
-      disabled={disabled}
+      placeholder="—"
       aria-label={label}
       onChange={(e) => setText(e.target.value)}
       onFocus={(e) => setText(e.target.value.replace(/,/g, ''))}

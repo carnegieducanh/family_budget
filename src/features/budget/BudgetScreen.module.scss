@@ -15,12 +15,6 @@
 
 .table {
   @include m.data-table;
-
-  // Tiêu đề cột dài ("Mặc định hàng tháng", "Riêng tháng 10/2026") xuống dòng khi cửa sổ hẹp.
-  th {
-    white-space: normal;
-    vertical-align: bottom;
-  }
 }
 
 .total td {
@@ -32,7 +26,6 @@
   @include m.num;
 }
 
-// Lề trong nhỏ để chữ gợi ý "Theo mặc định" vừa ô 120 px.
 .input {
   width: 120px;
   padding-left: var(--space-2);
@@ -41,20 +34,19 @@
   font-variant-numeric: tabular-nums;
 }
 
-.muted {
-  color: var(--color-text-muted);
+// Ngân sách lấy từ khoản định kỳ: chỉ hiện số, căn chữ số thẳng với số trong ô nhập.
+.fixed {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-right: calc(var(--space-2) + 1px);
+}
+
+.tag {
+  @include m.badge(primary);
 }
 
 .over {
   @include m.badge(danger);
   margin-left: var(--space-2);
-}
-
-.note {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: var(--space-3) 0 0;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
 }

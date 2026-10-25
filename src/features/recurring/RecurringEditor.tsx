@@ -1,4 +1,5 @@
 import { useId, useState, type FormEvent } from 'react';
+import { DEFAULT_BUDGET_MONTH, getBudgetAmount, recurringTotals } from '../../core/budget';
 import { sortedCategories } from '../../core/categories';
 import { formatYen, parseYen } from '../../core/money';
 import { toMonth } from '../../core/month';
@@ -35,6 +36,11 @@ export function RecurringEditor({
     (c) => !c.hidden || c.id === initial?.categoryId,
   );
   const amountNumber = parseYen(amount);
+  // Danh mục chưa có khoản định kỳ nào đang bật: ngân sách nhập tay (nếu có) sẽ bị thay.
+  const replacedBudget =
+    enabled && categoryId && !recurringTotals(data.recurring).has(categoryId)
+      ? getBudgetAmount(data.budgets, DEFAULT_BUDGET_MONTH, categoryId)
+      : null;
 
   function save(event: FormEvent) {
     event.preventDefault();
@@ -113,6 +119,12 @@ export function RecurringEditor({
             </select>
           </div>
         </div>
+        {replacedBudget !== null && (
+          <p className={styles.preview}>
+            Ngân sách {formatYen(replacedBudget)} đang nhập tay của danh mục này sẽ được thay bằng
+            tổng khoản định kỳ.
+          </p>
+        )}
         <div className={styles.field}>
           <span className={styles.label}>Người trả</span>
           <div className={styles.segmented} role="radiogroup" aria-label="Người trả">

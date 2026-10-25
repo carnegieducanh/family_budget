@@ -73,7 +73,8 @@ export function RecurringScreen() {
       <p className={styles.lead}>
         Mỗi mẫu đang bật tự tạo một khoản chi vào ngày đã chọn của tháng hiện tại, khi mở app và sau
         mỗi lần đồng bộ. Không tạo bù cho các tháng trước. Sửa mẫu không đổi khoản đã tạo của tháng
-        này; nếu cần, sửa khoản đó trong màn hình Khoản chi.
+        này; nếu cần, sửa khoản đó trong màn hình Khoản chi. Ngân sách của danh mục ở màn hình Ngân
+        sách bằng tổng các mẫu đang bật của danh mục đó.
       </p>
       {error && (
         <p className={styles.error} role="alert">
@@ -159,6 +160,8 @@ export function RecurringScreen() {
         >
           Xóa mẫu “{deleting.name}”? Các khoản đã tạo từ mẫu này vẫn giữ nguyên; từ tháng sau không
           tạo khoản mới nữa.
+          {deleting.active &&
+            ' Ngân sách của danh mục được tính lại theo các mẫu còn lại; không còn mẫu nào thì để trống.'}
         </ConfirmDialog>
       )}
     </>

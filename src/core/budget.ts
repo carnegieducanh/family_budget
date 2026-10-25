@@ -3,7 +3,7 @@ import { formatMonthLabel, isValidMonth } from './month';
 import { findMonthRecord, isLocked } from './monthLock';
 import { active, createRecord, softDelete, touch } from './records';
 import { spendingByCategory } from './queries';
-import type { Budget, DataFile, MutationContext } from './types';
+import type { Budget, DataFile, MutationContext, RecurringTemplate } from './types';
 
 export function budgetId(month: string, categoryId: string | null): string {
   return `budget-${month}-${categoryId ?? 'total'}`;
@@ -116,4 +116,51 @@ export function categoryBudgetRows(data: DataFile, month: string): CategoryBudge
       };
     })
     .filter((row) => row.spent > 0 || row.budget !== null);
+}
+
+/** Tổng số tiền các mẫu định kỳ đang bật, theo danh mục. */
+export function recurringTotals(templates: readonly RecurringTemplate[]): Map<string, number> {
+  const totals = new Map<string, number>();
+  for (const template of active(templates)) {
+    if (!template.active) continue;
+    totals.set(template.categoryId, (totals.get(template.categoryId) ?? 0) + template.amount);
+  }
+  return totals;
+}
+
+/**
+ * Danh mục có khoản định kỳ đang bật lấy ngân sách (mức chung mọi tháng) bằng đúng tổng các
+ * khoản đó; muốn đổi thì sửa ở màn Định kỳ, không nhập tay. Gọi mỗi khi danh sách mẫu đổi từ
+ * `before` sang `after`: danh mục còn khoản định kỳ thì đặt mức bằng tổng mới, danh mục vừa hết
+ * khoản định kỳ (tắt hoặc xóa hết) thì bỏ mức và quay về nhập tay. Không đụng ngân sách tổng.
+ * Trả về các bản ghi ngân sách thay đổi.
+ */
+export function applyRecurringToBudgets(
+  before: readonly RecurringTemplate[],
+  after: readonly RecurringTemplate[],
+  ctx: MutationContext,
+): Budget[] {
+  const next = recurringTotals(after);
+  const changed: Budget[] = [];
+  for (const categoryId of new Set([...recurringTotals(before).keys(), ...next.keys()])) {
+    if (!active(ctx.data.categories).some((c) => c.id === categoryId)) continue;
+    const record = setBudget(DEFAULT_BUDGET_MONTH, categoryId, next.get(categoryId) ?? null, ctx);
+    if (record) changed.push(record);
+  }
+  return changed;
+}
+
+/** Ngân sách admin tự nhập. Danh mục có khoản định kỳ đang bật thì không nhập tay được. */
+export function setManualBudget(
+  month: string,
+  categoryId: string | null,
+  amount: number | null,
+  ctx: MutationContext,
+): Budget | null {
+  if (categoryId !== null && recurringTotals(ctx.data.recurring).has(categoryId)) {
+    throw new DomainError(
+      'Ngân sách của danh mục này bằng tổng khoản định kỳ, sửa ở màn hình Định kỳ.',
+    );
+  }
+  return setBudget(month, categoryId, amount, ctx);
 }

@@ -371,3 +371,13 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 - **Màn Danh mục bỏ nút mũi tên lên/xuống; chỉ sắp xếp bằng kéo biểu tượng ⠿.**
   Lý do: user chỉ dùng kéo thả, hai nút làm mỗi dòng chật. Đổi lại không còn cách sắp xếp bằng bàn phím.
+
+## 2026-10-25 — Ngân sách danh mục có khoản định kỳ lấy từ Định kỳ
+
+- **Danh mục có khoản định kỳ đang bật lấy ngân sách (mức chung mọi tháng) bằng đúng tổng các khoản đó. Ở màn Ngân sách, ô của danh mục này chỉ hiện số kèm nhãn "định kỳ", không nhập tay được (`setManualBudget` từ chối); muốn đổi thì sửa mẫu ở màn Định kỳ. Mỗi lần admin thêm, sửa, bật, tắt hay xóa mẫu, app đặt lại ngân sách của các danh mục liên quan bằng tổng mới (`applyRecurringToBudgets` trong `core/budget.ts`), cùng lúc lưu mẫu; danh mục hết khoản định kỳ đang bật thì bỏ mức và quay về nhập tay. Danh mục khác và ngân sách tổng vẫn nhập tay. Thêm mẫu vào danh mục đang có ngân sách nhập tay thì mức đó bị thay; form mẫu có dòng báo trước. Tháng bắt đầu của mẫu không xét.**
+  Lý do: user chỉ có tiền nhà và internet là cố định, còn lại biến động. Hai cách làm trước trong cùng ngày bị bỏ: nút "Gợi ý ¥X" (user không muốn bấm gợi ý) và cộng phần chênh lệch vào mức nhập tay (một ô vừa có phần nhập tay vừa có phần định kỳ nên số không khớp với màn Định kỳ, khó hiểu). Mỗi danh mục giờ chỉ có một nguồn: định kỳ hoặc nhập tay. Đổi lại, một danh mục không thể vừa có khoản cố định vừa có ngân sách cho khoản biến động (ví dụ "Internet / Điện thoại" mà tiền điện thoại biến động): khi đó nên tách khoản biến động sang danh mục khác. Chỉ máy admin ghi, vào lúc sửa mẫu. Bản A/B lúc đổi chưa có mẫu định kỳ nào nên không cần chuyển dữ liệu.
+
+## 2026-10-25 — Màn Ngân sách chỉ còn 2 cột
+
+- **Bảng Ngân sách chỉ còn cột "Đang áp dụng" (ô nhập, hoặc số lấy từ Định kỳ) và "Đã chi". Số nhập vào là mức chung cho mọi tháng (bản ghi `budget-default-…`). Bỏ cột "Mặc định hàng tháng" và cột mức riêng của tháng đang xem, nên không còn đặt ngân sách riêng cho từng tháng từ giao diện; bỏ luôn dòng ghi chú "tháng đã khóa nên không sửa được mức riêng".** Khác SPEC mục 8 màn hình 6 ("mức mặc định hàng tháng và ghi đè cho từng tháng").
+  Lý do: user thấy 2 cột là đủ, 4 cột rối. Dữ liệu và `core/budget.ts` vẫn hiểu mức riêng của tháng (`getBudgetAmount` ưu tiên mức riêng nếu có), để bản cũ v0.1.0 lỡ tạo mức riêng thì vẫn đọc đúng; lúc đổi, dữ liệu bản A/B không có mức riêng nào.
