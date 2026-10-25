@@ -19,7 +19,7 @@ import { CategoryLabel } from '../../components/CategoryLabel';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { MonthHeader } from '../../components/MonthHeader';
 import { shortcutLabel } from '../../components/shortcut';
-import { UserDot, UserName } from '../../components/UserDot';
+import { UserName } from '../../components/UserDot';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import { useUiStore } from '../../state/uiStore';
 import { useNow } from '../../state/useNow';
@@ -142,7 +142,6 @@ export function TransactionsScreen() {
                   <th>Ghi chú</th>
                   <th className={styles.num}>Số tiền</th>
                   <th>Người trả</th>
-                  <th>Người nhập</th>
                   {!locked && <th aria-label="Thao tác" />}
                 </tr>
               </thead>
@@ -175,12 +174,6 @@ export function TransactionsScreen() {
                     <td className={styles.amount}>{formatYen(tx.amount)}</td>
                     <td>
                       <UserName user={usersById.get(tx.paidBy)} />
-                    </td>
-                    <td>
-                      <UserDot
-                        user={usersById.get(tx.createdBy)}
-                        title={`Nhập bởi ${usersById.get(tx.createdBy)?.name ?? 'không rõ'}`}
-                      />
                     </td>
                     {!locked && (
                       <td className={styles.actions} onClick={(e) => e.stopPropagation()}>

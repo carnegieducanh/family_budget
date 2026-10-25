@@ -67,8 +67,11 @@
   @include m.badge(neutral);
 }
 
+// Hai cột cố định (Ẩn/Hiện, Xóa) để nút Ẩn thẳng hàng cả ở dòng không có nút Xóa;
+// nút trong cột giãn hết bề rộng nên "Ẩn" và "Hiện" rộng bằng nhau.
 .actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: 60px 52px;
   gap: var(--space-1);
   margin-left: auto;
 }
@@ -78,7 +81,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  margin-top: var(--space-4);
+  margin-bottom: var(--space-3);
   padding-left: calc(16px + var(--space-1) * 2 + var(--space-2));
 }
 

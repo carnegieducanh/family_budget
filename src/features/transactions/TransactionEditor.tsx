@@ -9,7 +9,6 @@ import type { Transaction, TransactionInput } from '../../core/types';
 import { Button } from '../../components/Button';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Modal } from '../../components/Modal';
-import { UserDot } from '../../components/UserDot';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import { useUiStore, type EditorState } from '../../state/uiStore';
 import styles from './TransactionEditor.module.scss';
@@ -23,7 +22,7 @@ export function TransactionEditor() {
 }
 
 function EditorForm({ editor }: { editor: Exclude<EditorState, { mode: 'closed' }> }) {
-  const { data, me, users } = useReadyData();
+  const { data, me } = useReadyData();
   const close = useUiStore((s) => s.closeEditor);
   const existing: Transaction | undefined =
     editor.mode === 'edit'
@@ -33,7 +32,6 @@ function EditorForm({ editor }: { editor: Exclude<EditorState, { mode: 'closed' 
   const [date, setDate] = useState(existing?.date ?? toLocalDate(new Date()));
   const [amount, setAmount] = useState(existing ? String(existing.amount) : '');
   const [categoryId, setCategoryId] = useState(existing?.categoryId ?? '');
-  const [paidBy, setPaidBy] = useState(existing?.paidBy ?? me.id);
   const [note, setNote] = useState(existing?.note ?? '');
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -57,6 +55,7 @@ function EditorForm({ editor }: { editor: Exclude<EditorState, { mode: 'closed' 
     );
   const forbidden = existing !== undefined && !can(me, 'transaction:edit', existing);
   const creator = existing && data.users.find((u) => u.id === existing.createdBy);
+  const payer = existing && data.users.find((u) => u.id === existing.paidBy);
   const readOnly = locked || forbidden;
   // Danh mục ẩn không hiện trong danh sách chọn, trừ khi khoản đang sửa dùng danh mục đó.
   const categories = active(data.categories)
@@ -66,6 +65,8 @@ function EditorForm({ editor }: { editor: Exclude<EditorState, { mode: 'closed' 
 
   function save(event: FormEvent) {
     event.preventDefault();
+    // Người trả là người đang dùng app; sửa khoản cũ thì giữ người trả đã lưu.
+    const paidBy = existing?.paidBy ?? me.id;
     const input: TransactionInput = { date, amount: amountNumber, categoryId, note, paidBy };
     try {
       const store = useDataStore.getState();
@@ -178,26 +179,6 @@ function EditorForm({ editor }: { editor: Exclude<EditorState, { mode: 'closed' 
           </div>
 
           <div className={styles.field}>
-            <span className={styles.label}>Người trả</span>
-            <div className={styles.segmented} role="radiogroup" aria-label="Người trả">
-              {users.map((user) => (
-                <button
-                  key={user.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={paidBy === user.id}
-                  className={paidBy === user.id ? styles.segmentActive : styles.segment}
-                  onClick={() => setPaidBy(user.id)}
-                >
-                  <UserDot user={user} />
-                  {user.name}
-                  {user.id === me.id && <span className={styles.meTag}>(bạn)</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.field}>
             <label htmlFor={`${fieldId}-note`}>Ghi chú</label>
             <input
               id={`${fieldId}-note`}
@@ -212,6 +193,7 @@ function EditorForm({ editor }: { editor: Exclude<EditorState, { mode: 'closed' 
         {existing && (
           <p className={styles.meta}>
             Nhập bởi {creator?.name ?? 'không rõ'}
+            {existing.paidBy !== existing.createdBy && ` · người trả ${payer?.name ?? 'không rõ'}`}
             {existing.recurringId && ' · khoản định kỳ'}
           </p>
         )}

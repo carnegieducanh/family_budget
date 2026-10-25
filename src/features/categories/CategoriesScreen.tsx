@@ -62,8 +62,9 @@ export function CategoriesScreen() {
       )}
 
       <Card>
+        <AddCategory onSave={run} />
         <ul className={styles.list}>
-          {categories.map((category, index) => {
+          {categories.map((category) => {
             const used = isCategoryUsed(data, category.id);
             const rowClass = [
               styles.row,
@@ -106,24 +107,6 @@ export function CategoriesScreen() {
                 <span className={styles.actions}>
                   <Button
                     size="sm"
-                    variant="ghost"
-                    aria-label={`Đưa ${category.name} lên`}
-                    disabled={index === 0}
-                    onClick={() => move(category.id, index - 1)}
-                  >
-                    <Chevron up />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    aria-label={`Đưa ${category.name} xuống`}
-                    disabled={index === categories.length - 1}
-                    onClick={() => move(category.id, index + 1)}
-                  >
-                    <Chevron />
-                  </Button>
-                  <Button
-                    size="sm"
                     onClick={() =>
                       run(() =>
                         useDataStore.getState().setCategoryHidden(category.id, !category.hidden),
@@ -142,7 +125,6 @@ export function CategoriesScreen() {
             );
           })}
         </ul>
-        <AddCategory onSave={run} />
       </Card>
 
       {deleting && (
@@ -261,21 +243,5 @@ function AddCategory({ onSave }: { onSave: (action: () => void) => boolean }) {
         Gõ emoji: Win + . (Windows) hoặc Ctrl + Cmd + Space (macOS)
       </span>
     </form>
-  );
-}
-
-/** Mũi tên lên/xuống vẽ bằng SVG (ký tự ↑↓ bị Windows vẽ bằng font emoji có màu). */
-function Chevron({ up = false }: { up?: boolean }) {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-      <path
-        d={up ? 'M2.5 7.5 6 4l3.5 3.5' : 'M2.5 4.5 6 8l3.5-3.5'}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }

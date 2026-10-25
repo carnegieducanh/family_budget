@@ -360,3 +360,14 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 - **Mọi bảng số liệu dùng lề ô 8 px khi cửa sổ hẹp hơn 1200 px (mixin `data-table`). Bảng Khoản chi và Ngân sách được bọc trong khung cuộn ngang (mixin `table-scroll`).**
   Lý do: khung cuộn là lớp dự phòng khi dữ liệu cực dài (tên người, số tiền hàng triệu): bảng cuộn trong card thay vì tràn ra ngoài và làm cả màn hình cuộn ngang.
+
+## 2026-10-25 — Bớt ô, cột và nút thừa
+
+- **Modal Thêm/Sửa khoản chi không còn nhóm nút "Người trả". Khoản mới luôn có người trả là người đang dùng app (máy đó); sửa khoản cũ thì giữ người trả đã lưu. Khi sửa, nếu người trả khác người nhập thì dòng cuối modal ghi thêm "· người trả …".**
+  Lý do: mỗi người nhập khoản mình trả trên máy của mình, form gọn hơn; giữ người trả cũ để admin sửa khoản của người kia không làm lệch số tiền bù. Mẫu định kỳ và import CSV vẫn chọn được người trả như trước.
+
+- **Bảng Khoản chi bỏ cột "Người nhập" (chấm màu). Ai nhập vẫn xem được ở dòng cuối modal Sửa/Xem ("Nhập bởi …").**
+  Lý do: người nhập nay gần như luôn là người trả nên cột này lặp lại cột Người trả; bảng gọn hơn ở cửa sổ hẹp.
+
+- **Màn Danh mục bỏ nút mũi tên lên/xuống; chỉ sắp xếp bằng kéo biểu tượng ⠿.**
+  Lý do: user chỉ dùng kéo thả, hai nút làm mỗi dòng chật. Đổi lại không còn cách sắp xếp bằng bàn phím.
