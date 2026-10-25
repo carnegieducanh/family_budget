@@ -1,3 +1,4 @@
+import { GripVertical, Plus } from 'lucide-react';
 import { useState, type DragEvent, type FormEvent, type KeyboardEvent } from 'react';
 import { isCategoryUsed, sortedCategories } from '../../core/categories';
 import type { Category } from '../../core/types';
@@ -98,7 +99,7 @@ export function CategoriesScreen() {
                   title="Kéo để sắp xếp"
                   aria-hidden="true"
                 >
-                  ⠿
+                  <GripVertical size={16} />
                 </span>
                 <CategoryFields category={category} onSave={run} />
                 {category.hidden && <span className={styles.tag}>Đang ẩn</span>}
@@ -253,7 +254,8 @@ function AddCategory({ onSave }: { onSave: (action: () => void) => boolean }) {
         maxLength={40}
       />
       <Button type="submit" variant="primary" size="sm">
-        + Thêm danh mục
+        <Plus size={15} aria-hidden="true" />
+        Thêm danh mục
       </Button>
       <span className={styles.hint}>
         Gõ emoji: Win + . (Windows) hoặc Ctrl + Cmd + Space (macOS)

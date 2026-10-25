@@ -46,7 +46,8 @@ Stack: Tauri 2 + React + TypeScript + Vite, gần như không viết Rust, file 
 | Desktop shell | Tauri 2.x | Win 11 có sẵn WebView2; Mac build bản aarch64 |
 | UI | React + TypeScript (strict) + Vite | Không cần router, chuyển màn hình bằng state |
 | State | Zustand | Một store cho dữ liệu, một store cho trạng thái sync |
-| Style | SCSS Modules | Biến màu trong `styles/tokens.scss`, hỗ trợ dark mode theo hệ thống |
+| Style | SCSS Modules | Biến màu trong `styles/tokens.scss`, theme Sáng / Tối / Theo hệ thống; mẫu dùng chung trong `styles/_mixins.scss` |
+| Icon, font | lucide-react, Inter (`@fontsource-variable/inter`) | Font đóng gói trong app, có bộ chữ tiếng Việt, không cần mạng |
 | Biểu đồ | Recharts | Chỉ dùng cột và tròn |
 | Ngày tháng | dayjs | Ngày lưu dạng `YYYY-MM-DD` theo giờ local |
 | ID | `crypto.randomUUID()` | Có sẵn trong WebView |
@@ -341,7 +342,7 @@ Viết các hàm `can(user, action, record?)` trong `core/permissions.ts`, dùng
 
 App có 9 màn hình, bố cục sidebar trái + vùng nội dung; màn hình chính là Tổng quan tháng.
 
-Bố cục chung: cửa sổ tối thiểu 1024 × 700, sidebar điều hướng bên trái, trạng thái sync ở góc dưới sidebar, banner thông báo cập nhật ở trên cùng khi có bản mới. Theo dark mode của hệ thống. Các màn hình có chọn tháng dùng chung một bộ chọn `‹ Tháng 10/2026 ›`.
+Bố cục chung: cửa sổ tối thiểu 1024 × 700, sidebar điều hướng bên trái, trạng thái sync ở góc dưới sidebar, banner thông báo cập nhật ở trên cùng khi có bản mới. Theme Sáng / Tối / Theo hệ thống (mặc định), chọn ở sidebar hoặc Cài đặt → Giao diện, lưu riêng từng máy. Các màn hình có chọn tháng dùng chung một bộ chọn `‹ Tháng 10/2026 ›`.
 
 1. **Thiết lập lần đầu** (chỉ hiện khi chưa có `userId`)
    - Chọn "Tạo dữ liệu mới (admin)" hoặc "Tham gia (máy thứ hai)".

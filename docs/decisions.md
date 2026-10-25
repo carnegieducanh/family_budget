@@ -303,3 +303,32 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 - **Đã thử thật trên Windows 11 (một máy):** mã hóa với 3 instance app và một thư mục local đóng vai Drive (bật, nhập sai và đúng mật khẩu, dữ liệu đi hai chiều qua file mã hóa, đổi mật khẩu, máy mới tham gia thư mục đã mã hóa, tắt mã hóa); cập nhật thật từ bản release 0.1.0 lên 0.1.1 qua `latest.json` trên server local (banner kèm ghi chú, chữ ký sai bị từ chối, cài passive, app tự mở lại ở 0.1.1, dữ liệu còn nguyên); `npm run tauri build` ra file NSIS và `.sig` có ghi phiên bản.
 - **Chưa kiểm chứng:** workflow GitHub Actions (repo chưa có trên GitHub, máy không có `gh`), bản build macOS và các bước Gatekeeper, cập nhật trên macOS, Google Drive for Desktop thật.
+
+## 2026-10-25 — Làm mới giao diện, thêm theme sáng
+
+- **Theme có 3 lựa chọn: Sáng, Tối, Theo hệ thống (mặc định). Chọn nhanh bằng 3 icon ở sidebar, hoặc ở Cài đặt → Giao diện. Đây là lựa chọn của từng máy, không đồng bộ.**
+  Lý do: trước đây app chỉ theo hệ thống, nên máy để Windows ở chế độ tối thì không xem được bản sáng. Mỗi người có thể thích một theme khác nhau.
+
+- **Lựa chọn lưu trong `localStorage` của WebView (khóa `family-budget.theme`), không lưu trong `settings.json`. `index.html` có một đoạn script nhỏ đặt `data-theme` từ khóa này trước khi vẽ lần đầu.**
+  Lý do: `settings.json` chỉ đọc được bất đồng bộ qua plugin fs, nên app sẽ vẽ theme hệ thống trước rồi mới đổi, gây nháy màu lúc mở app. Mất lựa chọn (ví dụ xóa dữ liệu WebView) chỉ làm theme quay về "Theo hệ thống". Đoạn script nằm trong HTML nên Tauri tự thêm hash của nó vào CSP khi build.
+
+- **CSS: `<html data-theme="light|dark">` khi người dùng chọn Sáng/Tối; không có thuộc tính thì đi theo `prefers-color-scheme`. Bộ màu tối viết một lần trong mixin `dark-tokens` và dùng cho cả hai trường hợp. JS (màu biểu đồ) đọc theme đang áp dụng qua `useColorScheme()`.**
+  Lý do: chỉ một nguồn sự thật cho màu, đổi theme không phải tải lại.
+
+- **Gọi `getCurrentWindow().setTheme()` để thanh tiêu đề của hệ điều hành đổi theo (`null` = theo hệ thống); thêm quyền `core:window:allow-set-theme`.**
+  Lý do: nếu không gọi, chọn Sáng khi Windows đang tối thì thanh tiêu đề vẫn đen, trông như lỗi.
+
+- **Thêm `lucide-react` cho icon giao diện (menu, nút, trạng thái), thay emoji và ký tự ⚠ ⛔ ✓ ⟳. Emoji của danh mục giữ nguyên vì là dữ liệu người dùng tự chọn.**
+  Lý do: emoji hiển thị khác nhau giữa Windows và macOS, không cùng nét với chữ. Lucide chỉ đóng gói những icon được import (28 icon).
+
+- **Thêm font Inter (`@fontsource-variable/inter`), đóng gói trong app.**
+  Lý do: Windows (Segoe UI) và macOS (SF) trông giống nhau; Inter có bộ chữ tiếng Việt và chữ số cùng độ rộng cho cột tiền. Không tải font qua mạng, vì CSP chỉ cho phép `'self'` và app phải chạy được khi không có mạng.
+
+- **Các mẫu style lặp ở nhiều màn hình (bảng số liệu, ô nhập có nhãn, nhóm nút chọn, nhãn trạng thái, hộp thông báo, dòng "chưa có dữ liệu") gom vào `styles/_mixins.scss`. Tên class trong từng component giữ nguyên.**
+  Lý do: trước đây mỗi màn hình chép lại các khối CSS này, sửa một chỗ dễ lệch chỗ khác. Giữ tên class để không phải sửa JSX.
+
+- **Nền card ở theme tối đổi từ `#1e232a` sang `#171b21`. Đã chạy lại validator của skill dataviz: bảng màu biểu đồ (5 slot tối) vẫn đạt mọi cổng với các cặp kề nhau và đều ≥ 3:1 so với nền mới, nên giữ nguyên. Nền card sáng vẫn là `#ffffff`.**
+  Lý do: bảng màu chỉ đúng với nền đã kiểm.
+
+- **Nội dung chính rộng tối đa 1180 px, căn giữa; hộp thoại có nút Đóng (X) ngoài phím Esc và bấm ra ngoài.**
+  Lý do: trên màn hình rộng, bảng và thẻ không bị kéo quá dài; nút Đóng là cách quen thuộc với người không biết phím tắt.

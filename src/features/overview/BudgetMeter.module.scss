@@ -1,5 +1,5 @@
 .meter {
-  margin-top: var(--space-4);
+  margin-top: var(--space-5);
 }
 
 // Nền thanh là bậc nhạt của cùng màu với phần đã dùng.
@@ -45,7 +45,10 @@
 }
 
 .status {
-  margin: var(--space-2) 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: var(--space-3) 0 0;
   font-size: var(--font-size-sm);
   font-weight: 500;
 }
@@ -59,7 +62,7 @@
 }
 
 .none {
-  margin: var(--space-4) 0 0;
+  margin: var(--space-5) 0 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 }

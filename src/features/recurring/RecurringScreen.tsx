@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { formatYen } from '../../core/money';
 import { formatDate, formatMonthLabel, toMonth } from '../../core/month';
@@ -64,7 +65,8 @@ export function RecurringScreen() {
         title="Chi tiêu định kỳ"
         actions={
           <Button variant="primary" onClick={() => setEditing('new')}>
-            + Thêm khoản định kỳ
+            <Plus size={16} aria-hidden="true" />
+            Thêm khoản định kỳ
           </Button>
         }
       />

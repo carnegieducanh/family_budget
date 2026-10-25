@@ -1,3 +1,5 @@
+@use '../../styles/mixins' as m;
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -10,51 +12,48 @@
   }
 }
 
-.search {
+// Ô tìm kiếm có icon kính lúp bên trái.
+.searchBox {
+  position: relative;
   flex: 1;
-  min-width: 160px;
+  min-width: 180px;
+
+  svg {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+}
+
+.search {
+  width: 100%;
+  padding-left: 34px;
 }
 
 .table {
-  width: 100%;
-  border-collapse: collapse;
-
-  th,
-  td {
-    padding: var(--space-2) var(--space-3);
-    text-align: left;
-    border-bottom: 1px solid var(--color-border);
-    vertical-align: middle;
-  }
-
-  th {
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    color: var(--color-text-muted);
-  }
-
-  tbody tr:last-child td {
-    border-bottom: none;
-  }
+  @include m.data-table;
 }
 
 .clickable {
-  cursor: pointer;
-
-  &:hover td {
-    background: var(--color-surface-muted);
-  }
+  @include m.clickable-row;
 }
 
 .num {
-  text-align: right !important;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  @include m.num;
+}
+
+.amount {
+  @include m.num;
+  font-weight: 600;
 }
 
 .date {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
 }
 
 .note {
@@ -65,11 +64,8 @@
 }
 
 .tag {
+  @include m.badge(primary);
   margin-left: var(--space-2);
-  padding: 1px var(--space-2);
-  border-radius: var(--radius-pill);
-  background: var(--color-primary-soft);
-  font-size: var(--font-size-xs);
 }
 
 .actions {
@@ -79,15 +75,15 @@
 }
 
 .empty {
-  margin: 0;
-  padding: var(--space-6) 0;
-  text-align: center;
-  color: var(--color-text-muted);
+  @include m.empty;
 }
 
 .summary {
+  display: flex;
+  justify-content: space-between;
   margin: var(--space-3) 0 0;
-  padding: 0 var(--space-3);
+  padding: var(--space-3) var(--space-3) 0;
+  border-top: 1px solid var(--color-border);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 }

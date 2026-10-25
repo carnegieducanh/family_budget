@@ -1,13 +1,11 @@
+@use '../styles/mixins' as m;
+
 .banner {
-  display: flex;
+  @include m.callout(primary);
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-4);
   margin-bottom: var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-primary-soft);
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
 }
 
 .body {

@@ -1,4 +1,6 @@
+import { X } from 'lucide-react';
 import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from 'react';
+import { Button } from './Button';
 import styles from './Modal.module.scss';
 import { openModals } from './modalStack';
 
@@ -41,9 +43,22 @@ export function Modal({ title, onClose, children, footer, width = 440 }: ModalPr
         aria-labelledby={`${id}-title`}
         style={{ width }}
       >
-        <h2 id={`${id}-title`} className={styles.title}>
-          {title}
-        </h2>
+        <div className={styles.header}>
+          <h2 id={`${id}-title`} className={styles.title}>
+            {title}
+          </h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            className={styles.close}
+            onClick={onClose}
+            aria-label="Đóng"
+            title="Đóng (Esc)"
+          >
+            <X size={18} />
+          </Button>
+        </div>
         <div className={styles.body}>{children}</div>
         {footer && <div className={styles.footer}>{footer}</div>}
       </div>

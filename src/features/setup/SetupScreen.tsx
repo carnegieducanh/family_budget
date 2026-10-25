@@ -3,7 +3,9 @@ import { householdUsers } from '../../core/household';
 import { active } from '../../core/records';
 import { dataForJoin, type RemoteProblem } from '../../core/sync';
 import type { DataFile } from '../../core/types';
+import { BrandMark } from '../../components/BrandMark';
 import { Button } from '../../components/Button';
+import { ThemeSwitcher } from '../../components/ThemeSwitcher';
 import { UpdateBanner } from '../../components/UpdateBanner';
 import { UserName } from '../../components/UserDot';
 import { useDataStore } from '../../state/dataStore';
@@ -36,8 +38,14 @@ export function SetupScreen() {
 
   return (
     <div className={styles.page}>
+      <div className={styles.theme}>
+        <ThemeSwitcher compact />
+      </div>
       <div className={styles.panel}>
         <UpdateBanner />
+        <div className={styles.logo}>
+          <BrandMark size={44} />
+        </div>
         <h1 className={styles.title}>Chào mừng đến Family Budget</h1>
         {hasLocalData ? (
           <ChooseUser />

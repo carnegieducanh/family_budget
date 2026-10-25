@@ -1,3 +1,4 @@
+import { Lock, OctagonAlert } from 'lucide-react';
 import { useState, type KeyboardEvent } from 'react';
 import { DEFAULT_BUDGET_MONTH, findBudget, getBudgetAmount } from '../../core/budget';
 import { sortedCategories } from '../../core/categories';
@@ -123,7 +124,9 @@ export function BudgetScreen() {
                   <td className={styles.num}>
                     {formatYen(spentAmount)}
                     {effective !== null && spentAmount > effective && (
-                      <span className={styles.over}> ⛔ vượt</span>
+                      <span className={styles.over}>
+                        <OctagonAlert size={12} aria-hidden="true" /> vượt
+                      </span>
                     )}
                   </td>
                 </tr>
@@ -133,7 +136,8 @@ export function BudgetScreen() {
         </table>
         {locked && (
           <p className={styles.note}>
-            🔒 {formatMonthLabel(month)} đã khóa nên không sửa được mức riêng của tháng này.
+            <Lock size={13} aria-hidden="true" /> {formatMonthLabel(month)} đã khóa nên không sửa
+            được mức riêng của tháng này.
           </p>
         )}
       </Card>

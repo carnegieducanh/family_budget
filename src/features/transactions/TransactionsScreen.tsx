@@ -1,3 +1,4 @@
+import { Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 import { formatYen } from '../../core/money';
 import { formatDate, formatMonthLabel } from '../../core/month';
@@ -96,14 +97,17 @@ export function TransactionsScreen() {
             </option>
           ))}
         </select>
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Tìm theo ghi chú"
-          aria-label="Tìm theo ghi chú"
-          className={styles.search}
-        />
+        <div className={styles.searchBox}>
+          <Search size={16} aria-hidden="true" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm theo ghi chú"
+            aria-label="Tìm theo ghi chú"
+            className={styles.search}
+          />
+        </div>
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as TransactionSort)}
@@ -116,7 +120,8 @@ export function TransactionsScreen() {
           ))}
         </select>
         <Button variant="primary" onClick={openCreate} title={shortcutLabel('N')}>
-          + Thêm khoản chi
+          <Plus size={16} aria-hidden="true" />
+          Thêm khoản chi
         </Button>
       </div>
 
@@ -155,7 +160,7 @@ export function TransactionsScreen() {
                     {tx.note}
                     {tx.recurringId && <span className={styles.tag}>định kỳ</span>}
                   </td>
-                  <td className={styles.num}>{formatYen(tx.amount)}</td>
+                  <td className={styles.amount}>{formatYen(tx.amount)}</td>
                   <td>
                     <UserName user={usersById.get(tx.paidBy)} />
                   </td>
@@ -190,8 +195,13 @@ export function TransactionsScreen() {
         )}
         {monthTransactions.length > 0 && (
           <p className={styles.summary}>
-            {rows.length} khoản · tổng {formatYen(sumAmounts(rows))}
-            {filtered && ` (đã lọc từ ${monthTransactions.length} khoản)`}
+            <span>
+              {rows.length} khoản
+              {filtered && ` (đã lọc từ ${monthTransactions.length} khoản)`}
+            </span>
+            <span>
+              Tổng <strong className={styles.amount}>{formatYen(sumAmounts(rows))}</strong>
+            </span>
           </p>
         )}
       </Card>

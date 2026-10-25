@@ -6,7 +6,7 @@ import { useColorScheme } from '../../components/useColorScheme';
 import styles from './CategoryBreakdown.module.scss';
 
 // Bảng màu phân loại đã kiểm bằng validator của skill dataviz cho nền card của app
-// (sáng #ffffff, tối #1e232a): đạt mọi cổng CVD và normal-vision với các cặp kề nhau,
+// (sáng #ffffff, tối #171b21): đạt mọi cổng CVD và normal-vision với các cặp kề nhau,
 // kể cả cặp nối vòng slot 5 ↔ slot 1. Ba màu ở chế độ sáng dưới 3:1 so với nền nên
 // danh sách số liệu bên cạnh biểu đồ là bắt buộc, không chỉ để trang trí.
 const SLOT_COLORS = {

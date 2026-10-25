@@ -1,3 +1,4 @@
+import { CalendarDays, ChevronLeft, ChevronRight, Lock, LockOpen } from 'lucide-react';
 import { useState } from 'react';
 import { formatDateTime, formatMonthLabel, toMonth } from '../core/month';
 import { findMonthRecord, isLocked, isPastMonth, isTemporarilyUnlocked } from '../core/monthLock';
@@ -39,41 +40,49 @@ export function MonthHeader({ title }: { title: string }) {
       <h1 className={styles.title}>{title}</h1>
 
       <div className={styles.picker}>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={styles.arrow}
-          onClick={() => shiftMonth(-1)}
-          aria-label="Tháng trước"
-        >
-          ‹
-        </Button>
-        <span className={styles.month}>{formatMonthLabel(month)}</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={styles.arrow}
-          onClick={() => shiftMonth(1)}
-          aria-label="Tháng sau"
-        >
-          ›
-        </Button>
         {month !== currentMonth && (
           <Button variant="ghost" size="sm" onClick={() => setMonth(currentMonth)}>
             Về tháng này
           </Button>
         )}
+        <div className={styles.stepper}>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            onClick={() => shiftMonth(-1)}
+            aria-label="Tháng trước"
+            title="Tháng trước"
+          >
+            <ChevronLeft size={18} />
+          </Button>
+          <span className={styles.month}>
+            <CalendarDays size={15} aria-hidden="true" />
+            {formatMonthLabel(month)}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            onClick={() => shiftMonth(1)}
+            aria-label="Tháng sau"
+            title="Tháng sau"
+          >
+            <ChevronRight size={18} />
+          </Button>
+        </div>
       </div>
 
       <div className={styles.lock}>
         {locked && (
           <span className={styles.lockedBadge} title="Tháng đã qua được tự động khóa">
-            🔒 Đã khóa
+            <Lock size={13} aria-hidden="true" /> Đã khóa
           </span>
         )}
         {tempUnlocked && record?.manualUnlockUntil && (
           <span className={styles.unlockedBadge}>
-            🔓 Mở khóa tạm đến {formatDateTime(record.manualUnlockUntil)}
+            <LockOpen size={13} aria-hidden="true" /> Mở khóa tạm đến{' '}
+            {formatDateTime(record.manualUnlockUntil)}
           </span>
         )}
         {isAdmin && locked && (

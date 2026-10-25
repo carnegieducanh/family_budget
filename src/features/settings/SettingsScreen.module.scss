@@ -1,21 +1,23 @@
+@use '../../styles/mixins' as m;
+
 .page {
-  max-width: 860px;
+  max-width: 880px;
 }
 
 .cards {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .rows {
   display: grid;
-  grid-template-columns: 170px minmax(0, 1fr);
-  gap: var(--space-4) var(--space-5);
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: var(--space-5) var(--space-6);
   margin: 0;
 
   dt {
-    padding-top: 2px;
+    padding-top: 6px;
     font-size: var(--font-size-sm);
     font-weight: 500;
     color: var(--color-text-muted);
@@ -28,6 +30,12 @@
 }
 
 .path {
+  display: inline-block;
+  max-width: 100%;
+  padding: 2px var(--space-2);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
   overflow-wrap: anywhere;
   font-size: var(--font-size-sm);
 }
@@ -36,7 +44,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .list {
@@ -45,7 +53,7 @@
 }
 
 .hint {
-  margin: var(--space-1) 0 0;
+  margin: var(--space-2) 0 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 }
@@ -66,6 +74,9 @@
 
 // Màu theo trạng thái sync (SyncTone).
 .ok {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--color-success-text);
   font-weight: 500;
 }
@@ -88,7 +99,7 @@
 
 .section {
   margin-top: var(--space-5);
-  padding-top: var(--space-4);
+  padding-top: var(--space-5);
   border-top: 1px solid var(--color-border);
 }
 
@@ -116,7 +127,7 @@
 }
 
 .color {
-  width: 34px;
+  width: 36px;
   padding: 2px;
   cursor: pointer;
 }
@@ -139,21 +150,10 @@
 }
 
 .field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-
-  > label {
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    color: var(--color-text-muted);
-  }
+  @include m.field;
 }
 
 .notice {
-  padding: var(--space-3);
-  background: var(--color-warning-soft);
-  border-radius: var(--radius-sm);
-  color: var(--color-warning-text);
+  @include m.callout(warning);
   font-size: var(--font-size-sm);
 }

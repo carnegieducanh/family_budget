@@ -1,7 +1,7 @@
 .layout {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-6);
+  align-items: center;
+  gap: var(--space-8);
 }
 
 .donut {
@@ -20,7 +20,12 @@
   border-collapse: collapse;
 
   td {
-    padding: 3px var(--space-2);
+    padding: 7px var(--space-2);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
   }
 }
 
@@ -57,14 +62,14 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-modal);
+  box-shadow: var(--shadow-md);
   font-size: var(--font-size-sm);
   white-space: nowrap;
 }
 
 .empty {
   margin: 0;
-  padding: var(--space-6) 0;
+  padding: var(--space-8) 0;
   text-align: center;
   color: var(--color-text-muted);
 }

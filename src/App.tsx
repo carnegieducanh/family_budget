@@ -80,17 +80,21 @@ function MainLayout() {
     <div className={styles.layout}>
       <Sidebar />
       <main className={styles.content}>
-        <UpdateBanner />
-        {saveError && (
-          <div className={styles.saveError} role="alert">
-            <span>Không lưu được dữ liệu xuống máy: {saveError}. Thay đổi vẫn còn trong app.</span>
-            <Button size="sm" onClick={() => useDataStore.getState().retrySave()}>
-              Thử lưu lại
-            </Button>
-          </div>
-        )}
-        <SyncBanner />
-        <Current />
+        <div className={styles.inner}>
+          <UpdateBanner />
+          {saveError && (
+            <div className={styles.saveError} role="alert">
+              <span>
+                Không lưu được dữ liệu xuống máy: {saveError}. Thay đổi vẫn còn trong app.
+              </span>
+              <Button size="sm" onClick={() => useDataStore.getState().retrySave()}>
+                Thử lưu lại
+              </Button>
+            </div>
+          )}
+          <SyncBanner />
+          <Current />
+        </div>
       </main>
       <TransactionEditor />
     </div>

@@ -3,7 +3,9 @@
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-3) var(--space-3) var(--space-2);
-  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 }
@@ -15,6 +17,7 @@
   font-weight: 500;
 }
 
+// Chấm có quầng nhạt cùng màu cho dễ thấy.
 .dot {
   flex-shrink: 0;
   width: 8px;
@@ -22,6 +25,7 @@
   margin-top: 6px;
   border-radius: 50%;
   background: var(--color-text-muted);
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent);
 }
 
 // Lỗi có thể kèm đường dẫn dài: tối đa 3 dòng, đủ nội dung ở tooltip và trong Cài đặt.
@@ -41,15 +45,27 @@
 .button {
   align-self: flex-start;
   margin-top: var(--space-1);
-  margin-left: calc(-1 * var(--space-3) + 8px + var(--space-2));
+  margin-left: calc(-1 * 10px + 8px + var(--space-2));
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .ok .dot {
   background: var(--color-success);
+  color: var(--color-success);
 }
 
 .busy .dot {
   background: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .warning {

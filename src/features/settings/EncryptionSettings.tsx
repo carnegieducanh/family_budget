@@ -1,3 +1,4 @@
+import { Lock } from 'lucide-react';
 import { useId, useState, type FormEvent, type ReactNode } from 'react';
 import { can } from '../../core/permissions';
 import { Button } from '../../components/Button';
@@ -78,7 +79,9 @@ export function EncryptionSettings() {
         <dd>
           {enabled ? (
             <>
-              <div className={styles.ok}>🔒 Đang bật</div>
+              <div className={styles.ok}>
+                <Lock size={14} aria-hidden="true" /> Đang bật
+              </div>
               <p className={styles.hint}>
                 File của máy này trên Drive được mã hóa (AES-GCM 256 bit). Dữ liệu trên máy
                 (data.json, backup) vẫn ở dạng thường.

@@ -1,0 +1,177 @@
+// Mẫu style dùng chung giữa các màn hình. Trong file .module.scss:
+//   @use '../../styles/mixins' as m;
+//   .table { @include m.data-table; }
+
+/** Bảng số liệu: tiêu đề cột chữ nhỏ in hoa, dòng cách nhau bằng đường kẻ mảnh. */
+@mixin data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 10px var(--space-3);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+  }
+
+  th {
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-2);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--color-text-muted);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+/** Dòng bấm được trong bảng. */
+@mixin clickable-row {
+  cursor: pointer;
+
+  td {
+    transition: background-color var(--transition-fast);
+  }
+
+  &:hover td {
+    background: var(--color-surface-hover);
+  }
+}
+
+/** Cột số: căn phải, chữ số cùng độ rộng. */
+@mixin num {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/** Nhãn + ô nhập xếp dọc. */
+@mixin field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+
+  > label,
+  > .label {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text);
+  }
+}
+
+/** Nhóm nút chọn một trong vài lựa chọn (ví dụ người trả). */
+@mixin segmented-option {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
+
+  &:hover {
+    background: var(--color-surface-hover);
+  }
+}
+
+@mixin segmented-option-active {
+  @include segmented-option;
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+  font-weight: 600;
+
+  &:hover {
+    background: var(--color-primary-soft);
+  }
+}
+
+/** Nhãn nhỏ dạng viên thuốc. $tone: neutral | primary | success | warning | danger. */
+@mixin badge($tone: neutral) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+
+  @if $tone == neutral {
+    background: var(--color-surface-muted);
+    color: var(--color-text-muted);
+    box-shadow: inset 0 0 0 1px var(--color-border);
+  } @else if $tone == primary {
+    background: var(--color-primary-soft);
+    color: var(--color-primary-strong);
+  } @else {
+    background: var(--color-#{$tone}-soft);
+    color: var(--color-#{$tone}-text);
+  }
+}
+
+/** Hộp thông báo trong trang. $tone: neutral | primary | success | warning | danger. */
+@mixin callout($tone) {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+
+  @if $tone == neutral {
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+  } @else if $tone == primary {
+    background: var(--color-primary-soft);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+    color: var(--color-text);
+  } @else {
+    background: var(--color-#{$tone}-soft);
+    border: 1px solid color-mix(in srgb, var(--color-#{$tone}) 30%, transparent);
+    color: var(--color-#{$tone}-text);
+  }
+}
+
+/** Dòng chữ khi chưa có dữ liệu. */
+@mixin empty {
+  margin: 0;
+  padding: var(--space-8) 0;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+/** Đoạn mô tả ngắn dưới tiêu đề trang. */
+@mixin lead {
+  max-width: 720px;
+  margin: 0 0 var(--space-5);
+  color: var(--color-text-muted);
+}
+
+/** Ô vuông bo góc chứa icon danh mục (emoji). */
+@mixin icon-tile($size: 32px) {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: $size;
+  height: $size;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-sm);
+  font-size: calc(#{$size} * 0.5);
+  line-height: 1;
+}

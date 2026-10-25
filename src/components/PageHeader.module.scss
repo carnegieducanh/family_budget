@@ -2,13 +2,15 @@
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  min-height: 36px;
-  margin-bottom: var(--space-5);
+  min-height: var(--control-height);
+  margin-bottom: var(--space-6);
 }
 
 .title {
   margin-right: auto;
   font-size: var(--font-size-xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .actions {

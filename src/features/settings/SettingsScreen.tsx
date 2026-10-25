@@ -1,3 +1,4 @@
+import { RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { formatDateTime, formatTimeAgo } from '../../core/month';
 import { can } from '../../core/permissions';
@@ -6,6 +7,7 @@ import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { PageHeader } from '../../components/PageHeader';
+import { ThemeSwitcher } from '../../components/ThemeSwitcher';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import { useSyncStore } from '../../state/syncStore';
 import { useUiStore } from '../../state/uiStore';
@@ -38,6 +40,7 @@ export function SettingsScreen() {
     <div className={styles.page}>
       <PageHeader title="Cài đặt" />
       <div className={styles.cards}>
+        <AppearanceSettings />
         <UsersSettings />
         <SyncSettings />
         <EncryptionSettings />
@@ -56,6 +59,23 @@ export function SettingsScreen() {
         <AppVersionSettings />
       </div>
     </div>
+  );
+}
+
+function AppearanceSettings() {
+  return (
+    <Card title="Giao diện">
+      <dl className={styles.rows}>
+        <dt>Theme</dt>
+        <dd>
+          <ThemeSwitcher />
+          <p className={styles.hint}>
+            “Theo hệ thống” đổi theo chế độ sáng/tối của Windows hoặc macOS. Lựa chọn chỉ áp dụng
+            cho máy này.
+          </p>
+        </dd>
+      </dl>
+    </Card>
   );
 }
 
@@ -205,7 +225,8 @@ function SyncSettings() {
               disabled={running || !syncFolder}
               onClick={() => void syncNow()}
             >
-              ⟳ Sync ngay
+              <RefreshCw size={14} aria-hidden="true" />
+              Sync ngay
             </Button>
           </div>
         </dd>

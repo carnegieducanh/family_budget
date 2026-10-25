@@ -1,3 +1,4 @@
+import { Lock } from 'lucide-react';
 import { useId, useState, type FormEvent } from 'react';
 import { formatYen } from '../../core/money';
 import { formatDate, monthOfDate, toLocalDate } from '../../core/month';
@@ -113,7 +114,11 @@ function EditorForm({ editor }: { editor: Exclude<EditorState, { mode: 'closed' 
       }
     >
       <form id="transaction-form" className={styles.form} onSubmit={save}>
-        {locked && <p className={styles.locked}>🔒 Tháng đã khóa, chỉ xem được khoản này.</p>}
+        {locked && (
+          <p className={styles.locked}>
+            <Lock size={15} aria-hidden="true" /> Tháng đã khóa, chỉ xem được khoản này.
+          </p>
+        )}
         {!locked && forbidden && (
           <p className={styles.locked}>
             Khoản này do {creator?.name ?? 'người khác'} nhập, bạn chỉ xem được.

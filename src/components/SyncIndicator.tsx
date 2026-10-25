@@ -1,3 +1,4 @@
+import { RefreshCw } from 'lucide-react';
 import { useSyncStore } from '../state/syncStore';
 import { useNow } from '../state/useNow';
 import { syncNow } from '../sync/appSync';
@@ -33,7 +34,8 @@ export function SyncIndicator() {
         disabled={running}
         onClick={() => void syncNow()}
       >
-        ⟳ Sync ngay
+        <RefreshCw size={14} className={running ? styles.spin : undefined} aria-hidden="true" />
+        Sync ngay
       </Button>
     </div>
   );

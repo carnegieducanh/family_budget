@@ -1,13 +1,12 @@
+@use '../../styles/mixins' as m;
+
 .grid {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .empty {
-  margin: 0;
-  padding: var(--space-4) 0;
-  text-align: center;
-  color: var(--color-text-muted);
+  @include m.empty;
 }
 
 // --- Biểu đồ cột
@@ -53,7 +52,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-modal);
+  box-shadow: var(--shadow-md);
   font-size: var(--font-size-sm);
 
   strong {
@@ -84,31 +83,16 @@
 // --- Bảng chi theo danh mục
 
 .table {
-  width: 100%;
-  border-collapse: collapse;
-
-  th,
-  td {
-    padding: var(--space-2) var(--space-3);
-    text-align: left;
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  th {
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    color: var(--color-text-muted);
-  }
+  @include m.data-table;
 }
 
 .strong td {
-  border-bottom-width: 2px;
+  background: var(--color-surface-muted);
+  font-weight: 600;
 }
 
 .num {
-  text-align: right !important;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  @include m.num;
 }
 
 .meterCell {
@@ -165,12 +149,18 @@
   color: var(--color-text-muted);
 }
 
-.warningText {
+.warningText,
+.overText {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
   font-weight: 500;
+}
+
+.warningText {
   color: var(--color-warning-text);
 }
 
 .overText {
-  font-weight: 500;
   color: var(--color-danger-text);
 }

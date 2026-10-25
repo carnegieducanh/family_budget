@@ -1,3 +1,4 @@
+import { OctagonAlert, TriangleAlert, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import {
   budgetLevel,
@@ -17,10 +18,10 @@ import { CsvExport } from '../data/CsvExport';
 import { MonthlyChart } from './MonthlyChart';
 import styles from './ReportsScreen.module.scss';
 
-const LEVEL_LABEL: Record<BudgetLevel, { icon: string; text: string } | null> = {
+const LEVEL_LABEL: Record<BudgetLevel, { icon: LucideIcon; text: string } | null> = {
   ok: null,
-  warning: { icon: '⚠', text: 'Trên 80%' },
-  over: { icon: '⛔', text: 'Vượt' },
+  warning: { icon: TriangleAlert, text: 'Trên 80%' },
+  over: { icon: OctagonAlert, text: 'Vượt' },
 };
 
 /** Báo cáo: tổng chi 12 tháng, chi theo danh mục so với ngân sách, export CSV (SPEC mục 8). */
@@ -135,7 +136,7 @@ function BudgetRow({
             <span className={styles.percent}>{Math.round(ratio * 100)}%</span>
             {status && (
               <span className={styles[`${level}Text`]}>
-                <span aria-hidden="true">{status.icon}</span> {status.text}
+                <status.icon size={14} aria-hidden="true" /> {status.text}
               </span>
             )}
           </div>

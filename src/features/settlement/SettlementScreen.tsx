@@ -1,3 +1,12 @@
+import {
+  Circle,
+  CircleCheck,
+  Clock,
+  Handshake,
+  Minus,
+  TriangleAlert,
+  type LucideIcon,
+} from 'lucide-react';
 import { useState } from 'react';
 import { formatYen } from '../../core/money';
 import { formatDateTime, formatMonthLabel } from '../../core/month';
@@ -88,6 +97,9 @@ export function SettlementScreen() {
         </table>
 
         <div className={styles.result}>
+          <span className={styles.resultIcon} aria-hidden="true">
+            <Handshake size={20} />
+          </span>
           <div className={styles.resultText}>{describeSettlement(settlement, users)}</div>
           {!past && <span className={styles.provisional}>Tạm tính</span>}
         </div>
@@ -138,10 +150,13 @@ function SettledStatus({ settlement, record, change, users, onMark }: SettledSta
   if (change) {
     return (
       <div className={styles.warning} role="alert">
-        <span>
-          ⚠ Số tiền đã thay đổi sau khi tất toán: {formatYen(change.before)} →{' '}
-          {formatYen(change.after)}
-          {change.beforePayer !== change.afterPayer && ' (đổi người trả bù)'}
+        <span className={styles.warningText}>
+          <TriangleAlert size={16} aria-hidden="true" />
+          <span>
+            Số tiền đã thay đổi sau khi tất toán: {formatYen(change.before)} →{' '}
+            {formatYen(change.after)}
+            {change.beforePayer !== change.afterPayer && ' (đổi người trả bù)'}
+          </span>
         </span>
         <Button size="sm" onClick={onMark} disabled={settlement.amount === 0}>
           Xác nhận lại đã thanh toán
@@ -152,8 +167,8 @@ function SettledStatus({ settlement, record, change, users, onMark }: SettledSta
   if (record?.settledAt) {
     return (
       <p className={styles.settled}>
-        ✓ Đã thanh toán lúc {formatDateTime(record.settledAt)} · {userName(users, record.settledBy)}{' '}
-        xác nhận
+        <CircleCheck size={16} aria-hidden="true" /> Đã thanh toán lúc{' '}
+        {formatDateTime(record.settledAt)} · {userName(users, record.settledBy)} xác nhận
       </p>
     );
   }
@@ -170,21 +185,23 @@ function SettledStatus({ settlement, record, change, users, onMark }: SettledSta
 }
 
 type HistoryStatus = {
-  icon: string;
+  icon: LucideIcon;
   label: string;
   tone: 'toneMuted' | 'toneGood' | 'toneWarning';
 };
 
 function historyStatus(settlement: Settlement, data: DataFile, now: Date): HistoryStatus {
   if (!isPastMonth(settlement.month, now))
-    return { icon: '…', label: 'Tạm tính', tone: 'toneMuted' };
+    return { icon: Clock, label: 'Tạm tính', tone: 'toneMuted' };
   const record = findMonthRecord(data.months, settlement.month);
   if (settlementChange(record, settlement)) {
-    return { icon: '⚠', label: 'Đổi sau tất toán', tone: 'toneWarning' };
+    return { icon: TriangleAlert, label: 'Đổi sau tất toán', tone: 'toneWarning' };
   }
-  if (record?.settledAt) return { icon: '✓', label: 'Đã thanh toán', tone: 'toneGood' };
-  if (settlement.amount === 0) return { icon: '–', label: 'Không cần trả bù', tone: 'toneMuted' };
-  return { icon: '○', label: 'Chưa thanh toán', tone: 'toneWarning' };
+  if (record?.settledAt) return { icon: CircleCheck, label: 'Đã thanh toán', tone: 'toneGood' };
+  if (settlement.amount === 0) {
+    return { icon: Minus, label: 'Không cần trả bù', tone: 'toneMuted' };
+  }
+  return { icon: Circle, label: 'Chưa thanh toán', tone: 'toneWarning' };
 }
 
 interface HistoryTableProps {
@@ -224,7 +241,9 @@ function HistoryTable({ data, users, now, selected }: HistoryTableProps) {
               <td className={styles.num}>{formatYen(settlement.amount)}</td>
               <td>{describeDirection(settlement, users)}</td>
               <td className={styles[status.tone]}>
-                <span aria-hidden="true">{status.icon}</span> {status.label}
+                <span className={styles.status}>
+                  <status.icon size={14} aria-hidden="true" /> {status.label}
+                </span>
               </td>
             </tr>
           );

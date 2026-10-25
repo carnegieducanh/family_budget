@@ -1,3 +1,4 @@
+import { ArrowRight, Plus } from 'lucide-react';
 import { getBudgetAmount } from '../../core/budget';
 import { formatYen } from '../../core/money';
 import { formatDate } from '../../core/month';
@@ -11,10 +12,9 @@ import {
 import { computeSettlement } from '../../core/settlement';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
-import { CategoryLabel } from '../../components/CategoryLabel';
 import { MonthHeader } from '../../components/MonthHeader';
 import { shortcutLabel } from '../../components/shortcut';
-import { UserDot, UserName } from '../../components/UserDot';
+import { UserAvatar, UserName } from '../../components/UserDot';
 import { useReadyData } from '../../state/dataStore';
 import { useUiStore } from '../../state/uiStore';
 import { useNow } from '../../state/useNow';
@@ -54,7 +54,10 @@ export function OverviewScreen() {
           <ul className={styles.paidList}>
             {users.map((user) => (
               <li key={user.id}>
-                <UserName user={user} />
+                <span className={styles.person}>
+                  <UserAvatar user={user} />
+                  {user.name}
+                </span>
                 <span className={styles.num}>{formatYen(settlement.paidByUser[user.id] ?? 0)}</span>
               </li>
             ))}
@@ -62,10 +65,16 @@ export function OverviewScreen() {
           <div className={styles.settlement}>
             <span className={styles.settlementText}>{describeSettlement(settlement, users)}</span>
             {!isPastMonth(month, now) && <span className={styles.badge}>Tạm tính</span>}
+            <Button
+              variant="ghost"
+              size="sm"
+              className={styles.settlementLink}
+              onClick={() => setScreen('settlement')}
+            >
+              Xem tất toán
+              <ArrowRight size={14} aria-hidden="true" />
+            </Button>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => setScreen('settlement')}>
-            Xem tất toán →
-          </Button>
         </Card>
 
         <Card title="Chi theo danh mục" className={styles.wide}>
@@ -84,7 +93,8 @@ export function OverviewScreen() {
                 Xem tất cả
               </Button>
               <Button variant="primary" size="sm" onClick={openCreate} title={shortcutLabel('N')}>
-                + Thêm khoản chi
+                <Plus size={16} aria-hidden="true" />
+                Thêm khoản chi
               </Button>
             </>
           }
@@ -93,27 +103,32 @@ export function OverviewScreen() {
             <p className={styles.empty}>Chưa có khoản chi nào trong tháng.</p>
           ) : (
             <ul className={styles.recent}>
-              {recent.map((tx) => (
-                <li key={tx.id}>
-                  <button
-                    type="button"
-                    className={styles.recentRow}
-                    onClick={() => openEdit(tx.id)}
-                    disabled={locked}
-                  >
-                    <span className={styles.date}>{formatDate(tx.date).slice(0, 5)}</span>
-                    <span className={styles.category}>
-                      <CategoryLabel category={categoriesById.get(tx.categoryId)} />
-                    </span>
-                    <span className={styles.note}>{tx.note}</span>
-                    <UserDot
-                      user={usersById.get(tx.paidBy)}
-                      title={`${usersById.get(tx.paidBy)?.name ?? 'Không rõ'} trả`}
-                    />
-                    <span className={styles.num}>{formatYen(tx.amount)}</span>
-                  </button>
-                </li>
-              ))}
+              {recent.map((tx) => {
+                const category = categoriesById.get(tx.categoryId);
+                return (
+                  <li key={tx.id}>
+                    <button
+                      type="button"
+                      className={styles.recentRow}
+                      onClick={() => openEdit(tx.id)}
+                      disabled={locked}
+                    >
+                      <span className={styles.tile} aria-hidden="true">
+                        {category?.icon ?? '❔'}
+                      </span>
+                      <span className={styles.recentMain}>
+                        <span className={styles.category}>{category?.name ?? 'Không rõ'}</span>
+                        {tx.note && <span className={styles.note}>{tx.note}</span>}
+                      </span>
+                      <span className={styles.payer}>
+                        <UserName user={usersById.get(tx.paidBy)} />
+                      </span>
+                      <span className={styles.date}>{formatDate(tx.date).slice(0, 5)}</span>
+                      <span className={styles.amount}>{formatYen(tx.amount)}</span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Card>

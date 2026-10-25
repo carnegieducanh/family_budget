@@ -1,11 +1,12 @@
+import { OctagonAlert, TriangleAlert } from 'lucide-react';
 import { budgetLevel } from '../../core/budget';
 import { formatYen } from '../../core/money';
 import styles from './BudgetMeter.module.scss';
 
 const LEVEL_LABEL = {
   ok: null,
-  warning: { icon: '⚠', text: 'Đã dùng hơn 80% ngân sách' },
-  over: { icon: '⛔', text: 'Vượt ngân sách' },
+  warning: { icon: TriangleAlert, text: 'Đã dùng hơn 80% ngân sách' },
+  over: { icon: OctagonAlert, text: 'Vượt ngân sách' },
 } as const;
 
 /** Thanh tiến độ ngân sách tổng: đổi màu khi vượt 80% và 100%, luôn kèm chữ. */
@@ -40,7 +41,7 @@ export function BudgetMeter({ spent, budget }: { spent: number; budget: number |
       </div>
       {label && (
         <p className={`${styles.status} ${styles[`${level}Text`]}`}>
-          <span aria-hidden="true">{label.icon}</span> {label.text}
+          <label.icon size={15} aria-hidden="true" /> {label.text}
         </p>
       )}
     </div>

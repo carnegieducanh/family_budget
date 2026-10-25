@@ -13,6 +13,20 @@ export function UserDot({ user, title }: { user: User | undefined; title?: strin
   );
 }
 
+/** Ô tròn màu của người, chữ cái đầu của tên ở giữa. Luôn đặt cạnh tên. */
+export function UserAvatar({ user }: { user: User | undefined }) {
+  const initial = user?.name.trim().charAt(0).toUpperCase() || '?';
+  return (
+    <span
+      className={styles.avatar}
+      style={{ background: user?.color ?? 'var(--color-text-muted)' }}
+      aria-hidden="true"
+    >
+      {initial}
+    </span>
+  );
+}
+
 /** Chấm màu kèm tên người. */
 export function UserName({ user }: { user: User | undefined }) {
   return (
