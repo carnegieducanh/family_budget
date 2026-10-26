@@ -59,6 +59,10 @@ const COLLECTION_FIELDS: Record<string, FieldCheck[]> = {
     ['settledBy', 'string', true],
     ['settledAmount', 'number', true],
     ['settledPayer', 'string', true],
+    ['settleRequestedAt', 'string', true],
+    ['settleRequestedBy', 'string', true],
+    ['settleRequestedAmount', 'number', true],
+    ['settleRequestedPayer', 'string', true],
   ],
 };
 

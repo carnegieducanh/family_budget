@@ -1,0 +1,23 @@
+@use '../../styles/mixins' as m;
+
+.intro {
+  margin-bottom: var(--space-3);
+}
+
+// Câu "A trả B ¥x" nổi bật như ở màn Tất toán.
+.sentence {
+  @include m.callout(primary);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.hint {
+  margin: var(--space-3) 0 0;
+  color: var(--color-text-muted);
+}
+
+.error {
+  margin: var(--space-3) 0 0;
+  color: var(--color-danger-text);
+}

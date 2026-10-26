@@ -24,7 +24,13 @@ import {
   type RecurringInput,
 } from '../core/recurring';
 import { planRestore, type RestorePlan } from '../core/restore';
-import { computeSettlement, markSettled } from '../core/settlement';
+import {
+  acceptSettlement,
+  cancelSettlementRequest,
+  computeSettlement,
+  requestSettlement,
+  type Settlement,
+} from '../core/settlement';
 import { createTransaction, deleteTransaction, updateTransaction } from '../core/transactions';
 import type {
   BaseRecord,
@@ -117,7 +123,10 @@ interface DataState {
   addTransaction(input: TransactionInput): string;
   updateTransaction(id: string, input: TransactionInput): void;
   deleteTransaction(id: string): void;
-  markSettled(month: string): void;
+  /** Bấm "Tất toán": gửi yêu cầu, người kia đồng ý thì tháng mới được đánh dấu đã thanh toán. */
+  requestSettlement(month: string): void;
+  acceptSettlement(month: string): void;
+  cancelSettlementRequest(month: string): void;
 
   addCategory(input: CategoryInput): string;
   updateCategory(id: string, input: CategoryInput): void;
@@ -158,6 +167,11 @@ function find<T extends BaseRecord>(list: readonly T[], id: string, what: string
   const record = list.find((r) => r.id === id);
   if (!record) throw new DomainError(`Không tìm thấy ${what}.`);
   return record;
+}
+
+function settlementOf(data: DataFile, month: string): Settlement {
+  const [a, b] = householdUsers(data);
+  return computeSettlement(data.transactions, [a.id, b.id], month);
 }
 
 /** Dữ liệu sau khi người dùng máy này đặt ảnh đại diện của mình lúc thiết lập. */
@@ -385,11 +399,31 @@ export const useDataStore = create<DataState>()((set, get) => {
       commit({ ...ctx.data, transactions: upsert(ctx.data.transactions, tx) });
     },
 
-    markSettled(month) {
+    requestSettlement(month) {
       const ctx = authorized('month:settle');
-      const [a, b] = householdUsers(ctx.data);
-      const settlement = computeSettlement(ctx.data.transactions, [a.id, b.id], month);
-      const record = markSettled(ctx.data.months, settlement, ctx.userId, ctx.now);
+      const record = requestSettlement(
+        ctx.data.months,
+        settlementOf(ctx.data, month),
+        ctx.userId,
+        ctx.now,
+      );
+      commit({ ...ctx.data, months: upsert(ctx.data.months, record) });
+    },
+
+    acceptSettlement(month) {
+      const ctx = authorized('month:settle');
+      const record = acceptSettlement(
+        ctx.data.months,
+        settlementOf(ctx.data, month),
+        ctx.userId,
+        ctx.now,
+      );
+      commit({ ...ctx.data, months: upsert(ctx.data.months, record) });
+    },
+
+    cancelSettlementRequest(month) {
+      const ctx = authorized('month:settle');
+      const record = cancelSettlementRequest(ctx.data.months, month, ctx.userId, ctx.now);
       commit({ ...ctx.data, months: upsert(ctx.data.months, record) });
     },
 

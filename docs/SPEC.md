@@ -160,9 +160,14 @@ interface RecurringTemplate extends BaseRecord {
 interface MonthRecord extends BaseRecord {
   month: string;             // id: `month-${YYYY-MM}`
   settledAt?: string;
-  settledBy?: string;
-  settledAmount?: number;    // số tiền bù lúc bấm tất toán
+  settledBy?: string;        // người đồng ý yêu cầu tất toán
+  settledAmount?: number;    // số tiền bù lúc tất toán
   settledPayer?: string;     // userId người trả bù
+  // Yêu cầu tất toán đang chờ người kia đồng ý; đồng ý hoặc hủy thì bỏ cả 4 trường
+  settleRequestedAt?: string;
+  settleRequestedBy?: string;
+  settleRequestedAmount?: number;
+  settleRequestedPayer?: string;
 }
 
 interface DataFile {
@@ -304,7 +309,13 @@ Ví dụ để viết test:
 | ¥50,000 | ¥50,000 | ¥100,000 | ¥50,000 | Không ai trả bù |
 | ¥1,001 | ¥0 | ¥1,001 | ¥500.5 | B trả A ¥500 |
 
-**Đánh dấu đã thanh toán:** với tháng đã qua, màn hình Tất toán có nút "Đã thanh toán" (cả hai người đều bấm được). Bấm vào sẽ lưu `settledAt`, `settledBy`, `settledAmount`, `settledPayer` vào `MonthRecord`. Nếu sau đó khoản chi của tháng bị sửa và số tiền bù tính lại khác `settledAmount`, hiện cảnh báo "Số tiền đã thay đổi sau khi tất toán: ¥X → ¥Y". Tháng hiện tại chỉ hiện số tạm tính.
+**Tất toán hai bước:** nút "Tất toán" có từ ngày cuối tháng trở đi (giờ local, `canSettle`); trước đó màn Tất toán hiện dòng nhắc "Nút “Tất toán” sẽ hiện vào ngày cuối tháng, DD/MM/YYYY." Tháng đã qua chưa tất toán vẫn bấm được.
+
+- Một người bấm "Tất toán": gửi yêu cầu, lưu `settleRequestedAt`, `settleRequestedBy`, `settleRequestedAmount`, `settleRequestedPayer` vào `MonthRecord` (`requestSettlement`). Màn hình người gửi hiện "Đã gửi yêu cầu tất toán lúc …, đang chờ <người kia> đồng ý" kèm nút "Hủy yêu cầu".
+- Người kia nhận popup "Yêu cầu tất toán" (sau lượt sync đầu tiên, khi không có modal nào khác đang mở) với nút "Đồng ý" và "Để sau"; "Để sau" ẩn đến lần mở app sau, ở màn Tất toán vẫn có nút "Đồng ý". Đồng ý (`acceptSettlement`) lưu `settledAt`, `settledBy` (người đồng ý), `settledAmount`, `settledPayer` theo đúng số của yêu cầu và bỏ 4 trường yêu cầu. Chỉ khi đó tháng mới là "Đã thanh toán".
+- Số tiền bù hoặc người trả bù đổi sau khi gửi (thêm, sửa khoản chi): yêu cầu thành cũ, không còn popup, không đồng ý được; màn hình báo "Số tiền đã thay đổi sau khi gửi yêu cầu tất toán: ¥X → ¥Y" kèm "Gửi lại yêu cầu".
+- Nếu sau khi tất toán, khoản chi của tháng bị sửa và số tiền bù tính lại khác `settledAmount`, hiện cảnh báo "Số tiền đã thay đổi sau khi tất toán: ¥X → ¥Y" kèm nút "Tất toán lại" (cũng là gửi yêu cầu, người kia đồng ý).
+- Số tiền là "Tạm tính" khi tháng chưa qua và chưa tất toán (`isProvisional`).
 
 **Sinh khoản định kỳ (`core/recurring.ts`):**
 
@@ -321,7 +332,7 @@ Admin có thể sửa mọi dữ liệu. Người dùng thường quản lý đ�
 | Thêm khoản chi | Có | Có |
 | Sửa, xóa khoản do mình nhập | Có | Có |
 | Sửa, xóa khoản người kia nhập | Có | Không |
-| Đánh dấu tháng đã thanh toán | Có | Có |
+| Tất toán: gửi yêu cầu, đồng ý yêu cầu của người kia | Có | Có |
 | Quản lý danh mục, ngân sách, chi tiêu định kỳ | Có | Có |
 | Import CSV, khôi phục backup | Có | Không |
 | Export CSV, xem báo cáo, xem tất toán | Có | Có |
@@ -356,8 +367,9 @@ Bố cục chung: cửa sổ tối thiểu 1024 × 700, sidebar điều hướng
    - Khi mở app, nếu người kia đã thêm khoản chi từ lần báo trước: popup "Khoản chi mới" liệt kê các khoản đó (danh mục, ghi chú, ngày, số tiền) và tổng tiền, nút "Đã xem". Đóng là tính đã xem.
 4. **Tất toán**
    - Tháng đang chọn: bảng mỗi người đã trả, mỗi người chịu, kết quả "B trả A ¥X".
-   - Nút "Đã thanh toán" cho tháng đã qua; cảnh báo nếu số tiền thay đổi sau tất toán.
-   - Lịch sử các tháng: tháng, số tiền bù, ai trả, trạng thái đã thanh toán.
+   - Nút "Tất toán" từ ngày cuối tháng (trước đó là dòng nhắc ngày nút sẽ hiện); người kia đồng ý thì tháng mới được đánh dấu "Đã thanh toán". Cảnh báo nếu số tiền thay đổi sau khi gửi yêu cầu hoặc sau tất toán.
+   - Popup "Yêu cầu tất toán" cho người nhận, ở mọi màn hình (mục 6).
+   - Lịch sử các tháng: tháng, số tiền bù, ai trả, trạng thái (Tạm tính, Chờ đồng ý, Đã thanh toán, Chưa thanh toán, Đổi sau tất toán, Không cần trả bù).
 5. **Báo cáo**
    - Biểu đồ cột tổng chi 12 tháng gần nhất.
    - Chi theo danh mục của tháng chọn, so với ngân sách.

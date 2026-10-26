@@ -1,14 +1,14 @@
 import { ArrowRight, Plus } from 'lucide-react';
 import { getBudgetAmount } from '../../core/budget';
 import { formatYen } from '../../core/money';
-import { formatDate, isPastMonth } from '../../core/month';
+import { formatDate } from '../../core/month';
 import {
   recentTransactions,
   spendingByCategory,
   sumAmounts,
   transactionsInMonth,
 } from '../../core/queries';
-import { computeSettlement } from '../../core/settlement';
+import { computeSettlement, findMonthRecord, isProvisional } from '../../core/settlement';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { MonthHeader } from '../../components/MonthHeader';
@@ -70,7 +70,11 @@ export function OverviewScreen() {
               <SettlementSentence
                 settlement={settlement}
                 users={users}
-                suffix={!isPastMonth(month, now) && <span className={styles.badge}>Tạm tính</span>}
+                suffix={
+                  isProvisional(findMonthRecord(data.months, month), month, now) && (
+                    <span className={styles.badge}>Tạm tính</span>
+                  )
+                }
               />
             </span>
           </div>

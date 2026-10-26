@@ -55,9 +55,14 @@ export interface RecurringTemplate extends BaseRecord {
 export interface MonthRecord extends BaseRecord {
   month: string; // id: `month-${YYYY-MM}`
   settledAt?: string;
-  settledBy?: string;
-  settledAmount?: number; // số tiền bù lúc bấm tất toán
+  settledBy?: string; // người đồng ý yêu cầu tất toán (bản 0.2.0 trở về trước: người bấm)
+  settledAmount?: number; // số tiền bù lúc tất toán
   settledPayer?: string; // userId người trả bù
+  // Yêu cầu tất toán đang chờ người kia đồng ý. Đồng ý hoặc hủy thì bỏ cả 4 trường.
+  settleRequestedAt?: string;
+  settleRequestedBy?: string; // userId người bấm "Tất toán"
+  settleRequestedAmount?: number; // số tiền bù lúc gửi yêu cầu
+  settleRequestedPayer?: string; // userId người trả bù lúc gửi yêu cầu
 }
 
 export interface DataFile {

@@ -573,3 +573,17 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 - **Dữ liệu cũ không cần chuyển, không tăng `schemaVersion`.** Bản ghi tháng do bản 0.2.0 trở về trước ghi có thể còn `manualUnlockUntil`: bản mới không đọc trường này nhưng vẫn giữ (đọc file không loại trường lạ; đánh dấu đã thanh toán giữ các trường khác của bản ghi tháng). Máy còn chạy bản 0.2.0 vẫn khóa tháng trên máy đó cho đến khi cập nhật.
 
 - Đánh đổi đã biết: hai người cùng tạo danh mục trùng tên trước khi kịp đồng bộ thì sau khi gộp có hai danh mục cùng tên (id UUID khác nhau), phải ẩn hoặc xóa bớt một cái bằng tay. Trước đây chỉ admin tạo danh mục nên không xảy ra (xem Giai đoạn 3). Với gia đình hai người, việc này hiếm nên không thêm cơ chế chống trùng.
+
+## 2026-10-27 — Tất toán cần người kia đồng ý
+
+- **Tất toán thành hai bước: một người bấm "Tất toán" là gửi yêu cầu; người kia nhận popup "Yêu cầu tất toán" (nút "Đồng ý", "Để sau") và chỉ khi người kia đồng ý tháng mới được đánh dấu "Đã thanh toán". Người gửi thấy "đang chờ … đồng ý" và hủy được yêu cầu.** Thay cho nút "Đã thanh toán" một người bấm là xong. Yêu cầu là 4 trường `settleRequested*` trong `MonthRecord`, đi qua sync như dữ liệu khác; đồng ý hoặc hủy thì bỏ cả 4 trường, nên trạng thái "đang chờ" không phải so thời điểm giữa hai máy (giờ hai máy có thể lệch). `settledBy` giờ là người đồng ý; màn hình vẫn ghi "<người> xác nhận" cho cả bản ghi cũ lẫn mới.
+  Lý do: user muốn cả hai người cùng chốt số tiền bù cuối tháng.
+
+- **Nút "Tất toán" có từ ngày cuối tháng (giờ local) trở đi, không chỉ đúng ngày cuối tháng; trước đó màn Tất toán có dòng nhắc "Nút “Tất toán” sẽ hiện vào ngày cuối tháng, DD/MM/YYYY."** Trước đây phải sang tháng sau mới đánh dấu được. Tháng đã qua mà chưa tất toán vẫn bấm được, nếu không thì lỡ ngày cuối tháng là không tất toán được nữa. Nhãn "Tạm tính" (màn Tất toán, Tổng quan) giờ mất khi tháng đã tất toán, kể cả tất toán ngay ngày cuối tháng.
+  Lý do: user muốn tất toán vào cuối tháng và cần dòng nhắc để biết khi nào nút xuất hiện.
+
+- **Hai người phải đồng ý cùng một con số: số tiền bù hoặc người trả bù đổi sau khi gửi (ví dụ có khoản chi thêm vào ngày cuối tháng) thì yêu cầu thành cũ — không còn popup, không đồng ý được, màn hình báo "Số tiền đã thay đổi sau khi gửi yêu cầu tất toán" kèm "Gửi lại yêu cầu".** "Xác nhận lại đã thanh toán" khi số tiền đổi sau tất toán cũng thành "Tất toán lại", đi qua bước yêu cầu và đồng ý. Không có nút "Từ chối": không đồng ý thì hai người nói với nhau, sửa khoản chi (yêu cầu tự thành cũ) hoặc người gửi hủy yêu cầu. Gửi yêu cầu không có hộp xác nhận vì hủy được (giống phạm vi ConfirmDialog chỉ cho nút Xóa).
+
+- **Popup "Yêu cầu tất toán" chỉ mở sau lượt sync đầu tiên khi mở app, và chờ đến khi không còn modal nào khác đang mở** (popup "Khoản chi mới", form khoản chi…): `modalStack` có thêm `useOpenModalCount` để popup biết khi nào tới lượt. Chờ sync để không hiện yêu cầu mà máy kia đã hủy. Có nhiều yêu cầu thì hiện tháng cũ trước, từng cái một.
+
+- **Không tăng `schemaVersion`.** Các trường mới đều không bắt buộc; bản 0.2.0 trở về trước đọc file không loại trường lạ. Máy còn chạy bản cũ không thấy popup và vẫn bấm "Đã thanh toán" một bước được; bấm như vậy thì yêu cầu (nếu có) vẫn nằm trong bản ghi. Hai máy nên cập nhật cùng lúc.

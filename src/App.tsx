@@ -9,6 +9,7 @@ import { OverviewScreen } from './features/overview/OverviewScreen';
 import { RecurringScreen } from './features/recurring/RecurringScreen';
 import { ReportsScreen } from './features/reports/ReportsScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
+import { SettlementRequestDialog } from './features/settlement/SettlementRequestDialog';
 import { SettlementScreen } from './features/settlement/SettlementScreen';
 import { SetupScreen } from './features/setup/SetupScreen';
 import { NewTransactionsDialog } from './features/transactions/NewTransactionsDialog';
@@ -106,6 +107,7 @@ function MainLayout() {
       </main>
       <TransactionEditor />
       <NewTransactionsDialog />
+      <SettlementRequestDialog />
     </div>
   );
 }

@@ -21,6 +21,11 @@ export function isPastMonth(month: string, now: Date): boolean {
   return month < toMonth(now);
 }
 
+/** Ngày cuối của tháng, dạng YYYY-MM-DD. */
+export function lastDayOfMonth(month: string): string {
+  return dayjs(`${month}-01`).endOf('month').format('YYYY-MM-DD');
+}
+
 /** Tháng mà một ngày YYYY-MM-DD thuộc về. */
 export function monthOfDate(date: string): string {
   return date.slice(0, 7);

@@ -70,17 +70,37 @@
   font-weight: 500;
 }
 
+// Dòng trạng thái kèm nút bên phải: chờ người kia đồng ý, người kia đề nghị, số tiền đã đổi.
+.waiting,
+.incoming,
 .warning {
-  @include m.callout(warning);
   flex-wrap: wrap;
   justify-content: space-between;
   margin-top: var(--space-4);
   font-weight: 500;
 }
 
-.warningText {
+.waiting {
+  @include m.callout(neutral);
+  color: var(--color-text);
+}
+
+.incoming {
+  @include m.callout(primary);
+}
+
+.warning {
+  @include m.callout(warning);
+}
+
+.noticeText {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-2);
+}
+
+.buttons {
+  display: inline-flex;
   gap: var(--space-2);
 }
 

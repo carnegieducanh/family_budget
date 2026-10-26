@@ -2,7 +2,7 @@ import { X } from 'lucide-react';
 import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { Button } from './Button';
 import styles from './Modal.module.scss';
-import { openModals } from './modalStack';
+import { openModals, pushModal, removeModal } from './modalStack';
 
 interface ModalProps {
   title: string;
@@ -20,7 +20,7 @@ export function Modal({ title, onClose, children, footer, width = 440 }: ModalPr
   });
 
   useEffect(() => {
-    openModals.push(id);
+    pushModal(id);
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && openModals[openModals.length - 1] === id) {
         event.preventDefault();
@@ -30,7 +30,7 @@ export function Modal({ title, onClose, children, footer, width = 440 }: ModalPr
     window.addEventListener('keydown', onKeyDown);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
-      openModals.splice(openModals.indexOf(id), 1);
+      removeModal(id);
     };
   }, [id]);
 

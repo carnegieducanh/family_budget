@@ -1,7 +1,8 @@
 import { DomainError } from './errors';
-import { formatMonthLabel, isPastMonth } from './month';
+import { householdUsers } from './household';
+import { formatDate, formatMonthLabel, isPastMonth, lastDayOfMonth, toLocalDate } from './month';
 import { createRecord, touch } from './records';
-import type { MonthRecord, Transaction } from './types';
+import type { DataFile, MonthRecord, Transaction } from './types';
 
 // Tất toán 50/50 (SPEC mục 6).
 
@@ -62,7 +63,7 @@ export interface SettlementChange {
 }
 
 /**
- * So sánh số tiền bù hiện tại với lúc bấm "Đã thanh toán".
+ * So sánh số tiền bù hiện tại với lúc tất toán.
  * Trả về null nếu chưa tất toán hoặc không có gì thay đổi.
  */
 export function settlementChange(
@@ -80,27 +81,146 @@ export function settlementChange(
   };
 }
 
-/** Đánh dấu đã thanh toán: lưu số tiền bù và người trả bù tại thời điểm bấm. */
-export function markSettled(
+// Tất toán hai bước: một người bấm "Tất toán" (gửi yêu cầu), người kia đồng ý thì tháng mới
+// được đánh dấu đã thanh toán. Yêu cầu nằm trong bản ghi tháng nên đi qua sync như dữ liệu khác.
+
+/** Nút "Tất toán" có từ ngày cuối tháng (giờ local) trở đi. */
+export function canSettle(month: string, now: Date): boolean {
+  return toLocalDate(now) >= lastDayOfMonth(month);
+}
+
+/** Số tiền còn là tạm tính: tháng chưa qua và chưa tất toán. */
+export function isProvisional(record: MonthRecord | undefined, month: string, now: Date): boolean {
+  return !isPastMonth(month, now) && !record?.settledAt;
+}
+
+export interface SettlementRequest {
+  at: string;
+  by: string;
+  amount: number;
+  payer: string | null;
+  /** Số tiền bù hoặc người trả bù đã đổi sau khi gửi: không đồng ý được, phải gửi lại. */
+  outdated: boolean;
+}
+
+/** Yêu cầu tất toán đang chờ người kia đồng ý, hoặc null. */
+export function settlementRequest(
+  record: MonthRecord | undefined,
+  settlement: Settlement,
+): SettlementRequest | null {
+  if (!record?.settleRequestedAt || !record.settleRequestedBy) return null;
+  if (record.settleRequestedAmount === undefined) return null;
+  const payer = record.settleRequestedPayer ?? null;
+  return {
+    at: record.settleRequestedAt,
+    by: record.settleRequestedBy,
+    amount: record.settleRequestedAmount,
+    payer,
+    outdated: record.settleRequestedAmount !== settlement.amount || payer !== settlement.payer,
+  };
+}
+
+export interface IncomingRequest {
+  settlement: Settlement;
+  request: SettlementRequest;
+}
+
+/** Các yêu cầu người kia gửi mà `userId` cần đồng ý (bỏ yêu cầu đã cũ), tháng cũ trước. */
+export function incomingRequests(data: DataFile, userId: string): IncomingRequest[] {
+  const [a, b] = householdUsers(data);
+  return data.months
+    .filter((record) => !record.deleted)
+    .sort((x, y) => (x.month < y.month ? -1 : x.month > y.month ? 1 : 0))
+    .flatMap((record) => {
+      const settlement = computeSettlement(data.transactions, [a.id, b.id], record.month);
+      const request = settlementRequest(record, settlement);
+      return request && !request.outdated && request.by !== userId ? [{ settlement, request }] : [];
+    });
+}
+
+/** Bản ghi tháng bỏ các trường của yêu cầu tất toán. */
+function withoutRequest(record: MonthRecord): MonthRecord {
+  const {
+    settleRequestedAt,
+    settleRequestedBy,
+    settleRequestedAmount,
+    settleRequestedPayer,
+    ...rest
+  } = record;
+  return rest;
+}
+
+/** Bấm "Tất toán": gửi yêu cầu với số tiền bù hiện tại, chờ người kia đồng ý. */
+export function requestSettlement(
   months: readonly MonthRecord[],
   settlement: Settlement,
   userId: string,
   now: Date,
 ): MonthRecord {
   const { month } = settlement;
-  if (!isPastMonth(month, now)) {
-    throw new DomainError(`${formatMonthLabel(month)} chưa kết thúc, chỉ có số tạm tính.`);
+  if (!canSettle(month, now)) {
+    throw new DomainError(
+      `${formatMonthLabel(month)} chỉ tất toán được từ ngày cuối tháng (${formatDate(lastDayOfMonth(month))}).`,
+    );
+  }
+  if (settlement.amount === 0 || !settlement.payer) {
+    throw new DomainError('Không ai cần trả bù tháng này.');
+  }
+  const existing = findMonthRecord(months, month);
+  if (existing?.settledAt && !settlementChange(existing, settlement)) {
+    throw new DomainError(`${formatMonthLabel(month)} đã thanh toán.`);
   }
   const fields = {
-    settledAt: now.toISOString(),
-    settledBy: userId,
-    settledAmount: settlement.amount,
-    ...(settlement.payer ? { settledPayer: settlement.payer } : {}),
+    settleRequestedAt: now.toISOString(),
+    settleRequestedBy: userId,
+    settleRequestedAmount: settlement.amount,
+    settleRequestedPayer: settlement.payer,
   };
-  const existing = findMonthRecord(months, month);
   if (!existing) {
     return createRecord<MonthRecord>(monthRecordId(month), { month, ...fields }, userId, now);
   }
-  const { settledPayer, ...rest } = existing;
+  return touch(withoutRequest(existing), fields, userId, now);
+}
+
+/** Người kia đồng ý: đánh dấu đã thanh toán với đúng số tiền của yêu cầu. */
+export function acceptSettlement(
+  months: readonly MonthRecord[],
+  settlement: Settlement,
+  userId: string,
+  now: Date,
+): MonthRecord {
+  const existing = findMonthRecord(months, settlement.month);
+  const request = settlementRequest(existing, settlement);
+  if (!existing || !request) throw new DomainError('Không có yêu cầu tất toán nào đang chờ.');
+  if (request.by === userId) {
+    throw new DomainError('Yêu cầu do bạn gửi, cần người kia đồng ý.');
+  }
+  if (request.outdated) {
+    throw new DomainError('Số tiền đã đổi sau khi gửi yêu cầu, cần gửi lại yêu cầu tất toán.');
+  }
+  const { settledPayer, ...rest } = withoutRequest(existing);
+  const fields = {
+    settledAt: now.toISOString(),
+    settledBy: userId,
+    settledAmount: request.amount,
+    ...(request.payer ? { settledPayer: request.payer } : {}),
+  };
   return touch(rest as MonthRecord, fields, userId, now);
+}
+
+/** Người gửi hủy yêu cầu đang chờ (bấm nhầm, hoặc số tiền đã đổi). */
+export function cancelSettlementRequest(
+  months: readonly MonthRecord[],
+  month: string,
+  userId: string,
+  now: Date,
+): MonthRecord {
+  const existing = findMonthRecord(months, month);
+  if (!existing?.settleRequestedAt) {
+    throw new DomainError('Không có yêu cầu tất toán nào đang chờ.');
+  }
+  if (existing.settleRequestedBy !== userId) {
+    throw new DomainError('Chỉ người gửi yêu cầu mới hủy được.');
+  }
+  return touch(withoutRequest(existing), {}, userId, now);
 }
