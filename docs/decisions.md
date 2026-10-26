@@ -486,3 +486,10 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
   Lý do: user hỏi về khoản "mới thêm". Khoản định kỳ thì cả hai đã biết trước; khoản mình đã sửa hoặc tự nhập từ CSV thì không còn là tin mới.
 
 - **Máy chưa có mốc (vừa thiết lập, hoặc vừa cập nhật lên bản có popup này): khi mở màn hình chính, trước lượt sync đầu tiên, đặt mốc = khoản mới nhất của người kia đang có trên máy.** Không báo lại cả lịch sử, nhưng khoản mà lượt sync đầu tiên đó mang về vẫn được báo.
+
+## 2026-10-26 — Bộ chọn tháng đứng yên khi đổi tháng
+
+- **Nhãn "Đã khóa" / "Mở khóa tạm đến …" và nút "Mở khóa 24 giờ" / "Khóa lại" chuyển từ bên phải bộ chọn tháng sang ngay sau tiêu đề màn hình. Bộ chọn tháng luôn sát mép phải, "Về tháng này" vẫn đứng bên trái nó.** Áp dụng cho cả 5 màn dùng chung tiêu đề có bộ chọn tháng (Tổng quan, Khoản chi, Tất toán, Báo cáo, Ngân sách).
+  Lý do: user thấy ở Báo cáo, bấm qua lại giữa tháng này và tháng đã khóa thì nhãn và nút khóa hiện/ẩn bên phải, đẩy bộ chọn tháng qua lại nên bấm mũi tên liên tục bị trượt.
+
+- **Ô tên tháng rộng tối thiểu theo cỡ chữ (`132px × --font-scale`), để "Tháng 9/2026" và "Tháng 10/2026" rộng như nhau và mũi tên trái không nhích ở cỡ chữ Vừa trở lên. Cửa sổ hẹp làm nhãn khóa xuống dòng thì nội dung bên dưới lùi xuống, còn bộ chọn tháng giữ nguyên chỗ (tiêu đề neo theo mép trên).**

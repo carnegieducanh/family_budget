@@ -39,6 +39,32 @@ export function MonthHeader({ title }: { title: string }) {
     <header className={styles.header}>
       <h1 className={styles.title}>{title}</h1>
 
+      {/* Trạng thái khóa nằm cạnh tiêu đề, không cạnh bộ chọn tháng: đổi tháng thì nhãn và nút
+          hiện/ẩn, nếu đứng bên phải chúng sẽ đẩy bộ chọn tháng qua lại. */}
+      <div className={styles.lock}>
+        {locked && (
+          <span className={styles.lockedBadge} title="Tháng đã qua được tự động khóa">
+            <Lock size={13} aria-hidden="true" /> Đã khóa
+          </span>
+        )}
+        {tempUnlocked && record?.manualUnlockUntil && (
+          <span className={styles.unlockedBadge}>
+            <LockOpen size={13} aria-hidden="true" /> Mở khóa tạm đến{' '}
+            {formatDateTime(record.manualUnlockUntil)}
+          </span>
+        )}
+        {isAdmin && locked && (
+          <Button size="sm" onClick={() => setConfirmUnlock(true)}>
+            Mở khóa 24 giờ
+          </Button>
+        )}
+        {isAdmin && tempUnlocked && (
+          <Button size="sm" onClick={() => run(() => useDataStore.getState().relockMonth(month))}>
+            Khóa lại
+          </Button>
+        )}
+      </div>
+
       <div className={styles.picker}>
         {month !== currentMonth && (
           <Button variant="secondary" size="sm" onClick={() => setMonth(currentMonth)}>
@@ -71,30 +97,6 @@ export function MonthHeader({ title }: { title: string }) {
             <ChevronRight size={18} />
           </Button>
         </div>
-      </div>
-
-      <div className={styles.lock}>
-        {locked && (
-          <span className={styles.lockedBadge} title="Tháng đã qua được tự động khóa">
-            <Lock size={13} aria-hidden="true" /> Đã khóa
-          </span>
-        )}
-        {tempUnlocked && record?.manualUnlockUntil && (
-          <span className={styles.unlockedBadge}>
-            <LockOpen size={13} aria-hidden="true" /> Mở khóa tạm đến{' '}
-            {formatDateTime(record.manualUnlockUntil)}
-          </span>
-        )}
-        {isAdmin && locked && (
-          <Button size="sm" onClick={() => setConfirmUnlock(true)}>
-            Mở khóa 24 giờ
-          </Button>
-        )}
-        {isAdmin && tempUnlocked && (
-          <Button size="sm" onClick={() => run(() => useDataStore.getState().relockMonth(month))}>
-            Khóa lại
-          </Button>
-        )}
       </div>
 
       {error && <p className={styles.error}>{error}</p>}
