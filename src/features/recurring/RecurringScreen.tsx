@@ -36,7 +36,7 @@ function toInput(template: RecurringTemplate): RecurringInput {
   return { name, amount, categoryId, paidBy, dayOfMonth, startMonth, active: template.active };
 }
 
-/** Chi tiêu định kỳ (admin): mẫu tự tạo khoản chi mỗi tháng (SPEC mục 6, 8). */
+/** Chi tiêu định kỳ: mẫu tự tạo khoản chi mỗi tháng (SPEC mục 6, 8). */
 export function RecurringScreen() {
   const { data, users } = useReadyData();
   const now = useNow();

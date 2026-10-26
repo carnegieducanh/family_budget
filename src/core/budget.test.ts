@@ -8,7 +8,6 @@ import {
   setBudget,
   setManualBudget,
 } from './budget';
-import { unlockMonth } from './monthLock';
 import { upsert } from './records';
 import { createRecurring, deleteRecurring, type RecurringInput } from './recurring';
 import { NOW, makeData, makeTx } from './testing';
@@ -113,14 +112,9 @@ describe('setBudget', () => {
     ).toBeNull();
   });
 
-  it('không sửa được ngân sách riêng của tháng đã khóa, trừ khi admin mở khóa tạm', () => {
-    const { ctx, a } = setup();
-    expect(() => setBudget('2026-09', null, 1000, ctx)).toThrow('Tháng 9/2026 đã khóa');
-    const unlocked = {
-      ...ctx,
-      data: { ...ctx.data, months: [unlockMonth([], '2026-09', a, NOW)] },
-    };
-    expect(setBudget('2026-09', null, 1000, unlocked)).toMatchObject({ amount: 1000 });
+  it('đặt được ngân sách riêng của tháng đã qua', () => {
+    const { ctx } = setup();
+    expect(setBudget('2026-09', null, 1000, ctx)).toMatchObject({ amount: 1000 });
   });
 
   it('từ chối số tiền không hợp lệ và danh mục không tồn tại', () => {

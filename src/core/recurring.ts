@@ -62,8 +62,7 @@ export function deleteRecurring(existing: RecurringTemplate, ctx: MutationContex
  * khoản id `rec-<mẫu>-<tháng>` (kể cả đã xóa mềm, nên khoản người dùng đã xóa không bị
  * sinh lại). Chỉ sinh cho tháng hiện tại, không sinh bù các tháng trước.
  *
- * Khoản sinh ra ghi người nhập là người sửa mẫu gần nhất (luôn là admin), để hai máy sinh
- * ra cùng một nội dung và người dùng thường không sửa nhầm khoản định kỳ.
+ * Khoản sinh ra ghi người nhập là người sửa mẫu gần nhất, để hai máy sinh ra cùng một nội dung.
  */
 export function generateRecurring(data: DataFile, now: Date): Transaction[] {
   const month = toMonth(now);

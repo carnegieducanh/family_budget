@@ -116,7 +116,7 @@ describe('prepareImport', () => {
       expect.stringMatching(/^3: Số tiền không hợp lệ/),
       expect.stringMatching(/^4: Không có danh mục "Học phí"/),
       expect.stringMatching(/^5: Không có người dùng "Chi"/),
-      expect.stringMatching(/^6: Tháng 9\/2026 đã khóa/),
+      'new',
     ]);
   });
 

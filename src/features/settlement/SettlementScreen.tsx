@@ -9,11 +9,11 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { formatYen } from '../../core/money';
-import { formatDateTime, formatMonthLabel, formatMonthShort } from '../../core/month';
-import { findMonthRecord, isPastMonth } from '../../core/monthLock';
+import { formatDateTime, formatMonthLabel, formatMonthShort, isPastMonth } from '../../core/month';
 import { activeMonths } from '../../core/queries';
 import {
   computeSettlement,
+  findMonthRecord,
   settlementChange,
   type Settlement,
   type SettlementChange,

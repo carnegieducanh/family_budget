@@ -16,6 +16,11 @@ export function toMonth(now: Date): string {
   return dayjs(now).format('YYYY-MM');
 }
 
+/** Tháng đã qua theo giờ local, tức là từ ngày 1 của tháng sau trở đi. */
+export function isPastMonth(month: string, now: Date): boolean {
+  return month < toMonth(now);
+}
+
 /** Tháng mà một ngày YYYY-MM-DD thuộc về. */
 export function monthOfDate(date: string): string {
   return date.slice(0, 7);

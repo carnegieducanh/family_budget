@@ -2,7 +2,6 @@ import { categoryKey } from './categories';
 import { DomainError } from './errors';
 import { parseYen } from './money';
 import { isValidDate, monthOfDate } from './month';
-import { assertMonthEditable, findMonthRecord, isLocked, lockedMonthMessage } from './monthLock';
 import { sortTransactions } from './queries';
 import { active, createRecord } from './records';
 import { validateTransactionInput } from './transactions';
@@ -202,10 +201,6 @@ export function prepareImport(text: string, ctx: MutationContext): ImportPreview
     } catch (error) {
       return fail(error instanceof Error ? error.message : String(error));
     }
-    const month = monthOfDate(date);
-    if (isLocked(month, ctx.now, findMonthRecord(data.months, month))) {
-      return fail(lockedMonthMessage(month));
-    }
 
     const key = duplicateKey(input);
     if (seen.has(key))
@@ -230,7 +225,6 @@ export function importTransactions(
 ): Transaction[] {
   return preview.rows.flatMap((row) => {
     if (row.status !== 'new') return [];
-    assertMonthEditable(monthOfDate(row.input.date), ctx.data.months, ctx.now);
     return [
       createRecord<Transaction>(
         newId(),

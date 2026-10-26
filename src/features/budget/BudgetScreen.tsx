@@ -22,7 +22,7 @@ function errorMessage(error: unknown): string {
 }
 
 /**
- * Ngân sách (admin): ngân sách tổng và theo danh mục, một mức chung cho mọi tháng, so với số
+ * Ngân sách: ngân sách tổng và theo danh mục, một mức chung cho mọi tháng, so với số
  * đã chi của tháng đang xem (SPEC mục 8, màn hình 6; bỏ mức riêng từng tháng, xem decisions.md).
  */
 export function BudgetScreen() {

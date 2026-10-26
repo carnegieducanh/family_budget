@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { unlockMonth } from './monthLock';
 import { NOW, makeData, makeTx } from './testing';
 import { createTransaction, deleteTransaction, updateTransaction } from './transactions';
 import type { MutationContext, TransactionInput } from './types';
@@ -50,17 +49,9 @@ describe('createTransaction', () => {
     expect(() => createTransaction({ ...input, ...patch }, ctx, 'tx')).toThrow();
   });
 
-  it('không thêm được khoản vào tháng đã khóa', () => {
+  it('thêm được khoản vào tháng đã qua', () => {
     const { ctx, input } = setup();
-    expect(() => createTransaction({ ...input, date: '2026-09-30' }, ctx, 'tx')).toThrow(
-      'Tháng 9/2026 đã khóa',
-    );
-  });
-
-  it('thêm được vào tháng đã khóa khi admin đang mở khóa tạm', () => {
-    const { ctx, input, a } = setup();
-    ctx.data.months = [unlockMonth([], '2026-09', a, NOW)];
-    expect(() => createTransaction({ ...input, date: '2026-09-30' }, ctx, 'tx')).not.toThrow();
+    expect(createTransaction({ ...input, date: '2026-09-30' }, ctx, 'tx').date).toBe('2026-09-30');
   });
 });
 
@@ -80,18 +71,12 @@ describe('updateTransaction', () => {
     });
   });
 
-  it('không sửa được khoản thuộc tháng đã khóa', () => {
+  it('sửa được khoản của tháng đã qua, kể cả đổi ngày sang tháng đã qua khác', () => {
     const { ctx, input, b } = setup();
     const existing = makeTx({ date: '2026-09-15', amount: 1000, paidBy: b });
-    expect(() => updateTransaction(existing, input, ctx)).toThrow('Tháng 9/2026 đã khóa');
-  });
-
-  it('không đổi được ngày của khoản khác sang tháng đã khóa', () => {
-    const { ctx, input, b } = setup();
-    const existing = makeTx({ date: '2026-10-01', amount: 1000, paidBy: b });
-    expect(() => updateTransaction(existing, { ...input, date: '2026-09-30' }, ctx)).toThrow(
-      'Tháng 9/2026 đã khóa',
-    );
+    expect(updateTransaction(existing, input, ctx).date).toBe(input.date);
+    const moved = updateTransaction(existing, { ...input, date: '2026-08-31' }, ctx);
+    expect(moved.date).toBe('2026-08-31');
   });
 
   it('không sửa được khoản đã xóa', () => {
@@ -116,9 +101,9 @@ describe('deleteTransaction', () => {
     });
   });
 
-  it('không xóa được khoản thuộc tháng đã khóa', () => {
+  it('xóa được khoản của tháng đã qua', () => {
     const { ctx, b } = setup();
     const existing = makeTx({ date: '2026-09-15', amount: 1000, paidBy: b });
-    expect(() => deleteTransaction(existing, ctx)).toThrow('Tháng 9/2026 đã khóa');
+    expect(deleteTransaction(existing, ctx).deleted).toBe(true);
   });
 });

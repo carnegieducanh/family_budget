@@ -9,7 +9,6 @@ export type Action =
   /** Sửa hoặc xóa một khoản chi; cần truyền khoản chi đó. */
   | 'transaction:edit'
   | 'month:settle'
-  | 'month:unlock'
   | 'categories:manage'
   | 'budgets:manage'
   | 'recurring:manage'
@@ -26,6 +25,9 @@ export type Action =
 const MEMBER_ACTIONS: ReadonlySet<Action> = new Set<Action>([
   'transaction:create',
   'month:settle',
+  'categories:manage',
+  'budgets:manage',
+  'recurring:manage',
   'csv:export',
   'reports:view',
   'sync:configure',

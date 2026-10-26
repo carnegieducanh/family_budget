@@ -2,7 +2,7 @@ import { Settings } from 'lucide-react';
 import { useReadyData } from '../state/dataStore';
 import { useUiStore } from '../state/uiStore';
 import { BrandMark } from './BrandMark';
-import { NAV_ITEMS, canOpen } from './navigation';
+import { NAV_ITEMS } from './navigation';
 import styles from './Sidebar.module.scss';
 import { SyncIndicator } from './SyncIndicator';
 import { ThemeSwitcher } from './ThemeSwitcher';
@@ -14,12 +14,10 @@ export function Sidebar() {
   const screen = useUiStore((s) => s.screen);
   const setScreen = useUiStore((s) => s.setScreen);
   const { me, users } = useReadyData();
-  const visible = NAV_ITEMS.filter((item) => canOpen(me, item.screen));
   const onSettings = screen === 'settings';
 
   function renderGroup(group: keyof typeof GROUP_LABEL) {
-    const items = visible.filter((item) => item.group === group);
-    if (items.length === 0) return null;
+    const items = NAV_ITEMS.filter((item) => item.group === group);
     const label = GROUP_LABEL[group];
     return (
       <div className={styles.group}>

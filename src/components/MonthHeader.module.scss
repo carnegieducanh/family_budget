@@ -1,11 +1,7 @@
-@use '../styles/mixins' as m;
-
-// Neo theo mép trên, mỗi khối cao tối thiểu bằng bộ chọn tháng: cửa sổ hẹp làm nhãn khóa xuống
-// dòng thì chỉ nội dung bên dưới lùi xuống, bộ chọn tháng không trượt theo.
 .header {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-3) var(--space-4);
   margin-bottom: var(--space-6);
 }
@@ -17,18 +13,6 @@
   font-size: var(--font-size-xl);
   font-weight: 700;
   letter-spacing: -0.02em;
-}
-
-// Chiếm phần trống giữa tiêu đề và bộ chọn tháng. flex-basis 0 để nhãn/nút khóa không bao giờ đẩy
-// bộ chọn tháng xuống dòng; thiếu chỗ thì chúng tự xuống dòng bên trong khối này.
-.lock {
-  flex: 1 1 0;
-  min-width: 0;
-  min-height: var(--control-height);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
 }
 
 // Bộ chọn tháng dạng một khối: ‹ Tháng 10/2026 ›, luôn sát mép phải. "Về tháng này" đứng bên
@@ -65,26 +49,4 @@
   svg {
     color: var(--color-text-muted);
   }
-}
-
-.lockedBadge {
-  @include m.badge(neutral);
-  padding: 4px var(--space-3);
-  font-size: var(--font-size-sm);
-}
-
-.unlockedBadge {
-  @include m.badge(warning);
-  padding: 4px var(--space-3);
-  font-size: var(--font-size-sm);
-  // Chữ dài: cửa sổ hẹp + cỡ chữ lớn thì xuống dòng thay vì tràn đè lên bộ chọn tháng.
-  white-space: normal;
-}
-
-// Tiêu đề nằm trên dải gradient: lỗi cần nền riêng để đủ tương phản.
-.error {
-  @include m.callout(danger);
-  flex-basis: 100%;
-  margin: 0;
-  font-size: var(--font-size-sm);
 }

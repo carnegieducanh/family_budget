@@ -1,6 +1,5 @@
 import { DomainError } from './errors';
-import { formatMonthLabel, isValidMonth } from './month';
-import { findMonthRecord, isLocked } from './monthLock';
+import { isValidMonth } from './month';
 import { active, createRecord, softDelete, touch } from './records';
 import { spendingByCategory } from './queries';
 import type { Budget, DataFile, MutationContext, RecurringTemplate } from './types';
@@ -48,7 +47,7 @@ export function findBudget(
 /**
  * Đặt ngân sách (tổng khi `categoryId = null`) cho một tháng hoặc mức mặc định.
  * `amount = null` là bỏ mức đó (xóa mềm). Trả về bản ghi thay đổi, hoặc null nếu không
- * có gì thay đổi. Không sửa được mức riêng của tháng đã khóa.
+ * có gì thay đổi.
  */
 export function setBudget(
   month: string,
@@ -56,11 +55,8 @@ export function setBudget(
   amount: number | null,
   ctx: MutationContext,
 ): Budget | null {
-  if (month !== DEFAULT_BUDGET_MONTH) {
-    if (!isValidMonth(month)) throw new DomainError('Tháng không hợp lệ.');
-    if (isLocked(month, ctx.now, findMonthRecord(ctx.data.months, month))) {
-      throw new DomainError(`${formatMonthLabel(month)} đã khóa, không sửa được ngân sách.`);
-    }
+  if (month !== DEFAULT_BUDGET_MONTH && !isValidMonth(month)) {
+    throw new DomainError('Tháng không hợp lệ.');
   }
   if (categoryId !== null && !active(ctx.data.categories).some((c) => c.id === categoryId)) {
     throw new DomainError('Không tìm thấy danh mục.');
@@ -150,7 +146,7 @@ export function applyRecurringToBudgets(
   return changed;
 }
 
-/** Ngân sách admin tự nhập. Danh mục có khoản định kỳ đang bật thì không nhập tay được. */
+/** Ngân sách nhập tay. Danh mục có khoản định kỳ đang bật thì không nhập tay được. */
 export function setManualBudget(
   month: string,
   categoryId: string | null,

@@ -54,7 +54,6 @@ export interface RecurringTemplate extends BaseRecord {
 
 export interface MonthRecord extends BaseRecord {
   month: string; // id: `month-${YYYY-MM}`
-  manualUnlockUntil?: string; // admin mở khóa tạm, ISO UTC
   settledAt?: string;
   settledBy?: string;
   settledAmount?: number; // số tiền bù lúc bấm tất toán

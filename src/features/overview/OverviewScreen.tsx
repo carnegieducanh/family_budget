@@ -1,8 +1,7 @@
 import { ArrowRight, Plus } from 'lucide-react';
 import { getBudgetAmount } from '../../core/budget';
 import { formatYen } from '../../core/money';
-import { formatDate } from '../../core/month';
-import { findMonthRecord, isLocked, isPastMonth } from '../../core/monthLock';
+import { formatDate, isPastMonth } from '../../core/month';
 import {
   recentTransactions,
   spendingByCategory,
@@ -34,7 +33,6 @@ export function OverviewScreen() {
   const monthTransactions = transactionsInMonth(data.transactions, month);
   const total = sumAmounts(monthTransactions);
   const settlement = computeSettlement(data.transactions, [users[0].id, users[1].id], month);
-  const locked = isLocked(month, now, findMonthRecord(data.months, month));
   const recent = recentTransactions(data.transactions, month, 5);
   const categoriesById = new Map(data.categories.map((c) => [c.id, c]));
   const usersById = new Map(data.users.map((u) => [u.id, u]));
@@ -112,7 +110,6 @@ export function OverviewScreen() {
                       type="button"
                       className={styles.recentRow}
                       onClick={() => openEdit(tx.id)}
-                      disabled={locked}
                     >
                       <span className={styles.tile} aria-hidden="true">
                         {category?.icon ?? '❔'}

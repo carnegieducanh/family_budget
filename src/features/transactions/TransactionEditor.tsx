@@ -1,8 +1,6 @@
-import { Lock } from 'lucide-react';
 import { useId, useState, type FormEvent } from 'react';
 import { formatYen } from '../../core/money';
 import { formatDate, monthOfDate, toLocalDate } from '../../core/month';
-import { findMonthRecord, isLocked } from '../../core/monthLock';
 import { can } from '../../core/permissions';
 import { active } from '../../core/records';
 import type { Transaction, TransactionInput } from '../../core/types';
@@ -46,18 +44,9 @@ function EditorForm({ editor }: { editor: Exclude<EditorState, { mode: 'closed' 
     );
   }
 
-  const now = new Date();
-  const locked =
-    existing !== undefined &&
-    isLocked(
-      monthOfDate(existing.date),
-      now,
-      findMonthRecord(data.months, monthOfDate(existing.date)),
-    );
-  const forbidden = existing !== undefined && !can(me, 'transaction:edit', existing);
+  const readOnly = existing !== undefined && !can(me, 'transaction:edit', existing);
   const creator = existing && data.users.find((u) => u.id === existing.createdBy);
   const payer = existing && data.users.find((u) => u.id === existing.paidBy);
-  const readOnly = locked || forbidden;
   // Danh mục ẩn không hiện trong danh sách chọn, trừ khi khoản đang sửa dùng danh mục đó.
   const categories = active(data.categories)
     .filter((c) => !c.hidden || c.id === existing?.categoryId)
@@ -116,13 +105,8 @@ function EditorForm({ editor }: { editor: Exclude<EditorState, { mode: 'closed' 
       }
     >
       <form id="transaction-form" className={styles.form} onSubmit={save}>
-        {locked && (
-          <p className={styles.locked}>
-            <Lock size={15} aria-hidden="true" /> Tháng đã khóa, chỉ xem được khoản này.
-          </p>
-        )}
-        {!locked && forbidden && (
-          <p className={styles.locked}>
+        {readOnly && (
+          <p className={styles.viewOnly}>
             <span>
               Khoản này do <UserFace user={creator} size={22} /> nhập, bạn chỉ xem được.
             </span>

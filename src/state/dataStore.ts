@@ -13,7 +13,6 @@ import { importTransactions, prepareImport } from '../core/csv';
 import { createInitialData } from '../core/defaults';
 import { DomainError } from '../core/errors';
 import { householdUsers } from '../core/household';
-import { relockMonth, unlockMonth } from '../core/monthLock';
 import { NOTHING_SEEN, initialSeenMark, seenMarkAfter } from '../core/newTransactions';
 import { assertCan, canEditProfile, type Action } from '../core/permissions';
 import { active, upsert } from '../core/records';
@@ -113,13 +112,11 @@ interface DataState {
   /** Admin tắt mã hóa: ghi file dạng thường, vẫn giữ khóa để đọc file mã hóa của máy kia. */
   disableEncryption(): Promise<void>;
 
-  // Các thao tác dưới đây kiểm tra quyền (SPEC mục 7) và luật khóa tháng,
-  // ném DomainError (thông báo tiếng Việt) khi bị từ chối.
+  // Các thao tác dưới đây kiểm tra quyền (SPEC mục 7), ném DomainError (thông báo tiếng Việt)
+  // khi bị từ chối.
   addTransaction(input: TransactionInput): string;
   updateTransaction(id: string, input: TransactionInput): void;
   deleteTransaction(id: string): void;
-  unlockMonth(month: string): void;
-  relockMonth(month: string): void;
   markSettled(month: string): void;
 
   addCategory(input: CategoryInput): string;
@@ -386,18 +383,6 @@ export const useDataStore = create<DataState>()((set, get) => {
       const ctx = authorized('transaction:edit', existing);
       const tx = deleteTransaction(existing, ctx);
       commit({ ...ctx.data, transactions: upsert(ctx.data.transactions, tx) });
-    },
-
-    unlockMonth(month) {
-      const ctx = authorized('month:unlock');
-      const record = unlockMonth(ctx.data.months, month, ctx.userId, ctx.now);
-      commit({ ...ctx.data, months: upsert(ctx.data.months, record) });
-    },
-
-    relockMonth(month) {
-      const ctx = authorized('month:unlock');
-      const record = relockMonth(ctx.data.months, month, ctx.userId, ctx.now);
-      commit({ ...ctx.data, months: upsert(ctx.data.months, record) });
     },
 
     markSettled(month) {

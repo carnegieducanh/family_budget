@@ -14,7 +14,7 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-/** Danh mục (admin): thêm, đổi tên, đổi icon, kéo thả sắp xếp, ẩn hoặc hiện (SPEC mục 8). */
+/** Danh mục: thêm, đổi tên, đổi icon, kéo thả sắp xếp, ẩn hoặc hiện (SPEC mục 8). */
 export function CategoriesScreen() {
   const { data } = useReadyData();
   const [error, setError] = useState<string | null>(null);

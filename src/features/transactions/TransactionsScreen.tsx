@@ -2,7 +2,6 @@ import { Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { formatYen } from '../../core/money';
 import { formatDate, formatMonthLabel } from '../../core/month';
-import { findMonthRecord, isLocked } from '../../core/monthLock';
 import { can } from '../../core/permissions';
 import {
   filterTransactions,
@@ -22,7 +21,6 @@ import { shortcutLabel } from '../../components/shortcut';
 import { UserFace } from '../../components/UserDot';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import { useUiStore } from '../../state/uiStore';
-import { useNow } from '../../state/useNow';
 import styles from './TransactionsScreen.module.scss';
 
 const SORT_OPTIONS: { value: TransactionSort; label: string }[] = [
@@ -37,7 +35,6 @@ export function TransactionsScreen() {
   const openCreate = useUiStore((s) => s.openCreate);
   const openEdit = useUiStore((s) => s.openEdit);
   const { data, me, users } = useReadyData();
-  const now = useNow();
 
   const [categoryId, setCategoryId] = useState('');
   const [paidBy, setPaidBy] = useState('');
@@ -46,7 +43,6 @@ export function TransactionsScreen() {
   const [deleting, setDeleting] = useState<Transaction | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const locked = isLocked(month, now, findMonthRecord(data.months, month));
   const monthTransactions = transactionsInMonth(data.transactions, month);
   const rows = sortTransactions(
     filterTransactions(monthTransactions, { categoryId, paidBy, search }),
@@ -142,16 +138,12 @@ export function TransactionsScreen() {
                   <th>Ghi chú</th>
                   <th className={styles.num}>Số tiền</th>
                   <th>Người trả</th>
-                  {!locked && <th aria-label="Thao tác" />}
+                  <th aria-label="Thao tác" />
                 </tr>
               </thead>
               <tbody>
                 {rows.map((tx) => (
-                  <tr
-                    key={tx.id}
-                    className={locked ? undefined : styles.clickable}
-                    onClick={locked ? undefined : () => openEdit(tx.id)}
-                  >
+                  <tr key={tx.id} className={styles.clickable} onClick={() => openEdit(tx.id)}>
                     <td className={styles.date}>{formatDate(tx.date).slice(0, 5)}</td>
                     <td>
                       <span
@@ -175,48 +167,46 @@ export function TransactionsScreen() {
                     <td>
                       <UserFace user={usersById.get(tx.paidBy)} />
                     </td>
-                    {!locked && (
-                      <td className={styles.actions} onClick={(e) => e.stopPropagation()}>
-                        <span className={styles.rowActions}>
-                          {can(me, 'transaction:edit', tx) ? (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                iconOnly
-                                onClick={() => openEdit(tx.id)}
-                                aria-label="Sửa"
-                                title="Sửa"
-                              >
-                                <Pencil size={15} />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                iconOnly
-                                className={styles.deleteButton}
-                                onClick={() => setDeleting(tx)}
-                                aria-label="Xóa"
-                                title="Xóa"
-                              >
-                                <Trash2 size={15} />
-                              </Button>
-                            </>
-                          ) : (
+                    <td className={styles.actions} onClick={(e) => e.stopPropagation()}>
+                      <span className={styles.rowActions}>
+                        {can(me, 'transaction:edit', tx) ? (
+                          <>
                             <Button
                               variant="ghost"
                               size="sm"
                               iconOnly
                               onClick={() => openEdit(tx.id)}
-                              aria-label="Xem"
-                              title="Xem"
+                              aria-label="Sửa"
+                              title="Sửa"
                             >
-                              <Eye size={15} />
+                              <Pencil size={15} />
                             </Button>
-                          )}
-                        </span>
-                      </td>
-                    )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              iconOnly
+                              className={styles.deleteButton}
+                              onClick={() => setDeleting(tx)}
+                              aria-label="Xóa"
+                              title="Xóa"
+                            >
+                              <Trash2 size={15} />
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            iconOnly
+                            onClick={() => openEdit(tx.id)}
+                            aria-label="Xem"
+                            title="Xem"
+                          >
+                            <Eye size={15} />
+                          </Button>
+                        )}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -10,7 +10,7 @@ Nguyên tắc làm việc:
 
 1. Làm theo từng giai đoạn ở mục 10. Xong mỗi giai đoạn: chạy test, tóm tắt những gì đã làm, rồi dừng lại chờ xác nhận trước khi sang giai đoạn tiếp theo.
 2. Ưu tiên đơn giản và ít phụ thuộc. Chỉ dùng thư viện ở mục 3; nếu cần thêm thư viện khác, giải thích lý do trước khi cài.
-3. Toàn bộ logic nghiệp vụ (merge sync, tất toán, khóa tháng, chi tiêu định kỳ, CSV) viết thành hàm thuần trong `src/core/`, không phụ thuộc Tauri hay React, có unit test bằng Vitest.
+3. Toàn bộ logic nghiệp vụ (merge sync, tất toán, chi tiêu định kỳ, CSV) viết thành hàm thuần trong `src/core/`, không phụ thuộc Tauri hay React, có unit test bằng Vitest.
 4. Không viết Rust trừ khi plugin chính thức của Tauri không đáp ứng được. Nếu bắt buộc, giữ phần Rust tối thiểu và giải thích.
 5. Giao diện tiếng Việt. Tiền tệ JPY, số nguyên, không có phần thập phân, hiển thị dạng ¥12,500.
 6. Điểm nào tài liệu chưa nói rõ: chọn phương án đơn giản nhất, ghi lại vào `docs/decisions.md` (ngày, quyết định, lý do).
@@ -31,7 +31,7 @@ App ghi các khoản chi chung hàng tháng của 2 người trong gia đình, c
 - Ngân sách tháng: tổng và theo danh mục.
 - Chi tiêu định kỳ (tiền nhà, internet...) tự tạo khoản mỗi tháng.
 - Báo cáo và biểu đồ theo tháng, theo danh mục.
-- Tất toán cuối tháng chia 50/50 và khóa tháng.
+- Tất toán cuối tháng chia 50/50.
 - Export và import CSV (UTF-8 có BOM để Excel mở đúng tiếng Việt).
 - Sync tự động, backup tự động, thông báo khi có bản cập nhật.
 
@@ -70,7 +70,6 @@ family-budget/
 │   │   ├── types.ts
 │   │   ├── merge.ts       # gộp dữ liệu 2 máy (LWW + tombstone)
 │   │   ├── settlement.ts  # tính tiền bù 50/50
-│   │   ├── monthLock.ts   # quy tắc khóa tháng
 │   │   ├── recurring.ts   # sinh khoản định kỳ
 │   │   ├── budget.ts
 │   │   ├── permissions.ts
@@ -160,7 +159,6 @@ interface RecurringTemplate extends BaseRecord {
 
 interface MonthRecord extends BaseRecord {
   month: string;             // id: `month-${YYYY-MM}`
-  manualUnlockUntil?: string; // admin mở khóa tạm, ISO UTC
   settledAt?: string;
   settledBy?: string;
   settledAmount?: number;    // số tiền bù lúc bấm tất toán
@@ -255,7 +253,7 @@ Chỉ một lượt sync chạy tại một thời điểm (mutex trong `syncSer
 - Id có ở cả hai bên → giữ bản có `updatedAt` lớn hơn (last write wins, so sánh cả bản ghi, không gộp từng trường).
 - `updatedAt` bằng nhau → giữ bản có `updatedBy` đứng trước theo thứ tự chữ cái, để hai máy luôn ra cùng một kết quả.
 - Bản ghi đã xóa mềm cũng tham gia merge như bản ghi thường; đây là lý do khoản đã xóa ở máy A không "sống lại" từ máy B.
-- Merge không áp luật nghiệp vụ (khóa tháng, phân quyền); các luật này được kiểm tra lúc người dùng thao tác.
+- Merge không áp luật nghiệp vụ (phân quyền); các luật này được kiểm tra lúc người dùng thao tác.
 
 **Ghi file an toàn (ghi nguyên tử):** ghi nội dung ra file tạm cùng thư mục, tên không khớp mẫu đọc (ví dụ `.device-<id>.json.tmp`), rồi rename đè lên file đích. Áp dụng cho cả `data.json`, `settings.json` và file trên Drive.
 
@@ -284,17 +282,9 @@ interface SyncAdapter {
 
 `syncService` chỉ làm việc qua interface này, nên sau này có thể thêm `supabaseAdapter` hoặc `lanAdapter` mà không phải sửa UI hay `core/`.
 
-## 6. Khóa tháng, tất toán và chi tiêu định kỳ
+## 6. Tất toán và chi tiêu định kỳ
 
-Một tháng tự động khóa ngay khi sang ngày 1 của tháng sau; khoản chi thuộc tháng nào là theo ngày thanh toán.
-
-**Quy tắc khóa (`core/monthLock.ts`):**
-
-- `isLocked(month, today, monthRecord)` trả về `true` khi `month` nhỏ hơn tháng hiện tại (theo giờ local) và không đang trong thời gian admin mở khóa tạm. Không cần job chạy nền; luôn tính tại thời điểm kiểm tra.
-- Khoản chi tính vào tháng theo `date` (ngày thanh toán). Ví dụ: tiền điện tháng 10 trả ngày 5/11 thì thuộc tháng 11.
-- Tháng đã khóa: không thêm, sửa, xóa khoản có `date` thuộc tháng đó; không được đổi `date` của khoản khác sang tháng đó; không sửa ngân sách của tháng đó. UI ẩn nút thao tác và hiện biểu tượng khóa.
-- Admin có thể mở khóa tạm một tháng: đặt `manualUnlockUntil = now + 24 giờ`. Hết 24 giờ tự khóa lại; admin cũng có thể bấm "Khóa lại" sớm.
-- Kiểm tra khóa ở cả UI và trong hàm thao tác dữ liệu (store), không chỉ ở UI.
+Khoản chi tính vào tháng theo `date` (ngày thanh toán). Ví dụ: tiền điện tháng 10 trả ngày 5/11 thì thuộc tháng 11. Một tháng là "đã qua" từ ngày 1 của tháng sau (theo giờ local, `isPastMonth` trong `core/month.ts`). Tháng đã qua không bị khóa: vẫn thêm, sửa, xóa khoản chi và đặt ngân sách được như tháng hiện tại (bỏ khóa tháng từ sau bản 0.2.0, xem decisions.md).
 
 **Tất toán 50/50 (`core/settlement.ts`):**
 
@@ -314,17 +304,17 @@ Ví dụ để viết test:
 | ¥50,000 | ¥50,000 | ¥100,000 | ¥50,000 | Không ai trả bù |
 | ¥1,001 | ¥0 | ¥1,001 | ¥500.5 | B trả A ¥500 |
 
-**Đánh dấu đã thanh toán:** với tháng đã khóa, màn hình Tất toán có nút "Đã thanh toán" (cả hai người đều bấm được). Bấm vào sẽ lưu `settledAt`, `settledBy`, `settledAmount`, `settledPayer` vào `MonthRecord`. Nếu sau đó dữ liệu tháng thay đổi (admin mở khóa và sửa) và số tiền bù tính lại khác `settledAmount`, hiện cảnh báo "Số tiền đã thay đổi sau khi tất toán: ¥X → ¥Y". Tháng hiện tại chỉ hiện số tạm tính.
+**Đánh dấu đã thanh toán:** với tháng đã qua, màn hình Tất toán có nút "Đã thanh toán" (cả hai người đều bấm được). Bấm vào sẽ lưu `settledAt`, `settledBy`, `settledAmount`, `settledPayer` vào `MonthRecord`. Nếu sau đó khoản chi của tháng bị sửa và số tiền bù tính lại khác `settledAmount`, hiện cảnh báo "Số tiền đã thay đổi sau khi tất toán: ¥X → ¥Y". Tháng hiện tại chỉ hiện số tạm tính.
 
 **Sinh khoản định kỳ (`core/recurring.ts`):**
 
 - Khi mở app và sau mỗi lượt sync, với mỗi `RecurringTemplate` đang `active`, nếu tháng hiện tại ≥ `startMonth` và chưa có khoản id `rec-${templateId}-${YYYY-MM}` (kể cả đã xóa mềm), tạo khoản đó với `date` = ngày `dayOfMonth` của tháng hiện tại.
 - Vì id cố định, nếu cả hai máy cùng sinh thì sau merge vẫn chỉ còn một khoản. Nếu người dùng xóa khoản định kỳ của tháng này, nó không bị sinh lại.
-- Chỉ sinh cho tháng hiện tại, không sinh bù các tháng đã khóa.
+- Chỉ sinh cho tháng hiện tại, không sinh bù các tháng trước.
 
 ## 7. Phân quyền
 
-Admin quản lý cấu hình và có thể sửa mọi dữ liệu; người dùng thường chỉ sửa được khoản do chính mình nhập. Mục đích là tránh sửa nhầm, không phải bảo mật thật (ai có quyền vào thư mục Drive vẫn sửa được file).
+Admin có thể sửa mọi dữ liệu. Người dùng thường quản lý được danh mục, ngân sách và chi tiêu định kỳ như admin, nhưng chỉ sửa được khoản chi do chính mình nhập. Mục đích là tránh sửa nhầm, không phải bảo mật thật (ai có quyền vào thư mục Drive vẫn sửa được file).
 
 | Thao tác | Admin | Người dùng |
 | --- | --- | --- |
@@ -332,8 +322,7 @@ Admin quản lý cấu hình và có thể sửa mọi dữ liệu; người dù
 | Sửa, xóa khoản do mình nhập | Có | Có |
 | Sửa, xóa khoản người kia nhập | Có | Không |
 | Đánh dấu tháng đã thanh toán | Có | Có |
-| Quản lý danh mục, ngân sách, chi tiêu định kỳ | Có | Không |
-| Mở khóa tạm tháng đã khóa | Có | Không |
+| Quản lý danh mục, ngân sách, chi tiêu định kỳ | Có | Có |
 | Import CSV, khôi phục backup | Có | Không |
 | Export CSV, xem báo cáo, xem tất toán | Có | Có |
 | Chuyển vai trò, mật khẩu mã hóa | Có | Không |
@@ -359,7 +348,6 @@ Bố cục chung: cửa sổ tối thiểu 1024 × 700, sidebar điều hướng
    - Mỗi người đã trả bao nhiêu, số tiền bù tạm tính.
    - Biểu đồ tròn chi theo danh mục.
    - 5 khoản gần nhất, nút "+ Thêm khoản chi".
-   - Biểu tượng khóa nếu tháng đã khóa.
 3. **Khoản chi**
    - Bảng khoản chi của tháng: ngày, danh mục, ghi chú, số tiền, người trả, người nhập (chấm màu), nhãn "định kỳ".
    - Lọc theo danh mục, người trả; tìm theo ghi chú; sắp xếp theo ngày hoặc số tiền.
@@ -368,18 +356,18 @@ Bố cục chung: cửa sổ tối thiểu 1024 × 700, sidebar điều hướng
    - Khi mở app, nếu người kia đã thêm khoản chi từ lần báo trước: popup "Khoản chi mới" liệt kê các khoản đó (danh mục, ghi chú, ngày, số tiền) và tổng tiền, nút "Đã xem". Đóng là tính đã xem.
 4. **Tất toán**
    - Tháng đang chọn: bảng mỗi người đã trả, mỗi người chịu, kết quả "B trả A ¥X".
-   - Nút "Đã thanh toán" cho tháng đã khóa; cảnh báo nếu số tiền thay đổi sau tất toán.
+   - Nút "Đã thanh toán" cho tháng đã qua; cảnh báo nếu số tiền thay đổi sau tất toán.
    - Lịch sử các tháng: tháng, số tiền bù, ai trả, trạng thái đã thanh toán.
 5. **Báo cáo**
    - Biểu đồ cột tổng chi 12 tháng gần nhất.
    - Chi theo danh mục của tháng chọn, so với ngân sách.
    - Nút export CSV cho khoảng tháng chọn.
-6. **Ngân sách** (admin)
+6. **Ngân sách**
    - Ngân sách tổng và theo danh mục, mức mặc định hàng tháng và ghi đè cho từng tháng.
-7. **Danh mục** (admin)
+7. **Danh mục**
    - Thêm, đổi tên, đổi icon, kéo thả sắp xếp, ẩn hoặc hiện.
    - Icon là một emoji: bấm vào ô icon thì mở bảng emoji của hệ điều hành (Windows: như Win + . ; macOS: Emoji & Symbols), emoji chọn được thay emoji cũ.
-8. **Chi tiêu định kỳ** (admin)
+8. **Chi tiêu định kỳ**
    - Danh sách mẫu: tên, số tiền, danh mục, người trả, ngày trong tháng, bật/tắt.
 9. **Cài đặt** (mở bằng cách bấm vào người đang dùng ở cuối sidebar; sidebar không có mục Cài đặt riêng)
    - Người dùng và vai trò (chuyển vai trò: admin). Tên: sửa trong ô, lưu khi rời ô hoặc bấm Enter. Ảnh đại diện: bấm vào ảnh để đổi (ảnh trên máy hoặc emoji). Mỗi người đổi được tên và ảnh của mình, admin đổi được của cả hai.

@@ -5,6 +5,7 @@ import {
   formatMonthLabel,
   formatMonthShort,
   formatTimeAgo,
+  isPastMonth,
   isValidDate,
   isValidMonth,
   monthOfDate,
@@ -43,6 +44,37 @@ describe('month helpers', () => {
     expect(formatMonthLabel('2026-03')).toBe('Tháng 3/2026');
     expect(formatMonthShort('2026-03')).toBe('3/2026');
     expect(formatDate('2026-10-05')).toBe('05/10/2026');
+  });
+});
+
+describe('isPastMonth — ranh giới tháng theo giờ local', () => {
+  it('ngày cuối tháng lúc 23:59:59: tháng đó chưa qua', () => {
+    const now = localTime(2026, 10, 31, 23, 59, 59);
+    expect(isPastMonth('2026-10', now)).toBe(false);
+    expect(isPastMonth('2026-09', now)).toBe(true);
+  });
+
+  it('ngày 1 lúc 00:00:00: tháng trước đã qua', () => {
+    const now = localTime(2026, 11, 1, 0, 0, 0);
+    expect(isPastMonth('2026-10', now)).toBe(true);
+    expect(isPastMonth('2026-11', now)).toBe(false);
+  });
+
+  it('ngày cuối tháng 2 năm thường và năm nhuận', () => {
+    expect(isPastMonth('2026-02', localTime(2026, 2, 28, 23, 59, 59))).toBe(false);
+    expect(isPastMonth('2026-02', localTime(2026, 3, 1, 0, 0, 0))).toBe(true);
+    expect(isPastMonth('2028-02', localTime(2028, 2, 29, 23, 59, 59))).toBe(false);
+  });
+
+  it('qua năm mới: tháng 12 năm trước đã qua', () => {
+    const now = localTime(2027, 1, 1, 0, 0, 0);
+    expect(isPastMonth('2026-12', now)).toBe(true);
+    expect(isPastMonth('2027-01', now)).toBe(false);
+  });
+
+  it('tháng tương lai chưa qua', () => {
+    expect(isPastMonth('2026-11', localTime(2026, 10, 23))).toBe(false);
+    expect(isPastMonth('2027-03', localTime(2026, 10, 23))).toBe(false);
   });
 });
 

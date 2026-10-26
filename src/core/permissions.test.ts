@@ -13,10 +13,9 @@ function users(): { admin: User; member: User } {
 const TABLE: Array<[Action, boolean, boolean]> = [
   ['transaction:create', true, true],
   ['month:settle', true, true],
-  ['categories:manage', true, false],
-  ['budgets:manage', true, false],
-  ['recurring:manage', true, false],
-  ['month:unlock', true, false],
+  ['categories:manage', true, true],
+  ['budgets:manage', true, true],
+  ['recurring:manage', true, true],
   ['csv:import', true, false],
   ['backup:restore', true, false],
   ['csv:export', true, true],
@@ -84,7 +83,7 @@ describe('assertCan', () => {
       createdBy: admin.id,
     });
     expect(() => assertCan(member, 'transaction:edit', others)).toThrow('do chính mình nhập');
-    expect(() => assertCan(member, 'budgets:manage')).toThrow('Chỉ admin');
-    expect(() => assertCan(admin, 'budgets:manage')).not.toThrow();
+    expect(() => assertCan(member, 'csv:import')).toThrow('Chỉ admin');
+    expect(() => assertCan(admin, 'csv:import')).not.toThrow();
   });
 });

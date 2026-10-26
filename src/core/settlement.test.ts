@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { DomainError } from './errors';
 import { computeSettlement, markSettled, settlementChange } from './settlement';
 import { NOW, localTime, makeTx } from './testing';
-import type { MonthRecord } from './types';
 
 const A = 'user-a';
 const B = 'user-b';
@@ -100,8 +99,9 @@ describe('markSettled và settlementChange', () => {
     });
   });
 
-  it('giữ nguyên trạng thái mở khóa tạm khi cập nhật bản ghi tháng có sẵn', () => {
-    const existing: MonthRecord = {
+  it('cập nhật bản ghi tháng có sẵn, giữ trường do bản app cũ ghi', () => {
+    // Bản 0.2.0 trở về trước ghi `manualUnlockUntil` (mở khóa tạm); máy còn chạy bản đó vẫn đọc.
+    const existing = {
       id: `month-${MONTH}`,
       month: MONTH,
       createdAt: '2026-10-01T00:00:00.000Z',
@@ -111,7 +111,7 @@ describe('markSettled và settlementChange', () => {
       manualUnlockUntil: '2026-10-24T00:00:00.000Z',
     };
     const record = markSettled([existing], settlement, A, NOW);
-    expect(record.manualUnlockUntil).toBe(existing.manualUnlockUntil);
+    expect(record).toMatchObject({ manualUnlockUntil: existing.manualUnlockUntil });
     expect(record.createdAt).toBe(existing.createdAt);
     expect(record.settledAmount).toBe(42500);
   });

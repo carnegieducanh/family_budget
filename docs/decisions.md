@@ -75,7 +75,7 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 - **Mở khóa tạm chỉ áp dụng cho tháng đã qua. "Khóa lại" xóa trường `manualUnlockUntil` khỏi bản ghi tháng**, không đặt về quá khứ.
   Lý do: tháng hiện tại vốn không khóa. Bỏ trường thì bản ghi gọn và nghĩa rõ ràng.
 
-- **Nút mở khóa tạm và khóa lại nằm ở thanh chọn tháng, dùng chung cho mọi màn hình.** Chỉ admin thấy; store cũng kiểm tra vai trò admin.
+- **Nút mở khóa tạm và khóa lại nằm ở thanh chọn tháng, dùng chung cho mọi màn hình.** Chỉ admin thấy; store cũng kiểm tra vai trò admin. _(Đã thay: bỏ khóa tháng, xem mục "2026-10-26 — Thành viên quản lý Ngân sách, Danh mục, Định kỳ; bỏ khóa tháng".)_
   Lý do: SPEC không chỉ chỗ đặt nút. Đặt cạnh biểu tượng khóa là dễ thấy nhất.
 
 - **Phân quyền đầy đủ (người dùng thường chỉ sửa khoản mình nhập) chưa áp dụng ở giai đoạn 1.** Giai đoạn này chỉ kiểm tra quyền admin cho mở khóa tạm.
@@ -177,7 +177,7 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 ## 2026-10-23 — Giai đoạn 3
 
-- **Phân quyền là một hàm `can(user, action, record?)` trong `core/permissions.ts`**, dùng chung cho UI và store; mọi thao tác dữ liệu trong store đều gọi `assertCan`. Màn hình Ngân sách, Danh mục, Định kỳ ẩn khỏi menu với thành viên. Nếu đang ở màn hình admin mà mất quyền (chuyển quyền, hoặc nhận thay đổi vai trò từ máy kia) thì app quay về Tổng quan.
+- **Phân quyền là một hàm `can(user, action, record?)` trong `core/permissions.ts`**, dùng chung cho UI và store; mọi thao tác dữ liệu trong store đều gọi `assertCan`. Màn hình Ngân sách, Danh mục, Định kỳ ẩn khỏi menu với thành viên. Nếu đang ở màn hình admin mà mất quyền (chuyển quyền, hoặc nhận thay đổi vai trò từ máy kia) thì app quay về Tổng quan. _(Đã thay: thành viên cũng mở được ba màn này, xem mục "2026-10-26 — Thành viên quản lý Ngân sách, Danh mục, Định kỳ; bỏ khóa tháng".)_
   Lý do: SPEC mục 7; một chỗ duy nhất quyết định quyền nên UI và store không lệch nhau.
 
 - **Khoản chi người khác nhập: thành viên vẫn mở được nhưng chỉ xem** (nút "Xem" thay cho "Sửa / Xóa", form bị khóa kèm dòng "Khoản này do … nhập, bạn chỉ xem được").
@@ -189,7 +189,7 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 - **Ngoài lúc mở app và sau mỗi lượt sync, khoản định kỳ còn được sinh ngay khi admin lưu mẫu.** Sửa mẫu không đổi khoản đã sinh của tháng này; xóa mẫu không xóa các khoản đã sinh.
   Lý do: thấy kết quả ngay sau khi thêm mẫu; khoản đã sinh là dữ liệu thật, sửa riêng trong màn hình Khoản chi nếu cần.
 
-- **Ngân sách phải lớn hơn 0; để trống ô là bỏ mức đó (xóa mềm), đặt lại thì dùng lại bản ghi cũ (id cố định).** Mức riêng của tháng đã khóa không sửa được (trừ khi admin mở khóa tạm). Đổi mức mặc định thì các tháng đã khóa đang dùng mức mặc định cũng thấy mức mới.
+- **Ngân sách phải lớn hơn 0; để trống ô là bỏ mức đó (xóa mềm), đặt lại thì dùng lại bản ghi cũ (id cố định).** Mức riêng của tháng đã khóa không sửa được (trừ khi admin mở khóa tạm). Đổi mức mặc định thì các tháng đã khóa đang dùng mức mặc định cũng thấy mức mới. _(Đã thay: bỏ khóa tháng, xem mục "2026-10-26 — Thành viên quản lý Ngân sách, Danh mục, Định kỳ; bỏ khóa tháng".)_
   Lý do: SPEC mục 6 chỉ chặn sửa ngân sách _của_ tháng đã khóa; giữ mức mặc định đơn giản, không chép mức cũ vào từng tháng.
 
 - **Tên danh mục không được trùng (không phân biệt hoa thường, bỏ khoảng trắng thừa).**
@@ -489,7 +489,7 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 ## 2026-10-26 — Bộ chọn tháng đứng yên khi đổi tháng
 
-- **Nhãn "Đã khóa" / "Mở khóa tạm đến …" và nút "Mở khóa 24 giờ" / "Khóa lại" chuyển từ bên phải bộ chọn tháng sang ngay sau tiêu đề màn hình. Bộ chọn tháng luôn sát mép phải, "Về tháng này" vẫn đứng bên trái nó.** Áp dụng cho cả 5 màn dùng chung tiêu đề có bộ chọn tháng (Tổng quan, Khoản chi, Tất toán, Báo cáo, Ngân sách).
+- **Nhãn "Đã khóa" / "Mở khóa tạm đến …" và nút "Mở khóa 24 giờ" / "Khóa lại" chuyển từ bên phải bộ chọn tháng sang ngay sau tiêu đề màn hình. Bộ chọn tháng luôn sát mép phải, "Về tháng này" vẫn đứng bên trái nó.** Áp dụng cho cả 5 màn dùng chung tiêu đề có bộ chọn tháng (Tổng quan, Khoản chi, Tất toán, Báo cáo, Ngân sách). _(Đã thay: bỏ khóa tháng, xem mục "2026-10-26 — Thành viên quản lý Ngân sách, Danh mục, Định kỳ; bỏ khóa tháng".)_
   Lý do: user thấy ở Báo cáo, bấm qua lại giữa tháng này và tháng đã khóa thì nhãn và nút khóa hiện/ẩn bên phải, đẩy bộ chọn tháng qua lại nên bấm mũi tên liên tục bị trượt.
 
 - **Ô tên tháng rộng tối thiểu theo cỡ chữ (`132px × --font-scale`), để "Tháng 9/2026" và "Tháng 10/2026" rộng như nhau và mũi tên trái không nhích ở cỡ chữ Vừa trở lên. Cửa sổ hẹp làm nhãn khóa xuống dòng thì nội dung bên dưới lùi xuống, còn bộ chọn tháng giữ nguyên chỗ (tiêu đề neo theo mép trên).**
@@ -511,13 +511,16 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 - **Icon app thay logo mặc định của Tauri bằng sổ tiết kiệm gập (có nhà và đồng ¥) trên ô vuông bo góc xanh, ảnh user tạo bằng ChatGPT theo phong cách app ゆうちょ銀行. Ảnh gốc, bản đã làm sạch và các bản master nằm ở `src-tauri/icons/_source/`. Logo trong app (`BrandMark`: đầu sidebar và màn thiết lập lần đầu) cũng đổi sang cùng hình, là ảnh PNG cắt sát ô xanh (`src/assets/brand-mark-64.png`, `-128.png`) thay cho SVG mái nhà + đồng xu.**
   Lý do: user muốn logo trong app giống icon app. Dùng ảnh cắt từ cùng nguồn chứ không vẽ lại bằng SVG để hai chỗ giống hệt nhau; có bản 128 px cho màn tỉ lệ cao.
 
-- **Windows: ô xanh chiếm 94% ô icon và được kéo thành vuông tuyệt đối (ảnh gốc rộng hơn cao khoảng 2,5%), theo lựa chọn của user sau khi xem ảnh thử ở cỡ thật. `icon.ico` có đủ 10 cỡ 16–256 px dạng PNG-in-ICO.**
+- **(2026-10-27) Quyển sổ được phóng to trong ô xanh: cắt ô vuông sát quanh quyển sổ để sổ (cả nếp gập) chiếm 95% bề ngang ô, rồi bo góc lại với bán kính cũ (21,7% cạnh ô). Bản ô đã phóng là `_source/family-budget-icon-tile.png`; icon Windows, icon macOS và `BrandMark` đều làm từ bản này.**
+  Lý do: user thấy icon trên taskbar và desktop nhỏ, muốn nhìn rõ quyển sổ và hình bên trong. Ô xanh đã chiếm 94% icon nên cách duy nhất làm sổ to lên mà giữ nguyên hình là bớt phần nền xanh quanh sổ (sổ to hơn khoảng 21%). User chọn mức này (sổ lớn nhất) thay vì mức 90% sau khi xem ảnh thử ở cỡ thật. Không bỏ ô xanh: sổ trắng trên taskbar sáng sẽ lẫn vào nền mà sổ chỉ to thêm khoảng 5%.
+
+- **Windows: ô xanh chiếm 98% ô icon (ban đầu 94%, kéo thành vuông tuyệt đối vì ảnh gốc rộng hơn cao khoảng 2,5%; bản phóng ngày 2026-10-27 cắt vuông nên không còn kéo). `icon.ico` có đủ 10 cỡ 16–256 px dạng PNG-in-ICO.**
   Lý do: thiếu cỡ 20/24/40 px thì ở màn 125/150% Windows phải tự co giãn nên icon mờ. Ảnh ChatGPT có ô xanh chỉ đục khoảng 98% (alpha 246–254) và lấm tấm điểm gần trong suốt quanh mép, nên alpha được làm sạch trước (≤ 16 thành 0, ≥ 240 thành 255).
 
 - **macOS (`icon.icns`) và các file `Square*Logo.png`, `StoreLogo.png`: ô xanh chiếm khoảng 80% khung theo lưới icon của Apple.**
   Lý do: icon macOS có lề trong suốt quanh ô; dùng bản 94% thì icon trên Dock to hơn các app khác. Chưa xem trên máy Mac.
 
-- Ở 16–24 px (khay hệ thống, thanh tiêu đề, taskbar) chỉ còn nhận ra tờ sổ trắng có vạch xanh; nhà và đồng ¥ chỉ rõ từ 40 px. Bản cài A/B (v0.1.0) vẫn icon cũ đến bản phát hành sau.
+- Ở 16–24 px (khay hệ thống, thanh tiêu đề, taskbar) chỉ còn nhận ra tờ sổ trắng có vạch xanh; nhà và đồng ¥ chỉ rõ từ 32–40 px. Bản cài A/B (v0.1.0) vẫn icon cũ đến bản phát hành sau; bản sổ phóng to chỉ tới máy đã cài từ bản phát hành sau v0.2.0.
 
 ## 2026-10-26 — Máy mới tự tìm dữ liệu gia đình, chọn tài khoản bằng thẻ
 
@@ -558,3 +561,15 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 - **Cài đặt → Đồng bộ qua Google Drive → Máy khác hiện "Máy Queen ghi dữ liệu lúc …" thay cho "Máy 8bab748d …". Mỗi máy ghi thêm `writtenBy` (userId của máy đó, lấy từ settings.json) vào đầu file `device-*.json`.** File của bản app cũ chưa có trường này thì vẫn gọi theo 8 ký tự đầu mã máy; hai máy của cùng một người (cài lại app, như bản B cũ `8bab748d` và bản B mới `934dbd87` đều là Queen) thì thành "Máy Queen (8bab748d)", "Máy Queen (934dbd87)".
   Lý do: user muốn biết máy nào của ai. File cũ chỉ có mã máy, không có gì nói máy đó của ai (settings.json không sync), nên phải ghi thêm. Trường không bắt buộc, không tăng `schemaVersion`: bản 0.1.0, 0.2.0 đọc file không loại trường lạ ở đầu file, và phần đầu file khi gộp luôn giữ của máy mình (`merge`, `dataForJoin` bắt đầu từ dữ liệu rỗng), nên máy bản cũ không chép nhầm `writtenBy` của máy kia vào file của mình.
+
+## 2026-10-26 — Thành viên quản lý Ngân sách, Danh mục, Định kỳ; bỏ khóa tháng
+
+- **Ngân sách, Danh mục, Định kỳ hiện trong nhóm "Quản lý" ở sidebar của cả hai người; thành viên thêm, sửa, xóa được ở cả ba màn như admin.** `categories:manage`, `budgets:manage`, `recurring:manage` chuyển vào `MEMBER_ACTIONS`. `navigation.ts` bỏ trường `action` và hàm `canOpen` vì không còn màn hình nào ẩn theo vai trò; App bỏ bước quay về Tổng quan khi mất quyền admin.
+  Lý do: user muốn máy B (thành viên) cũng quản lý được ba mục này. Vẫn chỉ admin làm: sửa, xóa khoản người kia nhập; import CSV; khôi phục backup; chuyển quyền admin; mật khẩu mã hóa. Khoản sinh từ mẫu định kỳ ghi người nhập là người sửa mẫu gần nhất, nên khoản sinh ra sau khi thành viên sửa mẫu thì thành viên sửa, xóa được.
+
+- **Bỏ hẳn khóa tháng: không còn nhãn "Đã khóa" / "Mở khóa tạm đến …", nút "Mở khóa 24 giờ" / "Khóa lại" và hộp xác nhận mở khóa. Tháng đã qua thêm, sửa, xóa khoản chi và đặt ngân sách được như tháng hiện tại; thành viên vẫn chỉ sửa, xóa khoản mình nhập.** Xóa `core/monthLock.ts`: `isPastMonth` chuyển sang `core/month.ts`, `findMonthRecord` và `monthRecordId` sang `core/settlement.ts`; `MonthRecord` bỏ trường `manualUnlockUntil`; quyền `month:unlock` bị bỏ. Thay các quyết định về khóa tháng ở Giai đoạn 1, Giai đoạn 3 và mục "Bộ chọn tháng đứng yên khi đổi tháng".
+  Lý do: user thấy không cần khóa tháng nữa khi cả hai người cùng quản lý, và muốn code gọn. Tất toán giữ nguyên: "Đã thanh toán" chỉ có ở tháng đã qua; sửa khoản của tháng đã tất toán làm số tiền bù đổi thì màn Tất toán vẫn cảnh báo "Số tiền đã thay đổi sau khi tất toán" kèm nút xác nhận lại.
+
+- **Dữ liệu cũ không cần chuyển, không tăng `schemaVersion`.** Bản ghi tháng do bản 0.2.0 trở về trước ghi có thể còn `manualUnlockUntil`: bản mới không đọc trường này nhưng vẫn giữ (đọc file không loại trường lạ; đánh dấu đã thanh toán giữ các trường khác của bản ghi tháng). Máy còn chạy bản 0.2.0 vẫn khóa tháng trên máy đó cho đến khi cập nhật.
+
+- Đánh đổi đã biết: hai người cùng tạo danh mục trùng tên trước khi kịp đồng bộ thì sau khi gộp có hai danh mục cùng tên (id UUID khác nhau), phải ẩn hoặc xóa bớt một cái bằng tay. Trước đây chỉ admin tạo danh mục nên không xảy ra (xem Giai đoạn 3). Với gia đình hai người, việc này hiếm nên không thêm cơ chế chống trùng.

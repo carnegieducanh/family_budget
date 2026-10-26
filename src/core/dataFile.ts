@@ -55,7 +55,6 @@ const COLLECTION_FIELDS: Record<string, FieldCheck[]> = {
   ],
   months: [
     ['month', 'string'],
-    ['manualUnlockUntil', 'string', true],
     ['settledAt', 'string', true],
     ['settledBy', 'string', true],
     ['settledAmount', 'number', true],

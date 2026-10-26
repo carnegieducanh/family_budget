@@ -1,6 +1,5 @@
 import { DomainError } from './errors';
-import { isValidDate, monthOfDate } from './month';
-import { assertMonthEditable } from './monthLock';
+import { isValidDate } from './month';
 import { createRecord, softDelete, touch } from './records';
 import type { MutationContext, Transaction, TransactionInput } from './types';
 
@@ -30,11 +29,9 @@ export function createTransaction(
   id: string,
 ): Transaction {
   const clean = validateTransactionInput(input, ctx.data);
-  assertMonthEditable(monthOfDate(clean.date), ctx.data.months, ctx.now);
   return createRecord<Transaction>(id, { ...clean, createdBy: ctx.userId }, ctx.userId, ctx.now);
 }
 
-/** Sửa khoản chi: cả tháng cũ lẫn tháng mới (nếu đổi ngày) đều không được khóa. */
 export function updateTransaction(
   existing: Transaction,
   input: TransactionInput,
@@ -42,13 +39,10 @@ export function updateTransaction(
 ): Transaction {
   if (existing.deleted) throw new DomainError('Khoản chi này đã bị xóa.');
   const clean = validateTransactionInput(input, ctx.data);
-  assertMonthEditable(monthOfDate(existing.date), ctx.data.months, ctx.now);
-  assertMonthEditable(monthOfDate(clean.date), ctx.data.months, ctx.now);
   return touch(existing, clean, ctx.userId, ctx.now);
 }
 
 export function deleteTransaction(existing: Transaction, ctx: MutationContext): Transaction {
   if (existing.deleted) throw new DomainError('Khoản chi này đã bị xóa.');
-  assertMonthEditable(monthOfDate(existing.date), ctx.data.months, ctx.now);
   return softDelete(existing, ctx.userId, ctx.now);
 }

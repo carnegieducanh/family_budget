@@ -1,10 +1,21 @@
 import { DomainError } from './errors';
-import { formatMonthLabel } from './month';
-import { findMonthRecord, isPastMonth, monthRecordId } from './monthLock';
+import { formatMonthLabel, isPastMonth } from './month';
 import { createRecord, touch } from './records';
 import type { MonthRecord, Transaction } from './types';
 
 // Tất toán 50/50 (SPEC mục 6).
+
+export function monthRecordId(month: string): string {
+  return `month-${month}`;
+}
+
+/** Bản ghi tháng còn hiệu lực (bỏ qua bản đã xóa mềm). */
+export function findMonthRecord(
+  months: readonly MonthRecord[],
+  month: string,
+): MonthRecord | undefined {
+  return months.find((record) => record.month === month && !record.deleted);
+}
 
 export interface Settlement {
   month: string;

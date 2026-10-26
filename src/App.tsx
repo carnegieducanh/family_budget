@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { Button } from './components/Button';
 import { isAnyModalOpen } from './components/modalStack';
-import { canOpen } from './components/navigation';
 import { Sidebar } from './components/Sidebar';
 import { UpdateDialog } from './components/UpdateDialog';
 import { BudgetScreen } from './features/budget/BudgetScreen';
@@ -15,7 +14,7 @@ import { SetupScreen } from './features/setup/SetupScreen';
 import { NewTransactionsDialog } from './features/transactions/NewTransactionsDialog';
 import { TransactionEditor } from './features/transactions/TransactionEditor';
 import { TransactionsScreen } from './features/transactions/TransactionsScreen';
-import { useDataStore, useReadyData } from './state/dataStore';
+import { useDataStore } from './state/dataStore';
 import { useSyncStore } from './state/syncStore';
 import { useUiStore, type Screen } from './state/uiStore';
 import { getDataFilePath } from './storage/localStore';
@@ -51,11 +50,8 @@ const SCREENS: Record<Screen, () => ReactElement> = {
 };
 
 function MainLayout() {
-  const selected = useUiStore((s) => s.screen);
+  const screen = useUiStore((s) => s.screen);
   const saveError = useDataStore((s) => s.saveError);
-  const { me } = useReadyData();
-  // Vừa mất quyền admin (chuyển quyền, hoặc nhận từ máy kia) thì quay về Tổng quan.
-  const screen = canOpen(me, selected) ? selected : 'overview';
   const Current = SCREENS[screen];
   const contentRef = useRef<HTMLElement>(null);
 
