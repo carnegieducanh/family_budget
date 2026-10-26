@@ -462,3 +462,11 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 - **App luôn chạy hiệu ứng, kể cả khi Windows/macOS tắt hiệu ứng (`prefers-reduced-motion: reduce`). Bỏ quy tắc chung trong `global.scss` từng tắt mọi animation/transition trong trường hợp đó.**
   Lý do: máy user tắt "Hiệu ứng hoạt hình" của Windows nên WebView2 báo `reduce`; nếu app làm theo thì user không thấy hiệu ứng nào. User chọn "luôn chạy đủ hiệu ứng" (thay vì làm theo Windows, hoặc chỉ hiện dần không trượt). Vì vậy trên máy này hiệu ứng bật lên của hộp thoại và đổi màu khi rê chuột cũng chạy lại.
+
+## 2026-10-26 — Mở Cài đặt từ khối người dùng ở cuối sidebar
+
+- **Sidebar không còn mục "Cài đặt". Khối người đang dùng ở cuối sidebar (ảnh đại diện, tên, vai trò) là một nút: bấm vào mở màn Cài đặt. Nút có nền đổi màu khi rê chuột, tooltip "Cài đặt" và icon bánh răng mờ bên phải; khi đang ở màn Cài đặt thì sáng lên như mục đang chọn. Bấm là vào thẳng màn Cài đặt, không bật menu.**
+  Lý do: user thấy góc dưới sidebar chồng nhiều thứ (mục Cài đặt, trạng thái sync, theme, người dùng) và muốn gọn hơn; bấm vào ảnh/tên để vào cài đặt là kiểu quen thuộc. Icon bánh răng giữ cho người chưa biết vẫn tìm được Cài đặt. Không làm menu vì app không có đăng xuất hay đổi tài khoản, menu chỉ có một mục thì tốn thêm một cú bấm. Nút "Mở Cài đặt" trong cảnh báo mã hóa vẫn như cũ.
+
+- **Rê chuột trên sidebar (các mục điều hướng và khối người dùng) dùng màu riêng `--color-sidebar-hover`: theme sáng là xanh nhạt `#e9f5e1`, nhạt hơn nền xanh của mục đang chọn; theme tối giữ như cũ.**
+  Lý do: ở theme sáng, nền rê chuột cũ `--color-surface-hover` (`#f6f7ef`) gần như trùng nền sidebar `#fcfcfc` nên khó thấy (user báo).

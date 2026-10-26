@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Receipt,
   Repeat,
-  Settings,
   Tags,
   Target,
   type LucideIcon,
@@ -17,8 +16,8 @@ interface NavItem {
   screen: Screen;
   icon: LucideIcon;
   label: string;
-  /** Nhóm trên sidebar: dùng hằng ngày, quản lý (admin), hệ thống (dưới cùng). */
-  group: 'main' | 'manage' | 'system';
+  /** Nhóm trên sidebar: dùng hằng ngày, quản lý (admin). Cài đặt mở từ khối người dùng cuối sidebar. */
+  group: 'main' | 'manage';
   /** Màn hình quản lý chỉ admin dùng (SPEC mục 7, 8); ẩn với người dùng thường. */
   action?: Action;
 }
@@ -49,7 +48,6 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'manage',
     action: 'recurring:manage',
   },
-  { screen: 'settings', icon: Settings, label: 'Cài đặt', group: 'system' },
 ];
 
 /** Màn hình người dùng này được mở. */

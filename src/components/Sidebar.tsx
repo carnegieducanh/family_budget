@@ -1,3 +1,4 @@
+import { Settings } from 'lucide-react';
 import { useReadyData } from '../state/dataStore';
 import { useUiStore } from '../state/uiStore';
 import { BrandMark } from './BrandMark';
@@ -7,13 +8,14 @@ import { SyncIndicator } from './SyncIndicator';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { UserAvatar } from './UserDot';
 
-const GROUP_LABEL = { main: null, manage: 'Quản lý', system: null } as const;
+const GROUP_LABEL = { main: null, manage: 'Quản lý' } as const;
 
 export function Sidebar() {
   const screen = useUiStore((s) => s.screen);
   const setScreen = useUiStore((s) => s.setScreen);
   const { me, users } = useReadyData();
   const visible = NAV_ITEMS.filter((item) => canOpen(me, item.screen));
+  const onSettings = screen === 'settings';
 
   function renderGroup(group: keyof typeof GROUP_LABEL) {
     const items = visible.filter((item) => item.group === group);
@@ -57,15 +59,24 @@ export function Sidebar() {
       </nav>
 
       <div className={styles.bottom}>
-        <nav aria-label="Hệ thống">{renderGroup('system')}</nav>
         <SyncIndicator />
         <ThemeSwitcher compact />
         <footer className={styles.footer}>
-          <UserAvatar user={me} />
-          <div className={styles.meText}>
-            <span className={styles.me}>{me.name}</span>
-            <span className={styles.role}>{me.role === 'admin' ? 'Admin' : 'Thành viên'}</span>
-          </div>
+          {/* Không có mục Cài đặt riêng: bấm vào người đang dùng để mở. */}
+          <button
+            type="button"
+            className={onSettings ? `${styles.profile} ${styles.profileActive}` : styles.profile}
+            aria-current={onSettings ? 'page' : undefined}
+            title="Cài đặt"
+            onClick={() => setScreen('settings')}
+          >
+            <UserAvatar user={me} />
+            <span className={styles.meText}>
+              <span className={styles.me}>{me.name}</span>
+              <span className={styles.role}>{me.role === 'admin' ? 'Admin' : 'Thành viên'}</span>
+            </span>
+            <Settings className={styles.gear} size={16} aria-hidden="true" />
+          </button>
         </footer>
       </div>
     </aside>

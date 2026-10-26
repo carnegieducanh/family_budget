@@ -13,6 +13,8 @@
   --color-surface: #ffffff;
   --color-surface-muted: #eff1e4;
   --color-surface-hover: #f6f7ef;
+  // Rê chuột trên sidebar: nền ngả xanh, nhạt hơn --color-primary-soft của mục đang chọn.
+  --color-sidebar-hover: #e9f5e1;
   --color-border: #e4e6d9;
   --color-border-strong: #cdceca;
   --color-text: #39414a;
@@ -64,6 +66,7 @@
   --color-surface: #171d17;
   --color-surface-muted: #1e251d;
   --color-surface-hover: #222a21;
+  --color-sidebar-hover: #222a21;
   --color-border: #283126;
   --color-border-strong: #374134;
   --color-text: #e6ece2;

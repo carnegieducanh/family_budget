@@ -162,7 +162,7 @@ macOS có thể hỏi "Family Budget muốn truy cập tệp trong Google Drive"
 
 App không cho tạo dữ liệu mới trong thư mục đã có dữ liệu Family Budget, để tránh hai bộ dữ liệu song song.
 
-Máy đã dùng app từ trước khi có đồng bộ (dữ liệu chỉ nằm trên máy): vào **Cài đặt → Đồng bộ qua Google Drive → Chọn thư mục...**, không cần thiết lập lại.
+Máy đã dùng app từ trước khi có đồng bộ (dữ liệu chỉ nằm trên máy): vào **Cài đặt** (bấm vào tên mình ở góc dưới bên trái) **→ Đồng bộ qua Google Drive → Chọn thư mục...**, không cần thiết lập lại.
 
 ### 2.4. Mã hóa dữ liệu trên Drive (tùy chọn)
 

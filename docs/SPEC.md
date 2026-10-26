@@ -376,7 +376,7 @@ Bố cục chung: cửa sổ tối thiểu 1024 × 700, sidebar điều hướng
    - Thêm, đổi tên, đổi icon, kéo thả sắp xếp, ẩn hoặc hiện.
 8. **Chi tiêu định kỳ** (admin)
    - Danh sách mẫu: tên, số tiền, danh mục, người trả, ngày trong tháng, bật/tắt.
-9. **Cài đặt**
+9. **Cài đặt** (mở bằng cách bấm vào người đang dùng ở cuối sidebar; sidebar không có mục Cài đặt riêng)
    - Người dùng và vai trò (admin). Ảnh đại diện: bấm vào ảnh để đổi (ảnh trên máy hoặc emoji); mỗi người đổi được ảnh của mình.
    - Sync: thư mục Drive, chu kỳ sync, trạng thái chi tiết, nút "Sync ngay".
    - Mã hóa (admin, giai đoạn 4).
