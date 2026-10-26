@@ -376,6 +376,7 @@ Bố cục chung: cửa sổ tối thiểu 1024 × 700, sidebar điều hướng
    - Ngân sách tổng và theo danh mục, mức mặc định hàng tháng và ghi đè cho từng tháng.
 7. **Danh mục** (admin)
    - Thêm, đổi tên, đổi icon, kéo thả sắp xếp, ẩn hoặc hiện.
+   - Icon là một emoji: bấm vào ô icon thì mở bảng emoji của hệ điều hành (Windows: như Win + . ; macOS: Emoji & Symbols), emoji chọn được thay emoji cũ.
 8. **Chi tiêu định kỳ** (admin)
    - Danh sách mẫu: tên, số tiền, danh mục, người trả, ngày trong tháng, bật/tắt.
 9. **Cài đặt** (mở bằng cách bấm vào người đang dùng ở cuối sidebar; sidebar không có mục Cài đặt riêng)

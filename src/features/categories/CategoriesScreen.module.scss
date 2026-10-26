@@ -55,6 +55,9 @@
   width: 52px;
   text-align: center;
   font-size: var(--font-size-lg);
+  cursor: pointer;
+  // Ô dùng như nút mở bảng emoji: không hiện con trỏ nhập chữ nhấp nháy.
+  caret-color: transparent;
 }
 
 .name {
@@ -83,10 +86,4 @@
   gap: var(--space-2);
   margin-bottom: var(--space-3);
   padding-left: calc(16px + var(--space-1) * 2 + var(--space-2));
-}
-
-.hint {
-  width: 100%;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
 }

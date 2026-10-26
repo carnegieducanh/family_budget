@@ -28,6 +28,14 @@ tauri-plugin-updater = "2"
 # generate_context! cần serde_json khi tauri.conf.json có mục "plugins".
 serde_json = "1"
 
+# Mở bảng emoji của hệ điều hành (lệnh show_emoji_panel trong lib.rs).
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_UI_Input_KeyboardAndMouse"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSApplication", "NSResponder"] }
+
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]
 codegen-units = 1

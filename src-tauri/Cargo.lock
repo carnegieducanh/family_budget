@@ -784,6 +784,8 @@ dependencies = [
 name = "family-budget"
 version = "0.1.0"
 dependencies = [
+ "objc2",
+ "objc2-app-kit",
  "serde_json",
  "tauri",
  "tauri-build",
@@ -792,6 +794,7 @@ dependencies = [
  "tauri-plugin-persisted-scope",
  "tauri-plugin-process",
  "tauri-plugin-updater",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

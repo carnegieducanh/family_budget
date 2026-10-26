@@ -493,3 +493,15 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
   Lý do: user thấy ở Báo cáo, bấm qua lại giữa tháng này và tháng đã khóa thì nhãn và nút khóa hiện/ẩn bên phải, đẩy bộ chọn tháng qua lại nên bấm mũi tên liên tục bị trượt.
 
 - **Ô tên tháng rộng tối thiểu theo cỡ chữ (`132px × --font-scale`), để "Tháng 9/2026" và "Tháng 10/2026" rộng như nhau và mũi tên trái không nhích ở cỡ chữ Vừa trở lên. Cửa sổ hẹp làm nhãn khóa xuống dòng thì nội dung bên dưới lùi xuống, còn bộ chọn tháng giữ nguyên chỗ (tiêu đề neo theo mép trên).**
+
+## 2026-10-26 — Bấm ô icon danh mục để mở bảng emoji của hệ điều hành
+
+- **Ở màn Danh mục, bấm vào ô icon (cả dòng "Thêm danh mục" lẫn các danh mục có sẵn) là mở bảng emoji của hệ điều hành: Windows là bảng "Emoji and more" như khi bấm Win + . ; macOS là cửa sổ Emoji & Symbols. Bỏ dòng gợi ý "Gõ emoji: Win + . (Windows) hoặc Ctrl + Cmd + Space (macOS)".** Lệnh Rust `show_emoji_panel` (src-tauri/src/lib.rs); ô là `EmojiInput` (components/EmojiInput.tsx).
+  Lý do: user không muốn người dùng phải tự nhớ phím tắt. Dùng bảng của hệ điều hành chứ không tự làm bảng emoji trong app vì user muốn đúng bảng như trên Windows/macOS: đủ emoji, có ô tìm kiếm, emoji gần đây, không phải thêm thư viện hay danh sách emoji.
+
+- **Windows không có API mở bảng emoji cho app Win32, nên lệnh giả lập phím Win + . (`SendInput`), giống cách Chromium/Electron làm. macOS gọi `NSApp.orderFrontCharacterPalette`.** Bảng chèn emoji vào ô đang focus, nên ô icon vẫn là ô nhập (không đổi thành nút), trỏ chuột hình bàn tay, không hiện con trỏ nhập chữ nhấp nháy trong ô (user thấy thừa khi ô dùng như nút); vẫn tự gõ hoặc dán được.
+
+- **Emoji chọn được thay emoji cũ, kể cả khi chọn tiếp nhiều emoji lúc bảng còn mở: bấm vào ô thì ô được chọn hết, sau mỗi lần bảng chèn emoji ô lại được chọn hết. Tự gõ phím trong ô thì thôi việc đó, ô gõ như thường.** Bấm đúp không mở rồi đóng bảng ngay (lần bấm thứ hai bị bỏ qua). Với danh mục có sẵn, emoji mới vẫn lưu khi rời ô hoặc bấm Enter; Esc (sau khi bảng đã đóng) trả lại icon cũ như trước.
+  Lý do: mỗi danh mục chỉ có một emoji; bảng của Windows và macOS không tự đóng sau khi chọn, nếu không thay thì chọn nhầm rồi chọn lại sẽ thành hai emoji nối nhau.
+
+- Đã thử trên Windows 11 (bản dev): bảng mở, chọn liên tiếp 👍 → ⏰ → 🎧 thì ô chỉ còn emoji cuối; dòng có sẵn chọn xong bấm Esc hai lần thì về icon cũ, không lưu. Bảng hiện ở chỗ Windows tự chọn (có khi ở màn hình khác với cửa sổ app khi dùng nhiều màn hình). Phần macOS mới kiểm là biên dịch được (`cargo check --target aarch64-apple-darwin` cho đoạn code AppKit), chưa chạy trên máy Mac.

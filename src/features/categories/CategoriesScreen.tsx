@@ -5,6 +5,7 @@ import type { Category } from '../../core/types';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { EmojiInput } from '../../components/EmojiInput';
 import { PageHeader } from '../../components/PageHeader';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import styles from './CategoriesScreen.module.scss';
@@ -145,7 +146,7 @@ export function CategoriesScreen() {
   );
 }
 
-/** Ô icon và tên, lưu khi rời ô hoặc bấm Enter. */
+/** Ô icon (bấm vào để chọn emoji) và tên, lưu khi rời ô hoặc bấm Enter. */
 function CategoryFields({
   category,
   onSave,
@@ -183,12 +184,13 @@ function CategoryFields({
 
   return (
     <>
-      <input
+      <EmojiInput
         className={styles.icon}
         value={icon}
-        onChange={(e) => setIcon(e.target.value)}
+        onChange={setIcon}
         onBlur={commit}
         onKeyDown={onKeyDown}
+        title="Bấm để chọn emoji"
         aria-label={`Icon của ${category.name}`}
         maxLength={8}
       />
@@ -219,11 +221,12 @@ function AddCategory({ onSave }: { onSave: (action: () => void) => boolean }) {
 
   return (
     <form className={styles.add} onSubmit={submit}>
-      <input
+      <EmojiInput
         className={styles.icon}
         value={icon}
-        onChange={(e) => setIcon(e.target.value)}
+        onChange={setIcon}
         placeholder="🙂"
+        title="Bấm để chọn emoji"
         aria-label="Icon danh mục mới"
         maxLength={8}
       />
@@ -239,9 +242,6 @@ function AddCategory({ onSave }: { onSave: (action: () => void) => boolean }) {
         <Plus size={15} aria-hidden="true" />
         Thêm danh mục
       </Button>
-      <span className={styles.hint}>
-        Gõ emoji: Win + . (Windows) hoặc Ctrl + Cmd + Space (macOS)
-      </span>
     </form>
   );
 }
