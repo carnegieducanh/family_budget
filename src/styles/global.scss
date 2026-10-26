@@ -151,12 +151,3 @@ input[type='number']::-webkit-outer-spin-button {
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}

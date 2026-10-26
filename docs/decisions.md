@@ -452,3 +452,13 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 - **Bảng ở Tất toán: ô không ngắt dòng, bảng có khung cuộn ngang trong card; cột Tháng của lịch sử ghi "10/2026" (`formatMonthShort`) vì tiêu đề cột đã là "Tháng". Dạng "Queen → Clazuze" giữ khoảng cách hẹp.**
   Lý do: từ khi có tên cạnh ảnh, ở bề rộng 1024 px "Tháng 10/2026", "Đã thanh toán" và "Queen → Clazuze" bị ngắt thành 2 dòng; bỏ chữ "Tháng" trong ô là đủ để bảng vừa card.
+
+## 2026-10-26 — Hiệu ứng khi chuyển màn hình
+
+- **Bấm sang mục khác ở sidebar: nội dung màn mới hiện dần và trượt lên 8 px trong 0,26 giây (`.screen` ở `App.module.scss`, có `key` theo màn hình nên chạy lại mỗi lần đổi). Màn cũ biến mất ngay, không có hiệu ứng ra. Thanh thông báo (cập nhật, lỗi lưu, sync) và dải gradient xanh đứng yên. Đổi tháng trong cùng một màn không có hiệu ứng.**
+  Lý do: user muốn chuyển mục mượt hơn. Chỉ có hiệu ứng vào để bấm qua lại liên tục vẫn không bị trễ. Hiệu ứng không giữ trạng thái cuối, vì còn `transform` thì các hộp thoại nằm trong màn hình (`position: fixed`, không qua portal) sẽ canh theo khối nội dung thay vì cửa sổ.
+
+- **Đổi màn hình thì vùng nội dung cuộn về đầu trang.** Trước đây màn mới giữ vị trí cuộn của màn cũ, nên có thể mở ra ở giữa trang.
+
+- **App luôn chạy hiệu ứng, kể cả khi Windows/macOS tắt hiệu ứng (`prefers-reduced-motion: reduce`). Bỏ quy tắc chung trong `global.scss` từng tắt mọi animation/transition trong trường hợp đó.**
+  Lý do: máy user tắt "Hiệu ứng hoạt hình" của Windows nên WebView2 báo `reduce`; nếu app làm theo thì user không thấy hiệu ứng nào. User chọn "luôn chạy đủ hiệu ứng" (thay vì làm theo Windows, hoặc chỉ hiện dần không trượt). Vì vậy trên máy này hiệu ứng bật lên của hộp thoại và đổi màu khi rê chuột cũng chạy lại.

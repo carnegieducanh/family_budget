@@ -19,6 +19,21 @@
   padding: var(--space-8) var(--space-8) var(--space-10);
 }
 
+// Đổi màn hình: nội dung màn mới hiện dần và trượt nhẹ lên. Màn cũ biến mất ngay, không chờ
+// hiệu ứng, để bấm qua lại liên tục vẫn nhanh. Không giữ trạng thái cuối (fill-mode forwards):
+// còn transform thì modal (position: fixed, không qua portal) canh theo khối này thay vì cửa sổ.
+// Chạy cả khi Windows/macOS tắt hiệu ứng (prefers-reduced-motion), xem docs/decisions.md.
+.screen {
+  animation: screen-in 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 .center {
   display: flex;
   align-items: center;

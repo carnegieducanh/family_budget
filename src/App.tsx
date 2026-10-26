@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { Button } from './components/Button';
 import { isAnyModalOpen } from './components/modalStack';
 import { canOpen } from './components/navigation';
@@ -56,6 +56,12 @@ function MainLayout() {
   // Vừa mất quyền admin (chuyển quyền, hoặc nhận từ máy kia) thì quay về Tổng quan.
   const screen = canOpen(me, selected) ? selected : 'overview';
   const Current = SCREENS[screen];
+  const contentRef = useRef<HTMLElement>(null);
+
+  // Đổi màn hình thì về đầu trang, không giữ vị trí cuộn của màn trước.
+  useLayoutEffect(() => {
+    contentRef.current?.scrollTo({ top: 0 });
+  }, [screen]);
 
   // Khi mở app: sinh khoản định kỳ của tháng này (SPEC mục 6), rồi bắt đầu lịch sync:
   // sync ngay, định kỳ, khi focus lại cửa sổ và sau mỗi thay đổi (SPEC mục 5).
@@ -79,7 +85,7 @@ function MainLayout() {
   return (
     <div className={styles.layout}>
       <Sidebar />
-      <main className={styles.content}>
+      <main ref={contentRef} className={styles.content}>
         <div className={styles.inner}>
           <UpdateBanner />
           {saveError && (
@@ -93,7 +99,10 @@ function MainLayout() {
             </div>
           )}
           <SyncBanner />
-          <Current />
+          {/* key: mỗi lần đổi màn hình khối này dựng lại nên hiệu ứng hiện ra chạy lại. */}
+          <div key={screen} className={styles.screen}>
+            <Current />
+          </div>
         </div>
       </main>
       <TransactionEditor />
