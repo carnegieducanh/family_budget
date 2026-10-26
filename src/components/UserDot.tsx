@@ -60,12 +60,27 @@ export function UserAvatar({ user, size = 32 }: { user: AvatarUser | undefined; 
   );
 }
 
+interface UserFaceProps {
+  user: User | undefined;
+  size?: number;
+  /** Hiện tên cạnh ảnh, ở chỗ còn đủ chỗ (Tổng quan, Tất toán). */
+  withName?: boolean;
+}
+
 /**
  * Ảnh đại diện đứng thay tên người trong bảng và trong câu. Tên vẫn có ở tooltip và cho
- * trình đọc màn hình.
+ * trình đọc màn hình; `withName` thì hiện tên ngay cạnh ảnh.
  */
-export function UserFace({ user, size = 24 }: { user: User | undefined; size?: number }) {
+export function UserFace({ user, size = 24, withName = false }: UserFaceProps) {
   const name = user?.name ?? 'không rõ';
+  if (withName) {
+    return (
+      <span className={styles.faceName}>
+        <UserAvatar user={user} size={size} />
+        {name}
+      </span>
+    );
+  }
   return (
     <span className={styles.face} role="img" aria-label={name} title={name}>
       <UserAvatar user={user} size={size} />

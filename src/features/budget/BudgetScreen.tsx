@@ -116,12 +116,12 @@ export function BudgetScreen() {
                       )}
                     </td>
                     <td className={styles.num}>
-                      {formatYen(spentAmount)}
                       {effective !== null && spentAmount > effective && (
                         <span className={styles.over}>
                           <OctagonAlert size={12} aria-hidden="true" /> vượt
                         </span>
                       )}
+                      {formatYen(spentAmount)}
                     </td>
                   </tr>
                 );

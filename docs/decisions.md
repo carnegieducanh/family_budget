@@ -405,3 +405,50 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
   Lý do: user yêu cầu thay tên bằng ảnh đại diện của người tương ứng. App chỉ có hai người, ai cũng nhận ra ảnh của mình và của người kia. Người chưa có ảnh vẫn hiện chữ cái đầu trên nền màu.
 
 - **Giữ tên ở: bộ lọc "Clazuze trả" trong Khoản chi (ô chọn native không hiện được ảnh), màn thiết lập lần đầu (đang chọn "Tôi là ..." nên cần tên), Cài đặt → Người dùng và góc dưới sidebar (đã có ảnh cạnh tên).**
+
+## 2026-10-26 — Chọn cỡ chữ
+
+- **Cài đặt → Giao diện có dòng "Cỡ chữ" với 4 mức: Nhỏ (cỡ chữ ban đầu, thân bài 14 px, là mặc định), Vừa (16 px), Lớn (18 px), Rất lớn (20 px). Mọi cỡ chữ khác (tiêu đề, số tiền lớn, chữ nhỏ) đổi cùng tỉ lệ. Đây là lựa chọn của từng máy, không đồng bộ.**
+  Lý do: user thấy chữ hơi nhỏ, khó nhìn, và muốn chọn được vài cỡ; cỡ nhỏ nhất là cỡ hiện tại. Mỗi máy (màn hình, mắt người dùng) cần một cỡ khác nhau.
+
+- **Lưu và áp dụng giống theme: `localStorage` khóa `family-budget.font-size` (mức Nhỏ thì xóa khóa), `index.html` đặt `<html data-font-size="md|lg|xl">` trước khi vẽ lần đầu, `tokens.scss` đổi `--font-scale` theo thuộc tính này và mọi `--font-size-*` = cỡ gốc × `--font-scale`.**
+  Lý do: cùng lý do với theme (không nháy lúc mở app). Mọi cỡ chữ của app đã đi qua token nên chỉ cần một hệ số; vài cỡ còn viết cứng px (tên app ở sidebar, nhãn nhóm menu) nhân thêm `--font-scale`.
+
+- **Phóng chữ, không phóng cả giao diện (zoom WebView). Đi kèm chữ: chiều cao nút và ô nhập (`--control-height` = cỡ chữ thân bài + 22 px, lề trên dưới giữ nguyên), icon lucide (`zoom: var(--font-scale)` ở `global.scss`), bề rộng hộp thoại. Giữ nguyên: bề rộng sidebar, khoảng cách giữa các khối, ảnh đại diện, biểu đồ.**
+  Lý do: user hỏi cỡ chữ. Zoom cả trang làm vùng nội dung hẹp đi (cửa sổ 1024 px ở 140% chỉ còn ~730 px CSS) nên các bảng đã chỉnh cho vừa 1024 px sẽ tràn. Icon và nút không lớn theo thì trông lệch tỉ lệ với chữ bên cạnh; hộp thoại không rộng theo thì ô chọn bị cắt chữ.
+
+- **Sửa đi kèm để mức Rất lớn không vỡ bố cục: hàng người dùng ở Cài đặt cho xuống dòng (ô màu không bị bóp, nút chuyển quyền admin xuống dòng dưới); trục số tiền của biểu đồ Báo cáo tự đo bề rộng (`width="auto"`) thay vì 56 px; lề trái ô tìm kiếm Khoản chi tính theo icon kính lúp; bảng Định kỳ có khung cuộn ngang như bảng Khoản chi và Ngân sách; chú thích dưới thanh ngân sách ở Tổng quan xuống dòng khi chật.**
+  Đã xem trên bản dev mức Rất lớn ở mọi màn (cửa sổ 1280 px và bề rộng tối thiểu 1024 px), mức Lớn ở Cài đặt, mức Nhỏ ở Tổng quan; mức Vừa nằm giữa nên chưa xem riêng. Mọi màn đọc được; ở 1024 px + Rất lớn, bảng Định kỳ cuộn ngang trong card và cột Ghi chú của Khoản chi bị cắt ngắn ("..."). Mức Nhỏ trông y như trước.
+
+## 2026-10-26 — Bỏ chọn màu người dùng
+
+- **Cài đặt → Người dùng và vai trò không còn ô chọn màu; admin chỉ đổi được tên (và chuyển quyền admin). `updateUser` chỉ nhận tên, không đổi màu. Hàng của người dùng không phải admin cũng bỏ chấm màu cạnh tên.** Thay quyết định "admin đổi được tên, màu" ở Giai đoạn 2.
+  Lý do: user thấy chọn màu không cần thiết. Từ khi có ảnh đại diện, màu chỉ còn làm nền cho ảnh chữ cái đầu (người chưa chọn ảnh) và chấm màu ở màn thiết lập lần đầu.
+
+- **Trường `color` vẫn giữ trong dữ liệu, không tăng `schemaVersion`.** Người dùng mới nhận màu mặc định lúc thiết lập (`USER_COLORS`); màu đã chọn trước đây giữ nguyên. Bản v0.1.0 trên máy kia vẫn đổi được màu, và màu đó vẫn đồng bộ sang như trước.
+
+## 2026-10-26 — Bấm "Chưa kết nối thư mục Drive" để chọn thư mục
+
+- **Ở góc dưới sidebar, khi trạng thái là "Chưa kết nối thư mục Drive", dòng chữ này có gạch chân và bấm được: mở ngay hộp chọn thư mục Google Drive, chọn xong thì kiểm tra thư mục, kết nối và sync như nút "Chọn thư mục..." trong Cài đặt. Thư mục không dùng được (dữ liệu của gia đình khác) thì báo lỗi ngay dưới dòng đó. Các trạng thái khác không bấm được.**
+  Lý do: user muốn kết nối Drive thẳng từ thông báo, không phải vào Cài đặt. Bước kiểm tra và kết nối gom vào `connectSyncFolder` (sync/appSync.ts), Cài đặt và sidebar dùng chung.
+
+## 2026-10-26 — Tên cạnh ảnh đại diện ở Tổng quan và Tất toán
+
+- **Ở Tổng quan và Tất toán, ảnh đại diện có thêm tên ngay bên cạnh (`UserFace withName`): "Mỗi người đã trả", câu tất toán ("[ảnh] Queen trả [ảnh] Clazuze ¥x", cả trong hộp xác nhận), 5 khoản gần nhất, bảng chia 50/50, cột "Ai trả ai" của lịch sử và dòng "... xác nhận". Khoản chi, Định kỳ và hai form sửa vẫn chỉ hiện ảnh.** Thay một phần quyết định "Ảnh đại diện thay tên người".
+  Lý do: user thấy hai màn này còn chỗ trống cạnh ảnh và muốn hiện tên. Ở "5 khoản gần nhất", cột người trả rộng tối thiểu 8em để ảnh thẳng cột giữa các dòng.
+
+- **Nút "Xem tất toán →" ở thẻ "Mỗi người đã trả" (Tổng quan) chuyển lên góc phải tiêu đề thẻ, giống "Xem tất cả" của thẻ "5 khoản gần nhất". Dòng tất toán cuối thẻ chỉ còn câu và nhãn "Tạm tính".**
+  Lý do: câu tất toán có thêm tên nên dài ra; cửa sổ hẹp thì nút bị đẩy xuống một dòng riêng, trông lệch (user báo). Ở bề rộng tối thiểu 1024 px, nhãn "Tạm tính" vẫn xuống dòng dưới câu.
+
+## 2026-10-26 — Số tiền trả bù màu xanh
+
+- **Trong câu tất toán "[ảnh] Queen trả [ảnh] Clazuze ¥49,150" (Tổng quan, hộp kết quả ở Tất toán, hộp xác nhận "Đã thanh toán"), số tiền có màu xanh chủ đạo `--color-primary-strong`.**
+  Lý do: user muốn số tiền phải trả nổi bật bằng màu khác. Xanh là màu của các số tiền chính trong app (tổng chi tháng ở Tổng quan, như số dư trong app ゆうちょ) và không mang nghĩa cảnh báo như vàng/đỏ. Ở theme sáng, màu này đạt ≥ 4.5:1 trên nền card trắng và trên nền xanh nhạt của hộp kết quả.
+
+## 2026-10-26 — Câu tất toán: số tiền lớn hơn, các phần cách xa hơn
+
+- **Trong câu tất toán, số tiền lớn hơn chữ của câu 1,3 lần; các phần (người trả, "trả", người nhận, số tiền) cách nhau rộng hơn. Số tiền và nhãn "Tạm tính" (Tổng quan) luôn cùng một dòng: cửa sổ hẹp thì cả cụm xuống dòng dưới tên (`suffix` của `SettlementSentence`).**
+  Lý do: user thấy dòng còn khoảng trống và muốn số tiền to, nội dung thoáng cho dễ nhìn. Cỡ và khoảng cách tính theo `em` nên hộp kết quả ở Tất toán (chữ lớn) và hộp xác nhận cùng tỉ lệ.
+
+- **Bảng ở Tất toán: ô không ngắt dòng, bảng có khung cuộn ngang trong card; cột Tháng của lịch sử ghi "10/2026" (`formatMonthShort`) vì tiêu đề cột đã là "Tháng". Dạng "Queen → Clazuze" giữ khoảng cách hẹp.**
+  Lý do: từ khi có tên cạnh ảnh, ở bề rộng 1024 px "Tháng 10/2026", "Đã thanh toán" và "Queen → Clazuze" bị ngắt thành 2 dòng; bỏ chữ "Tháng" trong ô là đủ để bảng vừa card.

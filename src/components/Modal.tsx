@@ -41,7 +41,8 @@ export function Modal({ title, onClose, children, footer, width = 440 }: ModalPr
         role="dialog"
         aria-modal="true"
         aria-labelledby={`${id}-title`}
-        style={{ width }}
+        // Rộng theo cỡ chữ người dùng chọn; cửa sổ hẹp thì max-width 100% chặn lại.
+        style={{ width: `calc(${width}px * var(--font-scale))` }}
       >
         <div className={styles.header}>
           <h2 id={`${id}-title`} className={styles.title}>

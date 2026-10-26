@@ -110,10 +110,12 @@
   padding: 0;
   list-style: none;
 
+  // Chữ lớn hoặc cửa sổ hẹp: nút chuyển quyền admin xuống dòng thay vì đè lên vai trò.
   li {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-4);
+    gap: var(--space-2) var(--space-4);
     padding: var(--space-2) 0;
   }
 }
@@ -155,12 +157,10 @@
   gap: var(--space-2);
   min-width: 260px;
   font-weight: 500;
-}
 
-.color {
-  width: 36px;
-  padding: 2px;
-  cursor: pointer;
+  > input {
+    min-width: 0;
+  }
 }
 
 .role {

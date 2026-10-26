@@ -37,7 +37,9 @@
 
 .caption {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
+  gap: 0 var(--space-3);
   margin-top: var(--space-2);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);

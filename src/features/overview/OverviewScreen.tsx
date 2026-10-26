@@ -50,29 +50,31 @@ export function OverviewScreen() {
           <BudgetMeter spent={total} budget={getBudgetAmount(data.budgets, month, null)} />
         </Card>
 
-        <Card title="Mỗi người đã trả">
+        <Card
+          title="Mỗi người đã trả"
+          actions={
+            <Button variant="ghost" size="sm" onClick={() => setScreen('settlement')}>
+              Xem tất toán
+              <ArrowRight size={14} aria-hidden="true" />
+            </Button>
+          }
+        >
           <ul className={styles.paidList}>
             {users.map((user) => (
               <li key={user.id}>
-                <UserFace user={user} size={36} />
+                <UserFace user={user} size={36} withName />
                 <span className={styles.num}>{formatYen(settlement.paidByUser[user.id] ?? 0)}</span>
               </li>
             ))}
           </ul>
           <div className={styles.settlement}>
             <span className={styles.settlementText}>
-              <SettlementSentence settlement={settlement} users={users} />
+              <SettlementSentence
+                settlement={settlement}
+                users={users}
+                suffix={!isPastMonth(month, now) && <span className={styles.badge}>Tạm tính</span>}
+              />
             </span>
-            {!isPastMonth(month, now) && <span className={styles.badge}>Tạm tính</span>}
-            <Button
-              variant="ghost"
-              size="sm"
-              className={styles.settlementLink}
-              onClick={() => setScreen('settlement')}
-            >
-              Xem tất toán
-              <ArrowRight size={14} aria-hidden="true" />
-            </Button>
           </div>
         </Card>
 
@@ -119,7 +121,7 @@ export function OverviewScreen() {
                         <span className={styles.category}>{category?.name ?? 'Không rõ'}</span>
                         {tx.note && <span className={styles.note}>{tx.note}</span>}
                       </span>
-                      <UserFace user={usersById.get(tx.paidBy)} />
+                      <UserFace user={usersById.get(tx.paidBy)} withName />
                       <span className={styles.date}>{formatDate(tx.date).slice(0, 5)}</span>
                       <span className={styles.amount}>{formatYen(tx.amount)}</span>
                     </button>

@@ -35,8 +35,13 @@ export function addMonths(month: string, count: number): string {
 
 /** "2026-10" → "Tháng 10/2026" */
 export function formatMonthLabel(month: string): string {
+  return `Tháng ${formatMonthShort(month)}`;
+}
+
+/** "10/2026", cho ô bảng mà tiêu đề cột đã ghi "Tháng". */
+export function formatMonthShort(month: string): string {
   const [year, mm] = month.split('-');
-  return `Tháng ${Number(mm)}/${year}`;
+  return `${Number(mm)}/${year}`;
 }
 
 /** "2026-10-05" → "05/10/2026" */

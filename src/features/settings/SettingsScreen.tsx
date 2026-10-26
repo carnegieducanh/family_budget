@@ -2,10 +2,10 @@ import { RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { formatDateTime, formatTimeAgo } from '../../core/month';
 import { can } from '../../core/permissions';
-import { connectProblem } from '../../core/sync';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { FontSizeSwitcher } from '../../components/FontSizeSwitcher';
 import { PageHeader } from '../../components/PageHeader';
 import { ThemeSwitcher } from '../../components/ThemeSwitcher';
 import { useDataStore, useReadyData } from '../../state/dataStore';
@@ -15,8 +15,7 @@ import { useNow } from '../../state/useNow';
 import { getBackupDir } from '../../storage/backup';
 import { pickSyncFolder, resolveDataDir } from '../../storage/driveFolderAdapter';
 import { getDataFilePath } from '../../storage/localStore';
-import { inspectFolder, settingsKey, syncNow } from '../../sync/appSync';
-import { openRemoteFiles } from '../../sync/syncService';
+import { connectSyncFolder, syncNow } from '../../sync/appSync';
 import { describeSyncStatus } from '../../sync/syncStatus';
 import { BackupPanel } from '../data/BackupPanel';
 import { CsvExport } from '../data/CsvExport';
@@ -74,6 +73,13 @@ function AppearanceSettings() {
             cho máy này.
           </p>
         </dd>
+        <dt>Cỡ chữ</dt>
+        <dd>
+          <FontSizeSwitcher />
+          <p className={styles.hint}>
+            Đổi cỡ chữ trên mọi màn hình của app. Lựa chọn chỉ áp dụng cho máy này.
+          </p>
+        </dd>
       </dl>
     </Card>
   );
@@ -104,7 +110,6 @@ function SyncSettings() {
   }, [syncFolder]);
 
   if (!settings) return null;
-  const deviceId = settings.deviceId;
   const status = describeSyncStatus({ running, last, lastSuccessAt }, now);
 
   async function chooseFolder() {
@@ -113,16 +118,7 @@ function SyncSettings() {
       const folder = await pickSyncFolder(syncFolder);
       if (!folder) return;
       setBusy(true);
-      const contents = await inspectFolder(folder, deviceId);
-      const files = await openRemoteFiles(contents.rawFiles, await settingsKey(settings));
-      const data = useDataStore.getState().data;
-      const problem = data && connectProblem(data, files, new Date());
-      if (problem) {
-        setError(problem);
-        return;
-      }
-      await useDataStore.getState().updateSettings({ syncFolder: folder });
-      void syncNow();
+      await connectSyncFolder(folder);
     } catch (e) {
       setError(errorMessage(e));
     } finally {

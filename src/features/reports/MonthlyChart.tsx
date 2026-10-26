@@ -46,7 +46,7 @@ export function MonthlyChart({ totals, selected, onSelect }: MonthlyChartProps) 
             )}
           />
           <YAxis
-            width={56}
+            width="auto"
             tickLine={false}
             axisLine={false}
             tickFormatter={(value: number) => `¥${compact.format(value)}`}

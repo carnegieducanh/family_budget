@@ -46,6 +46,15 @@
   vertical-align: middle;
 }
 
+// Ảnh kèm tên: tên không xuống dòng giữa chừng, khoảng cách theo cỡ chữ.
+.faceName {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
 .photo {
   background: var(--color-surface-muted);
 

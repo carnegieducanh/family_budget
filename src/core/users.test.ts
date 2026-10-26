@@ -13,20 +13,19 @@ function setup() {
 }
 
 describe('updateUser', () => {
-  it('đổi tên và màu', () => {
+  it('đổi tên, giữ nguyên màu', () => {
     const { ctx, member } = setup();
-    expect(updateUser(member, { name: ' Bình  An ', color: '#12ab9f' }, ctx)).toMatchObject({
+    expect(updateUser(member, { name: ' Bình  An ' }, ctx)).toMatchObject({
       name: 'Bình An',
-      color: '#12AB9F',
+      color: member.color,
       role: 'member',
     });
   });
 
-  it('từ chối tên trống, tên trùng người kia, màu sai', () => {
+  it('từ chối tên trống, tên trùng người kia', () => {
     const { ctx, member } = setup();
-    expect(() => updateUser(member, { name: '', color: '#123456' }, ctx)).toThrow('tên');
-    expect(() => updateUser(member, { name: 'an', color: '#123456' }, ctx)).toThrow('khác nhau');
-    expect(() => updateUser(member, { name: 'Bình', color: 'red' }, ctx)).toThrow('Màu');
+    expect(() => updateUser(member, { name: '' }, ctx)).toThrow('tên');
+    expect(() => updateUser(member, { name: 'an' }, ctx)).toThrow('khác nhau');
   });
 });
 
@@ -50,10 +49,10 @@ describe('setAvatar', () => {
     expect(() => setAvatar(member, 'abc', ctx)).toThrow('emoji');
   });
 
-  it('đổi tên và màu vẫn giữ ảnh đại diện', () => {
+  it('đổi tên vẫn giữ ảnh đại diện', () => {
     const { ctx, member } = setup();
     const withEmoji = setAvatar(member, '🐻', ctx);
-    expect(updateUser(withEmoji, { name: 'Bình', color: '#123456' }, ctx).avatar).toBe('🐻');
+    expect(updateUser(withEmoji, { name: 'Bình' }, ctx).avatar).toBe('🐻');
   });
 });
 

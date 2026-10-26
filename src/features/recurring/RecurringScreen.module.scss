@@ -13,6 +13,10 @@
   @include m.empty;
 }
 
+.tableWrap {
+  @include m.table-scroll;
+}
+
 .table {
   @include m.data-table;
 }

@@ -86,56 +86,58 @@ export function RecurringScreen() {
         {templates.length === 0 ? (
           <p className={styles.empty}>Chưa có khoản định kỳ nào, ví dụ tiền nhà, internet.</p>
         ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Tên</th>
-                <th>Danh mục</th>
-                <th className={styles.num}>Số tiền</th>
-                <th>Người trả</th>
-                <th className={styles.num}>Ngày</th>
-                <th>Tháng này</th>
-                <th aria-label="Thao tác" />
-              </tr>
-            </thead>
-            <tbody>
-              {templates.map((template) => (
-                <tr key={template.id} className={template.active ? undefined : styles.off}>
-                  <td className={styles.name}>{template.name}</td>
-                  <td>
-                    <CategoryLabel category={categoriesById.get(template.categoryId)} />
-                  </td>
-                  <td className={styles.num}>{formatYen(template.amount)}</td>
-                  <td>
-                    <UserFace user={usersById.get(template.paidBy)} />
-                  </td>
-                  <td className={styles.num}>{template.dayOfMonth}</td>
-                  <td className={styles.status}>{currentMonthStatus(template, data, now)}</td>
-                  <td className={styles.actions}>
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        run(() =>
-                          useDataStore.getState().updateRecurring(template.id, {
-                            ...toInput(template),
-                            active: !template.active,
-                          }),
-                        )
-                      }
-                    >
-                      {template.active ? 'Tắt' : 'Bật'}
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setEditing(template)}>
-                      Sửa
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setDeleting(template)}>
-                      Xóa
-                    </Button>
-                  </td>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Tên</th>
+                  <th>Danh mục</th>
+                  <th className={styles.num}>Số tiền</th>
+                  <th>Người trả</th>
+                  <th className={styles.num}>Ngày</th>
+                  <th>Tháng này</th>
+                  <th aria-label="Thao tác" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {templates.map((template) => (
+                  <tr key={template.id} className={template.active ? undefined : styles.off}>
+                    <td className={styles.name}>{template.name}</td>
+                    <td>
+                      <CategoryLabel category={categoriesById.get(template.categoryId)} />
+                    </td>
+                    <td className={styles.num}>{formatYen(template.amount)}</td>
+                    <td>
+                      <UserFace user={usersById.get(template.paidBy)} />
+                    </td>
+                    <td className={styles.num}>{template.dayOfMonth}</td>
+                    <td className={styles.status}>{currentMonthStatus(template, data, now)}</td>
+                    <td className={styles.actions}>
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          run(() =>
+                            useDataStore.getState().updateRecurring(template.id, {
+                              ...toInput(template),
+                              active: !template.active,
+                            }),
+                          )
+                        }
+                      >
+                        {template.active ? 'Tắt' : 'Bật'}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditing(template)}>
+                        Sửa
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setDeleting(template)}>
+                        Xóa
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
 

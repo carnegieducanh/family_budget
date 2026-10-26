@@ -30,7 +30,8 @@
 
 .search {
   width: 100%;
-  padding-left: 34px;
+  // Lề 10px và icon 16px của kính lúp lớn theo cỡ chữ (zoom ở global.scss), cộng 8px tới chữ.
+  padding-left: calc(26px * var(--font-scale) + 8px);
 }
 
 .tableWrap {

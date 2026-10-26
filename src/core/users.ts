@@ -5,12 +5,10 @@ import type { MutationContext, User } from './types';
 
 // Người dùng và vai trò (SPEC mục 7, 8). Luôn có đúng 2 người và đúng một admin.
 
+// Màu của người dùng không đổi được nữa: giữ màu mặc định lúc thiết lập (nền ảnh chữ cái đầu).
 export interface UserInput {
   name: string;
-  color: string;
 }
-
-const COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
 export function updateUser(existing: User, input: UserInput, ctx: MutationContext): User {
   if (existing.deleted) throw new DomainError('Không tìm thấy người dùng.');
@@ -21,8 +19,7 @@ export function updateUser(existing: User, input: UserInput, ctx: MutationContex
   if (other && other.name.trim().toLocaleLowerCase('vi') === name.toLocaleLowerCase('vi')) {
     throw new DomainError('Tên 2 người phải khác nhau.');
   }
-  if (!COLOR_RE.test(input.color)) throw new DomainError('Màu không hợp lệ.');
-  return touch(existing, { name, color: input.color.toUpperCase() }, ctx.userId, ctx.now);
+  return touch(existing, { name }, ctx.userId, ctx.now);
 }
 
 /** Đặt ảnh đại diện, hoặc bỏ (`null`) để hiện lại chữ cái đầu của tên. */

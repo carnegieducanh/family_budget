@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { formatYen } from '../../core/money';
-import { formatDateTime, formatMonthLabel } from '../../core/month';
+import { formatDateTime, formatMonthLabel, formatMonthShort } from '../../core/month';
 import { findMonthRecord, isPastMonth } from '../../core/monthLock';
 import { activeMonths } from '../../core/queries';
 import {
@@ -58,43 +58,45 @@ export function SettlementScreen() {
       <MonthHeader title="Tất toán" />
 
       <Card title={`Chia đều 50/50 — ${formatMonthLabel(month)}`}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Người</th>
-              <th className={styles.num}>Đã trả</th>
-              <th className={styles.num}>Phần phải chịu</th>
-              <th className={styles.num}>Chênh lệch</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => {
-              const paid = settlement.paidByUser[user.id] ?? 0;
-              const diff = paid - settlement.sharePerPerson;
-              return (
-                <tr key={user.id}>
-                  <td>
-                    <UserFace user={user} size={28} />
-                  </td>
-                  <td className={styles.num}>{formatYen(paid)}</td>
-                  <td className={styles.num}>{formatYen(settlement.sharePerPerson)}</td>
-                  <td className={styles.num}>
-                    {diff > 0 ? '+' : ''}
-                    {formatYen(diff)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td>Tổng</td>
-              <td className={styles.num}>{formatYen(settlement.total)}</td>
-              <td className={styles.num}>{formatYen(settlement.total)}</td>
-              <td />
-            </tr>
-          </tfoot>
-        </table>
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Người</th>
+                <th className={styles.num}>Đã trả</th>
+                <th className={styles.num}>Phần phải chịu</th>
+                <th className={styles.num}>Chênh lệch</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => {
+                const paid = settlement.paidByUser[user.id] ?? 0;
+                const diff = paid - settlement.sharePerPerson;
+                return (
+                  <tr key={user.id}>
+                    <td>
+                      <UserFace user={user} size={28} withName />
+                    </td>
+                    <td className={styles.num}>{formatYen(paid)}</td>
+                    <td className={styles.num}>{formatYen(settlement.sharePerPerson)}</td>
+                    <td className={styles.num}>
+                      {diff > 0 ? '+' : ''}
+                      {formatYen(diff)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>Tổng</td>
+                <td className={styles.num}>{formatYen(settlement.total)}</td>
+                <td className={styles.num}>{formatYen(settlement.total)}</td>
+                <td />
+              </tr>
+            </tfoot>
+          </table>
+        </div>
 
         <div className={styles.result}>
           <span className={styles.resultIcon} aria-hidden="true">
@@ -172,7 +174,7 @@ function SettledStatus({ settlement, record, change, users, onMark }: SettledSta
       <p className={styles.settled}>
         <CircleCheck size={16} aria-hidden="true" /> Đã thanh toán lúc{' '}
         {formatDateTime(record.settledAt)} ·{' '}
-        <UserFace user={users.find((u) => u.id === record.settledBy)} size={22} /> xác nhận
+        <UserFace user={users.find((u) => u.id === record.settledBy)} size={22} withName /> xác nhận
       </p>
     );
   }
@@ -220,41 +222,43 @@ function HistoryTable({ data, users, now, selected }: HistoryTableProps) {
   const userIds = [users[0].id, users[1].id] as const;
 
   return (
-    <table className={styles.table}>
-      <thead>
-        <tr>
-          <th>Tháng</th>
-          <th className={styles.num}>Tổng chi</th>
-          <th className={styles.num}>Số tiền bù</th>
-          <th>Ai trả ai</th>
-          <th>Trạng thái</th>
-        </tr>
-      </thead>
-      <tbody>
-        {activeMonths(data, now).map((month) => {
-          const settlement = computeSettlement(data.transactions, userIds, month);
-          const status = historyStatus(settlement, data, now);
-          return (
-            <tr
-              key={month}
-              className={month === selected ? styles.selectedRow : styles.clickable}
-              onClick={() => setMonth(month)}
-            >
-              <td>{formatMonthLabel(month)}</td>
-              <td className={styles.num}>{formatYen(settlement.total)}</td>
-              <td className={styles.num}>{formatYen(settlement.amount)}</td>
-              <td>
-                <SettlementDirection settlement={settlement} users={users} />
-              </td>
-              <td className={styles[status.tone]}>
-                <span className={styles.status}>
-                  <status.icon size={14} aria-hidden="true" /> {status.label}
-                </span>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+    <div className={styles.tableWrap}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>Tháng</th>
+            <th className={styles.num}>Tổng chi</th>
+            <th className={styles.num}>Số tiền bù</th>
+            <th>Ai trả ai</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          {activeMonths(data, now).map((month) => {
+            const settlement = computeSettlement(data.transactions, userIds, month);
+            const status = historyStatus(settlement, data, now);
+            return (
+              <tr
+                key={month}
+                className={month === selected ? styles.selectedRow : styles.clickable}
+                onClick={() => setMonth(month)}
+              >
+                <td>{formatMonthShort(month)}</td>
+                <td className={styles.num}>{formatYen(settlement.total)}</td>
+                <td className={styles.num}>{formatYen(settlement.amount)}</td>
+                <td>
+                  <SettlementDirection settlement={settlement} users={users} />
+                </td>
+                <td className={styles[status.tone]}>
+                  <span className={styles.status}>
+                    <status.icon size={14} aria-hidden="true" /> {status.label}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }

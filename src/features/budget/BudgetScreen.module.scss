@@ -46,7 +46,8 @@
   @include m.badge(primary);
 }
 
+// Đứng trước số tiền để số đã chi của mọi dòng thẳng mép phải.
 .over {
   @include m.badge(danger);
-  margin-left: var(--space-2);
+  margin-right: var(--space-2);
 }

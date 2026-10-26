@@ -3,6 +3,7 @@ import {
   addMonths,
   formatDate,
   formatMonthLabel,
+  formatMonthShort,
   formatTimeAgo,
   isValidDate,
   isValidMonth,
@@ -40,6 +41,7 @@ describe('month helpers', () => {
   it('định dạng hiển thị', () => {
     expect(formatMonthLabel('2026-10')).toBe('Tháng 10/2026');
     expect(formatMonthLabel('2026-03')).toBe('Tháng 3/2026');
+    expect(formatMonthShort('2026-03')).toBe('3/2026');
     expect(formatDate('2026-10-05')).toBe('05/10/2026');
   });
 });

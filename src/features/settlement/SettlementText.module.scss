@@ -1,8 +1,38 @@
 // Ảnh đại diện và chữ trong câu tất toán nằm giữa dòng, kể cả khi câu đứng giữa đoạn văn.
+// Các phần cách nhau rộng cho dễ đọc; hẹp thì cụm số tiền xuống dòng dưới tên.
 .line {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.3em;
+  gap: 0.3em 0.55em;
   vertical-align: middle;
+}
+
+// Số tiền và nhãn đi kèm (ví dụ "Tạm tính") luôn cùng một dòng.
+.amountGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  margin-left: 0.15em;
+  white-space: nowrap;
+}
+
+// Số tiền trả bù nổi bật bằng màu xanh chủ đạo và lớn hơn chữ trong câu, như các số tiền chính
+// khác của app. Đủ tương phản trên nền card và trên nền xanh nhạt của hộp kết quả ở màn Tất toán
+// (≥ 4.5:1).
+.amount {
+  color: var(--color-primary-strong);
+  font-size: 1.3em;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+// "Bình → An" trong ô bảng lịch sử: gọn, không ngắt dòng.
+.direction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  vertical-align: middle;
+  white-space: nowrap;
 }

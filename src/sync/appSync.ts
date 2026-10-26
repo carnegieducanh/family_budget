@@ -1,6 +1,7 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { DEFAULT_SYNC_INTERVAL_MIN } from '../core/defaults';
 import { parseDeviceFileName, type DeviceFileInfo } from '../core/deviceFiles';
+import { connectProblem } from '../core/sync';
 import type { Settings } from '../core/types';
 import { useDataStore } from '../state/dataStore';
 import { useSyncStore } from '../state/syncStore';
@@ -13,6 +14,7 @@ import {
 } from '../storage/driveFolderAdapter';
 import {
   createSyncScheduler,
+  openRemoteFiles,
   readRemoteFiles,
   syncOnce,
   type RawRemoteFile,
@@ -150,4 +152,19 @@ export async function inspectFolder(folder: string, deviceId: string): Promise<F
   const deviceFiles = await listDeviceFiles(folder);
   const rawFiles = await readRemoteFiles(createDriveFolderAdapter(folder, deviceId));
   return { folder, dataDir, deviceFiles, rawFiles };
+}
+
+/**
+ * Kết nối thư mục Drive vừa chọn rồi sync ngay (Cài đặt, hoặc bấm "Chưa kết nối thư mục Drive"
+ * ở sidebar). Ném lỗi kèm lý do nếu thư mục chứa dữ liệu của gia đình khác.
+ */
+export async function connectSyncFolder(folder: string): Promise<void> {
+  const { settings, data } = useDataStore.getState();
+  if (!settings) throw new Error('Chưa đọc được settings.');
+  const contents = await inspectFolder(folder, settings.deviceId);
+  const files = await openRemoteFiles(contents.rawFiles, await settingsKey(settings));
+  const problem = data && connectProblem(data, files, new Date());
+  if (problem) throw new Error(problem);
+  await useDataStore.getState().updateSettings({ syncFolder: folder });
+  void syncNow();
 }

@@ -1,7 +1,17 @@
 @use '../../styles/mixins' as m;
 
+// Bảng vẫn rộng hơn card (cửa sổ hẹp, chữ lớn) thì cuộn ngang trong card.
+.tableWrap {
+  @include m.table-scroll;
+}
+
 .table {
   @include m.data-table;
+
+  // Ô ngắn (tháng, số tiền, ảnh + tên, trạng thái): không ngắt dòng giữa chừng.
+  td {
+    white-space: nowrap;
+  }
 
   tfoot td {
     font-weight: 600;

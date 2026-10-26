@@ -5,10 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Family Budget</title>
     <script>
-      // Đặt theme đã chọn trước khi vẽ lần đầu để không nháy màu (state/themeStore.ts).
+      // Đặt theme và cỡ chữ đã chọn trước khi vẽ lần đầu để không nháy
+      // (state/themeStore.ts, state/fontSizeStore.ts).
       try {
         var theme = localStorage.getItem('family-budget.theme');
         if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+        var fontSize = localStorage.getItem('family-budget.font-size');
+        if (fontSize === 'md' || fontSize === 'lg' || fontSize === 'xl')
+          document.documentElement.dataset.fontSize = fontSize;
       } catch (e) {}
     </script>
   </head>

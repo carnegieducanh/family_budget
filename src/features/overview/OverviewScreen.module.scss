@@ -68,10 +68,6 @@
   @include m.badge(neutral);
 }
 
-.settlementLink {
-  margin-left: auto;
-}
-
 // --- 5 khoản gần nhất
 
 .recent {
@@ -82,7 +78,8 @@
 
 .recentRow {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto 52px minmax(90px, auto);
+  // Cột người trả (ảnh + tên) rộng tối thiểu 8em để ảnh thẳng cột dù tên dài ngắn khác nhau.
+  grid-template-columns: auto minmax(0, 1fr) minmax(8em, auto) 52px minmax(90px, auto);
   align-items: center;
   gap: var(--space-4);
   width: 100%;
