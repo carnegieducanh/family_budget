@@ -86,6 +86,11 @@ export interface Settings {
    */
   encryption: { enabled: boolean; keyB64?: string; saltB64?: string };
   lastSyncAt?: string;
+  /**
+   * `createdAt` của khoản mới nhất người kia nhập mà máy này đã báo trong popup "khoản chi mới"
+   * (core/newTransactions.ts). Chưa có thì app đặt khi mở màn hình chính.
+   */
+  newTransactionsSeenUntil?: string;
 }
 
 /** Dữ liệu người dùng nhập trong form thêm/sửa khoản chi. */

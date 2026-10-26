@@ -1,0 +1,71 @@
+@use '../../styles/mixins' as m;
+
+.intro {
+  margin-bottom: var(--space-3);
+}
+
+.list {
+  margin: 0 calc(-1 * var(--space-3));
+  padding: 0;
+  list-style: none;
+}
+
+// Cùng kiểu dòng với "5 khoản gần nhất" ở Tổng quan, bỏ cột người trả (luôn là người kia).
+.row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(80px, auto);
+  align-items: center;
+  gap: var(--space-4);
+  padding: 8px var(--space-3);
+
+  & + & {
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+.tile {
+  @include m.icon-tile(36px);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.category,
+.note {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category {
+  font-weight: 500;
+}
+
+.note {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.date {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.amount {
+  @include m.num;
+  font-weight: 600;
+}
+
+.total {
+  margin-right: auto;
+
+  strong {
+    @include m.num;
+    margin-left: var(--space-1);
+  }
+}

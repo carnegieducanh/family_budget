@@ -60,6 +60,8 @@ describe('parseSettings', () => {
   it('đọc lại đúng settings đã ghi', () => {
     const settings = { ...createSettings('device-1'), userId: 'user-a' };
     expect(parseSettings(serializeSettings(settings))).toEqual(settings);
+    const seen = { ...settings, newTransactionsSeenUntil: '2026-10-25T09:00:00.000Z' };
+    expect(parseSettings(serializeSettings(seen))).toEqual(seen);
   });
 
   it('điền giá trị mặc định cho trường thiếu', () => {

@@ -14,6 +14,7 @@ import { createInitialData } from '../core/defaults';
 import { DomainError } from '../core/errors';
 import { householdUsers } from '../core/household';
 import { relockMonth, unlockMonth } from '../core/monthLock';
+import { NOTHING_SEEN, initialSeenMark, seenMarkAfter } from '../core/newTransactions';
 import { assertCan, canEditAvatar, type Action } from '../core/permissions';
 import { active, upsert } from '../core/records';
 import {
@@ -93,6 +94,16 @@ interface DataState {
   updateSettings(changes: Partial<Omit<Settings, 'deviceId'>>): Promise<void>;
   /** Dữ liệu, người dùng của máy này và thời điểm hiện tại, để xem trước một thao tác. */
   context(): MutationContext;
+
+  // Mốc báo khoản chi mới (core/newTransactions.ts), lưu trong settings.json.
+  /**
+   * Máy chưa có mốc (vừa thiết lập, hoặc vừa cập nhật lên bản có popup khoản chi mới): coi các
+   * khoản đang có trên máy là đã xem. Gọi khi mở màn hình chính, trước lượt sync đầu tiên, để
+   * khoản lượt sync đó mang về vẫn được báo.
+   */
+  initNewTransactionsMark(): void;
+  /** Người dùng đã xem popup: dời mốc tới khoản mới nhất trong `shown`. */
+  markNewTransactionsSeen(shown: readonly Transaction[]): void;
 
   // Mã hóa file trên Drive (SPEC mục 9). Khóa lưu trong settings.json, không lưu mật khẩu.
   /** Admin đặt mật khẩu mới (bật mã hóa hoặc đổi mật khẩu): khóa mới với salt mới. */
@@ -212,6 +223,13 @@ export const useDataStore = create<DataState>()((set, get) => {
     return find(context().data.transactions, id, 'khoản chi');
   }
 
+  /** Không lưu được mốc thì lần mở app sau báo lại các khoản đó, không mất gì. */
+  function saveSeenMark(seenUntil: string): void {
+    get()
+      .updateSettings({ newTransactionsSeenUntil: seenUntil })
+      .catch((error: unknown) => console.warn('Không lưu được mốc khoản chi mới:', error));
+  }
+
   return {
     status: 'loading',
     loadError: null,
@@ -300,6 +318,17 @@ export const useDataStore = create<DataState>()((set, get) => {
     },
 
     context,
+
+    initNewTransactionsMark() {
+      const { data, settings } = get();
+      if (!data || !settings?.userId || settings.newTransactionsSeenUntil !== undefined) return;
+      saveSeenMark(initialSeenMark(data, settings.userId));
+    },
+
+    markNewTransactionsSeen(shown) {
+      const seenUntil = requireSettings().newTransactionsSeenUntil ?? NOTHING_SEEN;
+      saveSeenMark(seenMarkAfter(seenUntil, shown));
+    },
 
     async setEncryptionPassword(password, confirm) {
       authorized('encryption:manage');

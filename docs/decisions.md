@@ -470,3 +470,19 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 - **Rê chuột trên sidebar (các mục điều hướng và khối người dùng) dùng màu riêng `--color-sidebar-hover`: theme sáng là xanh nhạt `#e9f5e1`, nhạt hơn nền xanh của mục đang chọn; theme tối giữ như cũ.**
   Lý do: ở theme sáng, nền rê chuột cũ `--color-surface-hover` (`#f6f7ef`) gần như trùng nền sidebar `#fcfcfc` nên khó thấy (user báo).
+
+## 2026-10-26 — Popup "Khoản chi mới" của người kia
+
+- **Mở app: sau lượt sync đầu tiên, nếu người kia đã thêm khoản chi từ lần báo trước thì hiện popup "Khoản chi mới": "[ảnh] Queen đã thêm N khoản chi.", danh sách từng khoản (icon và tên danh mục, ghi chú, ngày, số tiền; ngày mới nhất trước), dòng tổng tiền và nút "Đã xem". Đóng bằng cách nào (nút, Esc, dấu X, bấm ra ngoài) cũng tính là đã xem. Khoản người kia nhập với người trả khác (bản v0.1.0 ở máy kia vẫn chọn được người trả) thì dòng phụ ghi thêm "Bạn trả"/"<tên> trả".**
+  Lý do: user muốn mỗi khi một người thêm khoản chi thì người kia mở app sẽ thấy popup các khoản mới.
+
+- **Chỉ báo một lần mỗi lần mở app, ngay khi lượt sync đầu tiên xong — kể cả khi chưa kết nối Drive hoặc sync lỗi, khi đó báo những khoản đã có trên máy. Khoản đến trong lúc app đang mở (sync định kỳ, focus lại cửa sổ) không bật popup giữa chừng mà để lần mở app sau.**
+  Lý do: user nói "khi mở app"; popup bật lên giữa lúc đang nhập khoản chi sẽ làm mất mạch. Chờ lượt sync đầu để báo được cả khoản vừa nhận từ Drive.
+
+- **Mỗi máy nhớ một mốc trong `settings.json` (`newTransactionsSeenUntil`, không đồng bộ, không đổi `schemaVersion`): `createdAt` của khoản mới nhất đã báo. Khoản mới = người kia nhập, `createdAt` sau mốc. Mốc so với `createdAt` do máy kia ghi chứ không với giờ máy này, nên giờ hai máy lệch nhau không làm sót khoản.** Logic ở `core/newTransactions.ts`.
+  Lý do: "đã xem" là chuyện của từng máy, không phải dữ liệu chung. Một mốc thời gian đủ dùng vì file Drive của máy kia luôn chứa toàn bộ dữ liệu: đã thấy khoản nhập lúc T thì cũng đã có mọi khoản nhập trước T.
+
+- **Không báo: khoản của mình, khoản đã xóa, khoản sinh từ định kỳ (app tự tạo mỗi tháng), khoản mà người sửa sau cùng khác người nhập (máy này đã sửa nó, hoặc admin nhập CSV thay người kia). Cũng không báo khi người kia sửa hay xóa khoản cũ.**
+  Lý do: user hỏi về khoản "mới thêm". Khoản định kỳ thì cả hai đã biết trước; khoản mình đã sửa hoặc tự nhập từ CSV thì không còn là tin mới.
+
+- **Máy chưa có mốc (vừa thiết lập, hoặc vừa cập nhật lên bản có popup này): khi mở màn hình chính, trước lượt sync đầu tiên, đặt mốc = khoản mới nhất của người kia đang có trên máy.** Không báo lại cả lịch sử, nhưng khoản mà lượt sync đầu tiên đó mang về vẫn được báo.

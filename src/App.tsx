@@ -12,6 +12,7 @@ import { ReportsScreen } from './features/reports/ReportsScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
 import { SettlementScreen } from './features/settlement/SettlementScreen';
 import { SetupScreen } from './features/setup/SetupScreen';
+import { NewTransactionsDialog } from './features/transactions/NewTransactionsDialog';
 import { TransactionEditor } from './features/transactions/TransactionEditor';
 import { TransactionsScreen } from './features/transactions/TransactionsScreen';
 import { useDataStore, useReadyData } from './state/dataStore';
@@ -63,10 +64,12 @@ function MainLayout() {
     contentRef.current?.scrollTo({ top: 0 });
   }, [screen]);
 
-  // Khi mở app: sinh khoản định kỳ của tháng này (SPEC mục 6), rồi bắt đầu lịch sync:
-  // sync ngay, định kỳ, khi focus lại cửa sổ và sau mỗi thay đổi (SPEC mục 5).
+  // Khi mở app: sinh khoản định kỳ của tháng này (SPEC mục 6), đặt mốc báo khoản chi mới nếu
+  // máy chưa có, rồi bắt đầu lịch sync: sync ngay, định kỳ, khi focus lại cửa sổ và sau mỗi
+  // thay đổi (SPEC mục 5).
   useEffect(() => {
     useDataStore.getState().generateRecurring();
+    useDataStore.getState().initNewTransactionsMark();
     startSync();
   }, []);
 
@@ -106,6 +109,7 @@ function MainLayout() {
         </div>
       </main>
       <TransactionEditor />
+      <NewTransactionsDialog />
     </div>
   );
 }

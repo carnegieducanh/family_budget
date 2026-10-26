@@ -187,6 +187,7 @@ interface Settings {
   syncIntervalMin: number;   // mặc định 5
   encryption: { enabled: boolean; keyB64?: string };
   lastSyncAt?: string;
+  newTransactionsSeenUntil?: string; // createdAt của khoản mới nhất người kia nhập đã báo trong popup "Khoản chi mới"
 }
 ```
 
@@ -362,6 +363,7 @@ Bố cục chung: cửa sổ tối thiểu 1024 × 700, sidebar điều hướng
    - Lọc theo danh mục, người trả; tìm theo ghi chú; sắp xếp theo ngày hoặc số tiền.
    - Thêm và sửa trong modal: ngày (mặc định hôm nay), số tiền (ô số, Enter để lưu), danh mục, người trả (mặc định là mình), ghi chú. Xóa có hộp xác nhận.
    - Phím tắt: Ctrl/Cmd + N thêm mới, Esc đóng modal.
+   - Khi mở app, nếu người kia đã thêm khoản chi từ lần báo trước: popup "Khoản chi mới" liệt kê các khoản đó (danh mục, ghi chú, ngày, số tiền) và tổng tiền, nút "Đã xem". Đóng là tính đã xem.
 4. **Tất toán**
    - Tháng đang chọn: bảng mỗi người đã trả, mỗi người chịu, kết quả "B trả A ¥X".
    - Nút "Đã thanh toán" cho tháng đã khóa; cảnh báo nếu số tiền thay đổi sau tất toán.

@@ -145,6 +145,9 @@ export function parseSettings(json: string): Settings {
     // Không có khóa thì không ghi mã hóa được, dù file ghi `enabled: true`.
     encryption: { enabled: encryption.enabled === true && key !== null, ...key },
     ...(typeof raw.lastSyncAt === 'string' ? { lastSyncAt: raw.lastSyncAt } : {}),
+    ...(typeof raw.newTransactionsSeenUntil === 'string'
+      ? { newTransactionsSeenUntil: raw.newTransactionsSeenUntil }
+      : {}),
   };
 }
 
