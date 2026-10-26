@@ -16,7 +16,7 @@ import { getBackupDir } from '../../storage/backup';
 import { pickSyncFolder, resolveDataDir } from '../../storage/driveFolderAdapter';
 import { getDataFilePath } from '../../storage/localStore';
 import { connectSyncFolder, syncNow } from '../../sync/appSync';
-import { describeSyncStatus } from '../../sync/syncStatus';
+import { describeSyncStatus, remoteDeviceName } from '../../sync/syncStatus';
 import { BackupPanel } from '../data/BackupPanel';
 import { CsvExport } from '../data/CsvExport';
 import { CsvImport } from '../data/CsvImport';
@@ -86,6 +86,7 @@ function AppearanceSettings() {
 }
 
 function SyncSettings() {
+  const { data } = useReadyData();
   const settings = useDataStore((s) => s.settings);
   const running = useSyncStore((s) => s.running);
   const last = useSyncStore((s) => s.last);
@@ -237,7 +238,7 @@ function SyncSettings() {
                 <ul className={styles.list}>
                   {remotes.map((remote) => (
                     <li key={remote.name}>
-                      Máy <code>{remote.deviceId.slice(0, 8)}</code> ghi dữ liệu lúc{' '}
+                      {remoteDeviceName(remote, data.users, remotes)} ghi dữ liệu lúc{' '}
                       {formatDateTime(remote.writtenAt)} ({formatTimeAgo(remote.writtenAt, now)})
                     </li>
                   ))}

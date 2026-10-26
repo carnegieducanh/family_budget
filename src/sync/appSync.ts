@@ -47,6 +47,7 @@ const env: SyncEnv = {
       adapter: createDriveFolderAdapter(settings.syncFolder, settings.deviceId, writeKey !== null),
       readKey,
       writeKey,
+      writtenBy: settings.userId,
     };
   },
   getData() {

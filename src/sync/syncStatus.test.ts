@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { localTime } from '../core/testing';
-import { describeSyncStatus, formatSyncTime } from './syncStatus';
+import { localTime, makeData } from '../core/testing';
+import { describeSyncStatus, formatSyncTime, remoteDeviceName } from './syncStatus';
 import type { SyncOutcome } from './syncService';
 
 const NOW = localTime(2026, 10, 23, 14, 30);
@@ -113,5 +113,34 @@ describe('formatSyncTime', () => {
     expect(formatSyncTime(localTime(2026, 10, 22, 23, 50).toISOString(), NOW)).toBe(
       '23:50 22/10/2026',
     );
+  });
+});
+
+describe('remoteDeviceName', () => {
+  const { data } = makeData();
+  const remote = (deviceId: string, writtenBy?: string) => ({
+    name: `device-${deviceId}.json`,
+    deviceId,
+    writtenAt: minutesAgo(3),
+    ...(writtenBy ? { writtenBy } : {}),
+    encrypted: false,
+  });
+
+  it('gọi theo tên người dùng của máy đó', () => {
+    const b = remote('8bab748d-0738', 'user-b');
+    expect(remoteDeviceName(b, data.users, [b])).toBe('Máy Bình');
+  });
+
+  it('file của bản app cũ chưa ghi người dùng → dùng mã máy', () => {
+    const old = remote('8bab748d-0738');
+    expect(remoteDeviceName(old, data.users, [old])).toBe('Máy 8bab748d');
+  });
+
+  it('hai máy của cùng một người → thêm mã máy để phân biệt', () => {
+    const first = remote('8bab748d-0738', 'user-b');
+    const second = remote('934dbd87-c86d', 'user-b');
+    const all = [first, second];
+    expect(remoteDeviceName(first, data.users, all)).toBe('Máy Bình (8bab748d)');
+    expect(remoteDeviceName(second, data.users, all)).toBe('Máy Bình (934dbd87)');
   });
 });

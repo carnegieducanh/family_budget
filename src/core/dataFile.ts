@@ -81,6 +81,9 @@ function checkDataFile(raw: Json): DataFile {
   if (typeof raw.deviceId !== 'string' || typeof raw.writtenAt !== 'string') {
     throw new DomainError('Dữ liệu sai cấu trúc: thiếu deviceId hoặc writtenAt.');
   }
+  if (raw.writtenBy !== undefined && typeof raw.writtenBy !== 'string') {
+    throw new DomainError('Dữ liệu sai cấu trúc: writtenBy phải là string.');
+  }
   for (const [collection, checks] of Object.entries(COLLECTION_FIELDS)) {
     const list = raw[collection];
     if (!Array.isArray(list)) {

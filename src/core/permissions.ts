@@ -38,8 +38,8 @@ export function can(user: User | undefined, action: Action, record?: Transaction
   return MEMBER_ACTIONS.has(action);
 }
 
-/** Ảnh đại diện: mỗi người tự đổi của mình, admin đổi được của cả hai. */
-export function canEditAvatar(user: User | undefined, target: User): boolean {
+/** Tên và ảnh đại diện: mỗi người tự đổi của mình, admin đổi được của cả hai. */
+export function canEditProfile(user: User | undefined, target: User): boolean {
   if (!user || user.deleted) return false;
   return user.id === target.id || can(user, 'users:manage');
 }

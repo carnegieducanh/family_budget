@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assertCan, can, canEditAvatar, type Action } from './permissions';
+import { assertCan, can, canEditProfile, type Action } from './permissions';
 import { makeData, makeTx } from './testing';
 import type { User } from './types';
 
@@ -63,14 +63,14 @@ describe('can', () => {
   });
 });
 
-describe('canEditAvatar', () => {
-  it('mỗi người đổi được ảnh của mình, admin đổi được của cả hai', () => {
+describe('canEditProfile', () => {
+  it('mỗi người đổi được tên và ảnh của mình, admin đổi được của cả hai', () => {
     const { admin, member } = users();
-    expect(canEditAvatar(member, member)).toBe(true);
-    expect(canEditAvatar(member, admin)).toBe(false);
-    expect(canEditAvatar(admin, admin)).toBe(true);
-    expect(canEditAvatar(admin, member)).toBe(true);
-    expect(canEditAvatar(undefined, member)).toBe(false);
+    expect(canEditProfile(member, member)).toBe(true);
+    expect(canEditProfile(member, admin)).toBe(false);
+    expect(canEditProfile(admin, admin)).toBe(true);
+    expect(canEditProfile(admin, member)).toBe(true);
+    expect(canEditProfile(undefined, member)).toBe(false);
   });
 });
 

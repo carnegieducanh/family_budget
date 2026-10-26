@@ -171,6 +171,7 @@ interface DataFile {
   schemaVersion: 1;
   deviceId: string;
   writtenAt: string;
+  writtenBy?: string;        // userId của người dùng máy ghi file device-*.json (bản app cũ không ghi)
   users: User[];
   categories: Category[];
   transactions: Transaction[];
@@ -264,9 +265,9 @@ Chỉ một lượt sync chạy tại một thời điểm (mutex trong `syncSer
 
 **Thiết lập lần đầu:**
 
-1. Máy admin: chọn "Tạo dữ liệu mới", nhập tên 2 người, chọn ảnh đại diện của mình (bắt buộc), chọn thư mục Drive. App tạo danh mục mặc định và ghi `device-<id>.json`.
-2. Máy thứ hai: chọn "Tham gia", chọn cùng thư mục Drive. App đọc file của máy admin, hiện danh sách người dùng để chọn "Tôi là ...", chọn ảnh đại diện của mình (bắt buộc), rồi merge và ghi file của mình.
-3. Không cho tạo dữ liệu mới nếu thư mục đã có file `device-*.json` (tránh hai bộ dữ liệu song song).
+1. Máy admin: app báo chưa thấy dữ liệu gia đình, bấm "Tạo dữ liệu mới" ở dòng cuối, nhập tên 2 người, chọn ảnh đại diện của mình (bắt buộc), chọn thư mục Drive. App tạo danh mục mặc định và ghi `device-<id>.json`.
+2. Máy thứ hai: mở app lần đầu, app tự tìm thư mục `FamilyBudget` đã có dữ liệu trong Google Drive for Desktop của máy (tối đa 2 cấp dưới My Drive / Shared drives, kể cả lối tắt) và cấp quyền đọc ghi thư mục đó. Thấy đúng một thư mục thì hiện luôn hai người dùng dạng thẻ có ảnh đại diện; không thấy (hoặc thấy nhiều hơn một) thì hiện hướng dẫn cho máy thứ hai (cài Google Drive for Desktop, thêm lối tắt tới thư mục được chia sẻ, chờ Drive tải xong) với nút "Tìm lại" và "Tự chọn thư mục...". Sau đó chọn tài khoản của mình, chọn ảnh đại diện (bắt buộc), rồi merge và ghi file của mình.
+3. Không cho tạo dữ liệu mới nếu thư mục đã có file `device-*.json`, hoặc nếu Google Drive của máy đã có thư mục gia đình ở chỗ khác (tránh hai bộ dữ liệu song song). Đã tìm thấy dữ liệu gia đình thì màn chọn tài khoản không có đường quay về bước tạo mới.
 
 **Chuẩn bị Google Drive (ghi vào `docs/INSTALL.md`):** cài Google Drive for Desktop trên cả 2 máy. Nếu dùng 2 tài khoản Google khác nhau: admin tạo thư mục, chia sẻ quyền chỉnh sửa cho người kia; người kia chọn "Thêm lối tắt vào Drive". Bật "Có sẵn ngoại tuyến" cho thư mục này.
 
@@ -335,8 +336,8 @@ Admin quản lý cấu hình và có thể sửa mọi dữ liệu; người dù
 | Mở khóa tạm tháng đã khóa | Có | Không |
 | Import CSV, khôi phục backup | Có | Không |
 | Export CSV, xem báo cáo, xem tất toán | Có | Có |
-| Cài đặt người dùng, vai trò, mật khẩu mã hóa | Có | Không |
-| Đổi ảnh đại diện | Của cả hai người | Của mình |
+| Chuyển vai trò, mật khẩu mã hóa | Có | Không |
+| Đổi tên, ảnh đại diện | Của cả hai người | Của mình |
 | Cài đặt thư mục sync, chu kỳ sync của máy mình | Có | Có |
 
 Viết các hàm `can(user, action, record?)` trong `core/permissions.ts`, dùng chung cho UI (ẩn hoặc vô hiệu nút) và store (chặn thao tác). Vai trò được đặt khi thiết lập lần đầu; admin có thể chuyển vai trò trong Cài đặt, nhưng luôn phải còn đúng một admin.
@@ -345,12 +346,13 @@ Viết các hàm `can(user, action, record?)` trong `core/permissions.ts`, dùng
 
 App có 9 màn hình, bố cục sidebar trái + vùng nội dung; màn hình chính là Tổng quan tháng.
 
-Bố cục chung: cửa sổ tối thiểu 1024 × 700, sidebar điều hướng bên trái, trạng thái sync ở góc dưới sidebar, banner thông báo cập nhật ở trên cùng khi có bản mới. Theme Sáng / Tối / Theo hệ thống (mặc định), chọn ở sidebar hoặc Cài đặt → Giao diện, lưu riêng từng máy. Các màn hình có chọn tháng dùng chung một bộ chọn `‹ Tháng 10/2026 ›`.
+Bố cục chung: cửa sổ tối thiểu 1024 × 700, sidebar điều hướng bên trái, trạng thái sync ở góc dưới sidebar, popup giữa màn hình khi có bản cập nhật mới. Theme Sáng / Tối / Theo hệ thống (mặc định), chọn ở sidebar hoặc Cài đặt → Giao diện, lưu riêng từng máy. Các màn hình có chọn tháng dùng chung một bộ chọn `‹ Tháng 10/2026 ›`.
 
 1. **Thiết lập lần đầu** (chỉ hiện khi chưa có `userId`)
-   - Chọn "Tạo dữ liệu mới (admin)" hoặc "Tham gia (máy thứ hai)".
-   - Tạo mới: nhập tên 2 người, chọn ảnh đại diện của mình, chọn thư mục Drive.
-   - Tham gia: chọn thư mục Drive, chọn "Tôi là ..." từ danh sách đọc được, rồi chọn ảnh đại diện của mình.
+   - Tìm sẵn dữ liệu gia đình trong Google Drive (mục 5). Thấy thì hiện ngay "Chọn tài khoản của bạn để bắt đầu" với hai thẻ người dùng (ảnh đại diện, tên, vai trò), không kèm gì khác; không có nút quay về bước tạo mới.
+   - Không thấy: "Chưa tìm thấy dữ liệu gia đình trên Google Drive của máy này", hướng dẫn 3 bước cho máy người nhà, nút "Tự chọn thư mục..." và "Tìm lại" (chính). "Tạo dữ liệu mới" chỉ là dòng phụ cuối màn: "Bạn là người đầu tiên dùng app trong gia đình?".
+   - Tạo mới: cảnh báo chỉ làm trên máy đầu tiên, nhập tên 2 người, chọn ảnh đại diện của mình, chọn thư mục Drive.
+   - Tự chọn thư mục: chọn thư mục Drive, chọn tài khoản của mình từ hai thẻ, rồi chọn ảnh đại diện của mình.
    - Kiểm tra thư mục hợp lệ trước khi cho tiếp tục (mục 5).
 2. **Tổng quan tháng** (màn hình chính)
    - Tổng chi tháng, ngân sách còn lại dạng thanh tiến độ (đổi màu khi vượt 80% và 100%).
@@ -380,8 +382,8 @@ Bố cục chung: cửa sổ tối thiểu 1024 × 700, sidebar điều hướng
 8. **Chi tiêu định kỳ** (admin)
    - Danh sách mẫu: tên, số tiền, danh mục, người trả, ngày trong tháng, bật/tắt.
 9. **Cài đặt** (mở bằng cách bấm vào người đang dùng ở cuối sidebar; sidebar không có mục Cài đặt riêng)
-   - Người dùng và vai trò (admin). Ảnh đại diện: bấm vào ảnh để đổi (ảnh trên máy hoặc emoji); mỗi người đổi được ảnh của mình.
-   - Sync: thư mục Drive, chu kỳ sync, trạng thái chi tiết, nút "Sync ngay".
+   - Người dùng và vai trò (chuyển vai trò: admin). Tên: sửa trong ô, lưu khi rời ô hoặc bấm Enter. Ảnh đại diện: bấm vào ảnh để đổi (ảnh trên máy hoặc emoji). Mỗi người đổi được tên và ảnh của mình, admin đổi được của cả hai.
+   - Sync: thư mục Drive, chu kỳ sync, trạng thái chi tiết, nút "Sync ngay". Mục "Máy khác" gọi mỗi máy theo người dùng của máy đó ("Máy Queen"); file của bản app cũ chưa ghi người dùng thì gọi theo 8 ký tự đầu mã máy, hai máy của cùng một người thì kèm mã máy.
    - Mã hóa (admin, giai đoạn 4).
    - Backup: danh sách snapshot, khôi phục (admin), export/import backup JSON.
    - Import/export CSV.
@@ -410,7 +412,7 @@ Backup tự động trên từng máy, mã hóa chỉ áp dụng cho file trên 
 
 **Cập nhật app:**
 
-- Dùng `plugin-updater`. Kiểm tra khi mở app và mỗi 24 giờ. Có bản mới → banner "Có phiên bản x.y.z" kèm ghi chú thay đổi và nút "Cập nhật". Bấm → tải, cài, khởi động lại bằng `plugin-process`. Không tự cập nhật khi người dùng chưa bấm.
+- Dùng `plugin-updater`. Kiểm tra khi mở app và mỗi 24 giờ. Có bản mới → popup giữa màn hình "Có bản cập nhật mới": một câu báo phiên bản, ghi chú thay đổi ẩn sau "Xem chi tiết", nút "Để sau" (ẩn đến lần mở app sau) và "Cập nhật". Cài đặt → Phiên bản app xem lại được ghi chú của bản mới và của bản đang dùng (docs/CHANGELOG.md đóng gói trong app), cũng ẩn sau liên kết. Bấm → tải, cài, khởi động lại bằng `plugin-process`. Không tự cập nhật khi người dùng chưa bấm.
 - File cập nhật được ký bằng khóa của Tauri (`tauri signer generate`, miễn phí, khác với ký app của Apple). Private key không commit vào repo; lưu trong GitHub Secrets.
 - Endpoint `latest.json` đặt trên GitHub Releases. Updater cần endpoint công khai: dùng repo public, hoặc giữ code ở repo private và đẩy bản phát hành sang một repo public riêng chỉ chứa releases.
 - GitHub Actions dùng `tauri-action` để build: Windows (NSIS `.exe`) và macOS aarch64 (`.dmg` + `.app.tar.gz` cho updater).

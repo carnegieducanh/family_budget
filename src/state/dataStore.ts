@@ -15,7 +15,7 @@ import { DomainError } from '../core/errors';
 import { householdUsers } from '../core/household';
 import { relockMonth, unlockMonth } from '../core/monthLock';
 import { NOTHING_SEEN, initialSeenMark, seenMarkAfter } from '../core/newTransactions';
-import { assertCan, canEditAvatar, type Action } from '../core/permissions';
+import { assertCan, canEditProfile, type Action } from '../core/permissions';
 import { active, upsert } from '../core/records';
 import {
   createRecurring,
@@ -137,6 +137,7 @@ interface DataState {
   /** Sinh khoản định kỳ của tháng hiện tại (tự động, không cần quyền). Trả về số khoản mới. */
   generateRecurring(): number;
 
+  /** Đổi tên. Mỗi người tự đổi của mình, admin đổi được của cả hai. */
   updateUser(id: string, input: UserInput): void;
   /** Đặt ảnh đại diện, `null` là bỏ. Mỗi người tự đổi của mình, admin đổi được của cả hai. */
   setAvatar(id: string, avatar: string | null): void;
@@ -190,6 +191,21 @@ export const useDataStore = create<DataState>()((set, get) => {
       record,
     );
     return ctx;
+  }
+
+  /** Người dùng cần đổi tên hoặc ảnh; ném `denied` nếu người đang dùng không được đổi. */
+  function profileTarget(id: string, denied: string): { ctx: MutationContext; target: User } {
+    const ctx = context();
+    const target = find(ctx.data.users, id, 'người dùng');
+    if (
+      !canEditProfile(
+        ctx.data.users.find((u) => u.id === ctx.userId),
+        target,
+      )
+    ) {
+      throw new DomainError(denied);
+    }
+    return { ctx, target };
   }
 
   /** Ghi data.json (ghi nguyên tử, theo hàng đợi). Bộ nhớ đã được cập nhật trước đó. */
@@ -470,22 +486,12 @@ export const useDataStore = create<DataState>()((set, get) => {
     // --- Người dùng
 
     updateUser(id, input) {
-      const ctx = authorized('users:manage');
-      const user = updateUser(find(ctx.data.users, id, 'người dùng'), input, ctx);
-      commit({ ...ctx.data, users: upsert(ctx.data.users, user) });
+      const { ctx, target } = profileTarget(id, 'Chỉ admin đổi được tên của người kia.');
+      commit({ ...ctx.data, users: upsert(ctx.data.users, updateUser(target, input, ctx)) });
     },
 
     setAvatar(id, avatar) {
-      const ctx = context();
-      const target = find(ctx.data.users, id, 'người dùng');
-      if (
-        !canEditAvatar(
-          ctx.data.users.find((u) => u.id === ctx.userId),
-          target,
-        )
-      ) {
-        throw new DomainError('Chỉ admin đổi được ảnh đại diện của người kia.');
-      }
+      const { ctx, target } = profileTarget(id, 'Chỉ admin đổi được ảnh đại diện của người kia.');
       commit({ ...ctx.data, users: upsert(ctx.data.users, setAvatar(target, avatar, ctx)) });
     },
 

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-// Trạng thái cập nhật app để hiển thị (banner và Cài đặt). Không lưu file.
+// Trạng thái cập nhật app để hiển thị (popup cập nhật và Cài đặt). Không lưu file.
 
 export interface AvailableUpdate {
   version: string;
@@ -23,7 +23,7 @@ interface UpdateState {
   /** Kết quả lần kiểm tra gần nhất; null khi chưa kiểm tra lần nào. */
   lastCheck: { at: string; error: string | null } | null;
   install: InstallState;
-  /** Người dùng bấm "Để sau" cho bản này: ẩn banner đến lần mở app sau. */
+  /** Người dùng bấm "Để sau" cho bản này: ẩn popup đến lần mở app sau. */
   dismissedVersion: string | null;
 }
 

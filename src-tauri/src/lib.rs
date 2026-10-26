@@ -50,6 +50,122 @@ fn show_emoji_panel(app: tauri::AppHandle) {
     let _ = app;
 }
 
+/// Thư mục chứa file của các máy trong thư mục Drive (`SYNC_SUBFOLDER` bên JS).
+const SYNC_SUBFOLDER: &str = "FamilyBudget";
+
+/// Thư mục gốc của Google Drive for Desktop trên máy này. Windows: ổ đĩa ảo (thường là G:)
+/// có thư mục ẩn `.shortcut-targets-by-id` ở gốc; không dựa vào tên "My Drive" vì tên này
+/// đổi theo ngôn ngữ. Chỉ xét ổ cố định để không chạm ổ đĩa quang hay thẻ nhớ đang trống.
+/// macOS: `~/Library/CloudStorage/GoogleDrive-<email>`.
+fn drive_roots() -> Vec<std::path::PathBuf> {
+    let mut roots = Vec::new();
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::Storage::FileSystem::{GetDriveTypeW, GetLogicalDrives};
+        const DRIVE_FIXED: u32 = 3;
+        let drives = unsafe { GetLogicalDrives() };
+        for (bit, letter) in ('A'..='Z').enumerate() {
+            if drives & (1 << bit) == 0 {
+                continue;
+            }
+            let root = format!("{letter}:\\");
+            let wide: Vec<u16> = root.encode_utf16().chain([0]).collect();
+            if unsafe { GetDriveTypeW(wide.as_ptr()) } != DRIVE_FIXED {
+                continue;
+            }
+            let root = std::path::PathBuf::from(root);
+            if root.join(".shortcut-targets-by-id").is_dir() {
+                roots.push(root);
+            }
+        }
+    }
+    #[cfg(target_os = "macos")]
+    if let Some(home) = std::env::var_os("HOME") {
+        let cloud = std::path::Path::new(&home).join("Library/CloudStorage");
+        if let Ok(entries) = std::fs::read_dir(cloud) {
+            roots.extend(
+                entries
+                    .flatten()
+                    .filter(|e| e.file_name().to_string_lossy().starts_with("GoogleDrive-"))
+                    .map(|e| e.path()),
+            );
+        }
+    }
+    roots
+}
+
+/// Thư mục con không ẩn của `dir`, kể cả lối tắt tới thư mục (bỏ `.shortcut-targets-by-id`,
+/// `$RECYCLE.BIN`...).
+fn visible_dirs(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    entries
+        .flatten()
+        .filter(|e| {
+            let name = e.file_name();
+            let name = name.to_string_lossy();
+            !name.starts_with('.') && !name.starts_with('$')
+        })
+        .map(|e| e.path())
+        .filter(|path| path.is_dir())
+        .collect()
+}
+
+/// Cùng mẫu với `DEVICE_FILE_RE` bên JS: `device-<id>.json` hoặc `device-<id>.enc.json`.
+fn is_device_file(name: &str) -> bool {
+    let Some(rest) = name
+        .strip_prefix("device-")
+        .and_then(|rest| rest.strip_suffix(".json"))
+    else {
+        return false;
+    };
+    let id = rest.strip_suffix(".enc").unwrap_or(rest);
+    !id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+}
+
+fn has_device_files(dir: &std::path::Path) -> bool {
+    std::fs::read_dir(dir).is_ok_and(|entries| {
+        entries
+            .flatten()
+            .any(|e| is_device_file(&e.file_name().to_string_lossy()))
+    })
+}
+
+/// Thư mục FamilyBudget có file của ít nhất một máy, nằm trong Drive tối đa 2 cấp:
+/// `My Drive/FamilyBudget`, `My Drive/<thư mục>/FamilyBudget` (kể cả lối tắt tới thư mục
+/// được chia sẻ), `Shared drives/<ổ>/FamilyBudget`. Không tìm sâu hơn để khỏi duyệt cả Drive.
+fn find_data_dirs(roots: &[std::path::PathBuf]) -> Vec<std::path::PathBuf> {
+    let mut found = Vec::new();
+    for root in roots {
+        for top in visible_dirs(root) {
+            let children = visible_dirs(&top);
+            for dir in std::iter::once(top).chain(children) {
+                let data_dir = dir.join(SYNC_SUBFOLDER);
+                if has_device_files(&data_dir) && !found.contains(&data_dir) {
+                    found.push(data_dir);
+                }
+            }
+        }
+    }
+    found
+}
+
+/// Máy mới cài: tìm sẵn dữ liệu gia đình trong Google Drive để màn thiết lập hiện luôn hai
+/// người dùng, khỏi phải tự chọn thư mục. Thư mục tìm được được cấp quyền đọc ghi cho app
+/// như khi chọn qua hộp chọn thư mục, và plugin persisted-scope giữ quyền đó khi mở lại app.
+#[tauri::command]
+async fn find_sync_folders(app: tauri::AppHandle) -> Vec<String> {
+    use tauri_plugin_fs::FsExt;
+    let dirs = tauri::async_runtime::spawn_blocking(|| find_data_dirs(&drive_roots()))
+        .await
+        .unwrap_or_default();
+    dirs.into_iter()
+        .filter(|dir| app.fs_scope().allow_directory(dir, true).is_ok())
+        .map(|dir| dir.to_string_lossy().into_owned())
+        .collect()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -61,7 +177,10 @@ pub fn run() {
         // Cập nhật app (SPEC mục 9): kiểm tra, tải, cài bản mới rồi khởi động lại.
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .invoke_handler(tauri::generate_handler![show_emoji_panel])
+        .invoke_handler(tauri::generate_handler![
+            show_emoji_panel,
+            find_sync_folders
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

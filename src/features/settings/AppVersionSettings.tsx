@@ -1,13 +1,19 @@
+import changelog from '../../../docs/CHANGELOG.md?raw';
+import { changelogSection } from '../../core/changelog';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
-import { InstallStatus } from '../../components/UpdateBanner';
+import { ReleaseNotesToggle } from '../../components/ReleaseNotes';
+import { InstallStatus } from '../../components/UpdateDialog';
 import { useUpdateStore } from '../../state/updateStore';
 import { useNow } from '../../state/useNow';
 import { checkForUpdate, installUpdate } from '../../update/appUpdate';
 import { formatSyncTime } from '../../sync/syncStatus';
 import styles from './SettingsScreen.module.scss';
 
-/** Phiên bản app và nút "Kiểm tra cập nhật" (SPEC mục 8, màn hình 9). */
+/**
+ * Phiên bản app và nút "Kiểm tra cập nhật" (SPEC mục 8, màn hình 9). Nội dung của bản đang
+ * dùng (docs/CHANGELOG.md đóng gói trong app) và của bản mới ẩn sau liên kết, bấm mới hiện.
+ */
 export function AppVersionSettings() {
   const currentVersion = useUpdateStore((s) => s.currentVersion);
   const checking = useUpdateStore((s) => s.checking);
@@ -16,9 +22,10 @@ export function AppVersionSettings() {
   const install = useUpdateStore((s) => s.install);
   const now = useNow();
   const busy = install.phase === 'downloading' || install.phase === 'installing';
+  const currentNotes = currentVersion ? changelogSection(changelog, currentVersion) : null;
 
   function checkNow() {
-    // Kiểm tra tay thì banner hiện lại, kể cả khi đã bấm "Để sau".
+    // Kiểm tra tay thì popup cập nhật hiện lại, kể cả khi đã bấm "Để sau".
     useUpdateStore.setState({ dismissedVersion: null });
     void checkForUpdate();
   }
@@ -29,6 +36,7 @@ export function AppVersionSettings() {
         <dt>Đang dùng</dt>
         <dd>
           <code>{currentVersion ?? '...'}</code>
+          {currentNotes && <ReleaseNotesToggle notes={currentNotes} label="Xem nội dung bản này" />}
         </dd>
 
         <dt>Cập nhật</dt>
@@ -38,6 +46,7 @@ export function AppVersionSettings() {
           ) : available ? (
             <>
               <div className={styles.ok}>Có phiên bản {available.version}</div>
+              <ReleaseNotesToggle notes={available.notes} label="Xem nội dung cập nhật" />
               <InstallStatus install={install} />
             </>
           ) : lastCheck?.error ? (

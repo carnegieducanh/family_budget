@@ -37,6 +37,8 @@ export interface RemoteInfo {
   name: string;
   deviceId: string;
   writtenAt: string;
+  /** Người dùng của máy kia; không có nếu máy kia dùng bản app cũ. */
+  writtenBy?: string;
   /** Máy kia ghi file dạng mã hóa. */
   encrypted: boolean;
 }
@@ -104,6 +106,7 @@ export function mergeRemoteFiles(
       name: file.name,
       deviceId: remote.deviceId,
       writtenAt: remote.writtenAt,
+      ...(remote.writtenBy ? { writtenBy: remote.writtenBy } : {}),
       encrypted: parseDeviceFileName(file.name)?.encrypted ?? false,
     });
   }

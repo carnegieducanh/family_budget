@@ -67,7 +67,12 @@ function machine(folder: FakeFolder | null, deviceId: string, userId: string, da
     target: async () => {
       if (!folder) return null;
       const writeKey = state.encrypt ? state.key : null;
-      return { adapter: folder.adapter(deviceId, writeKey !== null), readKey: state.key, writeKey };
+      return {
+        adapter: folder.adapter(deviceId, writeKey !== null),
+        readKey: state.key,
+        writeKey,
+        writtenBy: userId,
+      };
     },
     getData: () => state.data,
     backup: async (snapshot) => {
@@ -112,7 +117,7 @@ function household() {
 }
 
 function content(data: DataFile) {
-  const { deviceId, writtenAt, ...rest } = data;
+  const { deviceId, writtenAt, writtenBy, ...rest } = data;
   return rest;
 }
 
@@ -138,6 +143,15 @@ describe('syncOnce', () => {
     const written = parseDataFile(folder.files.get('device-device-a.json') as string);
     expect(written.deviceId).toBe('device-a');
     expect(written.writtenAt).toBe(clock.toISOString());
+    expect(written.writtenBy).toBe('user-a');
+  });
+
+  it('máy kia biết file là của người dùng nào, dữ liệu local không giữ trường đó', async () => {
+    const { a, b } = household();
+    await a.sync();
+    const outcome = await b.sync();
+    expect(outcome.kind === 'ok' && outcome.remotes.map((r) => r.writtenBy)).toEqual(['user-a']);
+    expect(b.state.data.writtenBy).toBeUndefined();
   });
 
   it('thêm ở A → B thấy sau khi A rồi B sync; B tạo backup trước khi gộp', async () => {

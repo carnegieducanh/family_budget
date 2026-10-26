@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core';
 import { basename, join } from '@tauri-apps/api/path';
 import { open } from '@tauri-apps/plugin-dialog';
 import { exists, mkdir, readDir, readTextFile, remove } from '@tauri-apps/plugin-fs';
@@ -95,4 +96,18 @@ export async function pickSyncFolder(defaultPath?: string | null): Promise<strin
     ...(defaultPath ? { defaultPath } : {}),
   });
   return typeof selected === 'string' ? selected : null;
+}
+
+/** Tìm Google Drive quá lâu (ổ mạng treo...) thì thôi, người dùng tự chọn thư mục. */
+const FIND_TIMEOUT_MS = 8000;
+
+/**
+ * Các thư mục FamilyBudget đã có dữ liệu trong Google Drive for Desktop của máy này (lệnh
+ * Rust `find_sync_folders`), đã được cấp quyền đọc ghi. Rỗng nếu không tìm thấy hoặc lỗi.
+ */
+export async function findSyncFolders(): Promise<string[]> {
+  const timeout = new Promise<string[]>((resolve) =>
+    setTimeout(() => resolve([]), FIND_TIMEOUT_MS),
+  );
+  return Promise.race([invoke<string[]>('find_sync_folders'), timeout]).catch(() => []);
 }

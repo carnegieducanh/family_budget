@@ -38,6 +38,8 @@ export interface SyncTarget {
    * đúng tên file tương ứng (`.enc.json` hoặc `.json`).
    */
   writeKey: FileKey | null;
+  /** Người dùng của máy này, ghi vào file để máy kia hiện "Máy <tên>"; null khi chưa thiết lập. */
+  writtenBy: string | null;
 }
 
 export interface SyncEnv {
@@ -115,7 +117,7 @@ export async function syncOnce(env: SyncEnv): Promise<SyncOutcome> {
     return failed('Không đọc được khóa mã hóa trên máy này', error);
   }
   if (!target) return { kind: 'not-configured' };
-  const { adapter, readKey, writeKey } = target;
+  const { adapter, readKey, writeKey, writtenBy } = target;
   if (!(await adapter.isReady())) return { kind: 'folder-missing' };
 
   let files: RemoteFile[];
@@ -143,7 +145,11 @@ export async function syncOnce(env: SyncEnv): Promise<SyncOutcome> {
 
   const now = env.now();
   try {
-    const json = serializeDataFile({ ...env.getData(), writtenAt: now.toISOString() });
+    const json = serializeDataFile({
+      ...env.getData(),
+      writtenAt: now.toISOString(),
+      ...(writtenBy ? { writtenBy } : {}),
+    });
     await adapter.writeOwn(writeKey ? await encryptFile(json, writeKey) : json);
   } catch (error) {
     return failed('Không ghi được file lên thư mục Drive', error);

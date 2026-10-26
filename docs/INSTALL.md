@@ -148,13 +148,15 @@ macOS có thể hỏi "Family Budget muốn truy cập tệp trong Google Drive"
 
 ### 2.3. Thiết lập lần đầu
 
-1. **Máy admin:** mở app → **Tạo dữ liệu mới (admin)** → nhập tên của mình và tên người còn lại → chọn ảnh đại diện (**Chọn ảnh từ máy...** hoặc một emoji) → **Chọn thư mục...** và chọn thư mục `Family Budget` ở bước 2.2 → **Tạo dữ liệu**.
+1. **Máy admin:** mở app → app báo chưa tìm thấy dữ liệu gia đình (đúng, vì chưa ai tạo) → bấm **Tạo dữ liệu mới** ở dòng cuối → nhập tên của mình và tên người còn lại → chọn ảnh đại diện (**Chọn ảnh từ máy...** hoặc một emoji) → **Chọn thư mục...** và chọn thư mục `Family Budget` ở bước 2.2 → **Tạo dữ liệu**.
 
    App tạo thư mục con `FamilyBudget` bên trong và ghi file `device-<mã máy>.json`. Góc dưới bên trái hiện "Chưa thấy dữ liệu từ máy kia" là bình thường ở bước này.
 
 2. Chờ Google Drive tải file lên (biểu tượng Google Drive trên khay hệ thống / thanh menu báo đã đồng bộ xong).
 
-3. **Máy thứ hai:** mở app → **Tham gia (máy thứ hai)** → **Chọn thư mục...** và chọn đúng thư mục đó (hoặc lối tắt, nếu dùng 2 tài khoản) → chọn **Tôi là ...** → chọn ảnh đại diện → **Hoàn tất**.
+3. **Máy thứ hai:** mở app. App tự tìm dữ liệu gia đình trong Google Drive và hiện hai tài khoản → bấm vào tài khoản của mình → chọn ảnh đại diện → **Hoàn tất**.
+
+   Nếu app báo **Chưa tìm thấy dữ liệu gia đình**: làm theo hướng dẫn trên màn hình (mở Google Drive for Desktop; nếu dùng 2 tài khoản Google thì mở link thư mục admin gửi và bấm **Thêm lối tắt vào Drive**; chờ Drive tải xong) rồi bấm **Tìm lại**. Thư mục nằm sâu hơn 2 cấp trong My Drive thì bấm **Tự chọn thư mục...** và chọn đúng thư mục đó. **Đừng bấm "Tạo dữ liệu mới"** trên máy thứ hai: sẽ thành hai bộ dữ liệu không đồng bộ với nhau.
 
    Nếu admin đã bật mã hóa (mục 2.4), app hỏi **Mật khẩu mã hóa** trước: nhập mật khẩu admin đã đặt → **Mở khóa dữ liệu**.
 
@@ -188,7 +190,7 @@ Khi hai máy cùng sửa một khoản, bản sửa sau cùng được giữ. Kh
 
 ### 2.6. Cập nhật app
 
-App tự kiểm tra bản mới khi mở và mỗi 24 giờ. Có bản mới thì hiện banner **"Có phiên bản x.y.z"** ở trên cùng, kèm ghi chú thay đổi. App không tự cài: bấm **Cập nhật** để tải, cài và khởi động lại (Windows hiện cửa sổ tiến trình cài đặt, không cần bấm gì thêm), hoặc **Để sau** để ẩn banner đến lần mở app sau. Kiểm tra ngay: **Cài đặt → Phiên bản app → Kiểm tra cập nhật**.
+App tự kiểm tra bản mới khi mở và mỗi 24 giờ. Có bản mới thì hiện popup **"Có bản cập nhật mới"** giữa màn hình; bấm **Xem chi tiết** để đọc nội dung cập nhật. App không tự cài: bấm **Cập nhật** để tải, cài và khởi động lại (Windows hiện cửa sổ tiến trình cài đặt, không cần bấm gì thêm), hoặc **Để sau** để ẩn popup đến lần mở app sau. Nội dung cập nhật, của bản mới lẫn bản đang dùng, xem lại được ở **Cài đặt → Phiên bản app**. Kiểm tra ngay: **Cài đặt → Phiên bản app → Kiểm tra cập nhật**.
 
 Dữ liệu trên máy không bị ảnh hưởng khi cập nhật. Nên cập nhật cả 2 máy cùng lúc: nếu bản mới đổi cấu trúc dữ liệu, máy chưa cập nhật sẽ tạm dừng đồng bộ và báo "Máy kia đang dùng bản mới hơn, hãy cập nhật app".
 
@@ -230,11 +232,11 @@ Bản phát hành do GitHub Actions build (`.github/workflows/release.yml`) khi 
 
 ### 3.2. Mỗi lần phát hành
 
-1. Thêm mục `## X.Y.Z` vào đầu `docs/CHANGELOG.md`: vài dòng ngắn cho người dùng, đây là ghi chú hiện trong banner cập nhật. Commit.
+1. Thêm mục `## X.Y.Z` vào đầu `docs/CHANGELOG.md`: vài dòng ngắn cho người dùng, đây là ghi chú hiện khi bấm "Xem chi tiết" trong popup cập nhật và ở Cài đặt → Phiên bản app. Commit.
 2. Tăng phiên bản: `npm version X.Y.Z` (ví dụ `npm version 0.2.0`). Lệnh này sửa `package.json`, `package-lock.json`, tạo commit và tag `vX.Y.Z`. Phiên bản app chỉ lấy từ `package.json` (`tauri.conf.json` trỏ tới file này); số trong `Cargo.toml` không dùng.
 3. `git push --follow-tags`.
 4. Theo dõi ở tab **Actions** của repo (khoảng 15–20 phút). Workflow chạy lần lượt: kiểm tra code (typecheck, lint, format, test) → tạo release nháp → build Windows và macOS song song → bỏ trạng thái nháp. Release chỉ được đăng khi cả hai bản build xong và `latest.json` có đủ hai nền tảng (workflow kiểm tra trước khi đăng).
-5. Xong: app trên 2 máy thấy banner khi mở lại, hoặc trong vòng 24 giờ.
+5. Xong: app trên 2 máy thấy popup cập nhật khi mở lại, hoặc trong vòng 24 giờ.
 
 Workflow dừng sớm và báo lỗi nếu tag không khớp `version` trong `package.json`, hoặc `docs/CHANGELOG.md` chưa có mục cho phiên bản đó. Nếu một bước build lỗi, release vẫn là nháp (người dùng không thấy). Sửa lỗi, xóa release nháp trên GitHub và xóa tag (`git push --delete origin vX.Y.Z`, `git tag -d vX.Y.Z`), rồi tạo lại tag ở commit đã sửa.
 

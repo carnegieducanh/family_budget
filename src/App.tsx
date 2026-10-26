@@ -3,7 +3,7 @@ import { Button } from './components/Button';
 import { isAnyModalOpen } from './components/modalStack';
 import { canOpen } from './components/navigation';
 import { Sidebar } from './components/Sidebar';
-import { UpdateBanner } from './components/UpdateBanner';
+import { UpdateDialog } from './components/UpdateDialog';
 import { BudgetScreen } from './features/budget/BudgetScreen';
 import { CategoriesScreen } from './features/categories/CategoriesScreen';
 import { OverviewScreen } from './features/overview/OverviewScreen';
@@ -90,7 +90,7 @@ function MainLayout() {
       <Sidebar />
       <main ref={contentRef} className={styles.content}>
         <div className={styles.inner}>
-          <UpdateBanner />
+          <UpdateDialog />
           {saveError && (
             <div className={styles.saveError} role="alert">
               <span>

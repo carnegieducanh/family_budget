@@ -29,7 +29,7 @@
 }
 
 .logo {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .title {
@@ -42,6 +42,7 @@
 .lead {
   margin: 0 0 var(--space-1);
   color: var(--color-text-muted);
+  text-wrap: pretty;
 }
 
 .form {
@@ -55,9 +56,47 @@
   font-weight: 500;
 }
 
-.choice {
-  justify-content: flex-start;
-  min-height: 44px;
+.profiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background: var(--color-primary-soft);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+.profileName {
+  margin-top: var(--space-1);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: var(--font-size-lg);
+}
+
+.profileRole {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
 }
 
 .error {
@@ -72,30 +111,44 @@
   color: var(--color-text-muted);
 }
 
-.option {
+.warning {
+  @include m.callout(warning);
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+// Hướng dẫn cho máy thứ hai khi chưa thấy dữ liệu gia đình trên Google Drive.
+.steps {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
   padding: var(--space-4) var(--space-5);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  text-align: left;
-  transition:
-    border-color var(--transition-fast),
-    background-color var(--transition-fast),
-    box-shadow var(--transition-fast);
 
-  span {
+  ol {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding-left: var(--space-5);
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
   }
+}
 
-  &:hover {
-    border-color: var(--color-primary);
-    background: var(--color-primary-soft);
-    box-shadow: var(--shadow-sm);
-  }
+// Đường phụ cho máy đầu tiên, tách khỏi hướng dẫn tham gia ở trên.
+.first {
+  margin: 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.textLink {
+  @include m.text-link;
 }
 
 .path {
@@ -112,11 +165,6 @@
   display: flex;
   justify-content: space-between;
   gap: var(--space-2);
-}
-
-.found {
-  @include m.callout(success);
-  margin: 0;
 }
 
 .problems {

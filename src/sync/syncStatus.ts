@@ -1,5 +1,7 @@
 import dayjs from 'dayjs';
 import { formatTimeAgo } from '../core/month';
+import type { RemoteInfo } from '../core/sync';
+import type { User } from '../core/types';
 import type { SyncOutcome } from './syncService';
 
 // Chữ hiển thị trạng thái sync ở góc sidebar và trong Cài đặt (SPEC mục 5).
@@ -99,4 +101,21 @@ export function describeSyncStatus(input: SyncStatusInput, now: Date): SyncStatu
       return { main: synced, extra };
     }
   }
+}
+
+/**
+ * Tên một máy khác trong Cài đặt: "Máy <tên người dùng>" theo người dùng máy đó ghi trong file.
+ * File của bản app cũ chưa ghi người dùng thì dùng 8 ký tự đầu của mã máy. Có hai máy của cùng
+ * một người (cài lại app, thêm máy) thì thêm mã máy để phân biệt.
+ */
+export function remoteDeviceName(
+  remote: RemoteInfo,
+  users: readonly User[],
+  remotes: readonly RemoteInfo[],
+): string {
+  const shortId = remote.deviceId.slice(0, 8);
+  const user = users.find((u) => u.id === remote.writtenBy);
+  if (!user) return `Máy ${shortId}`;
+  const sameUser = remotes.filter((r) => r.writtenBy === remote.writtenBy).length > 1;
+  return sameUser ? `Máy ${user.name} (${shortId})` : `Máy ${user.name}`;
 }

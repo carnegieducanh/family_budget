@@ -1,5 +1,6 @@
 import mark64 from '../assets/brand-mark-64.png';
 import mark128 from '../assets/brand-mark-128.png';
+import mark256 from '../assets/brand-mark-256.png';
 
 /**
  * Logo của app: sổ tiết kiệm gập kiểu ゆうちょ trên nền xanh bo góc, cắt từ cùng ảnh với icon app
@@ -9,7 +10,7 @@ export function BrandMark({ size = 32 }: { size?: number }) {
   return (
     <img
       src={mark128}
-      srcSet={`${mark64} 64w, ${mark128} 128w`}
+      srcSet={`${mark64} 64w, ${mark128} 128w, ${mark256} 256w`}
       sizes={`${size}px`}
       width={size}
       height={size}

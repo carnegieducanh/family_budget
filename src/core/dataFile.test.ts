@@ -21,6 +21,13 @@ describe('parseDataFile', () => {
     expect(() => parseDataFile(JSON.stringify(raw))).toThrow('users[0].avatar');
   });
 
+  it('người dùng của máy ghi file là trường không bắt buộc, nhưng có thì phải là chuỗi', () => {
+    const { data, b } = makeData();
+    expect(parseDataFile(serializeDataFile({ ...data, writtenBy: b })).writtenBy).toBe(b);
+    expect(parseDataFile(serializeDataFile(data)).writtenBy).toBeUndefined();
+    expect(() => parseDataFile(JSON.stringify({ ...data, writtenBy: 1 }))).toThrow('writtenBy');
+  });
+
   it('JSON hỏng → lỗi', () => {
     expect(() => parseDataFile('{"schemaVersion": 1, ')).toThrow('file JSON bị hỏng');
   });

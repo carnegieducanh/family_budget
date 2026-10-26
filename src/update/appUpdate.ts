@@ -5,7 +5,7 @@ import { useUpdateStore, type InstallState } from '../state/updateStore';
 import { flushWrites } from '../storage/localStore';
 
 // Cập nhật app (SPEC mục 9) qua plugin-updater: kiểm tra khi mở app và mỗi 24 giờ; có bản mới
-// thì hiện banner, chỉ tải và cài khi người dùng bấm "Cập nhật". Bản cập nhật được ký bằng
+// thì hiện popup (UpdateDialog), chỉ tải và cài khi người dùng bấm "Cập nhật". Bản cập nhật được ký bằng
 // khóa của Tauri; plugin từ chối file có chữ ký sai hoặc không khớp số phiên bản.
 
 export const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;

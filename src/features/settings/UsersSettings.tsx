@@ -1,6 +1,6 @@
 import { Pencil } from 'lucide-react';
 import { useState } from 'react';
-import { can, canEditAvatar } from '../../core/permissions';
+import { can, canEditProfile } from '../../core/permissions';
 import type { User } from '../../core/types';
 import { AvatarPicker } from '../../components/AvatarPicker';
 import { Button } from '../../components/Button';
@@ -12,8 +12,8 @@ import { useDataStore, useReadyData } from '../../state/dataStore';
 import styles from './SettingsScreen.module.scss';
 
 /**
- * Người dùng và vai trò (admin sửa được; luôn có đúng một admin — SPEC mục 7). Ảnh đại diện
- * thì mỗi người tự đổi được của mình.
+ * Người dùng và vai trò (admin chuyển được vai trò; luôn có đúng một admin — SPEC mục 7). Tên
+ * và ảnh đại diện thì mỗi người tự đổi được của mình, admin đổi được của cả hai.
  */
 export function UsersSettings() {
   const { me, users } = useReadyData();
@@ -38,7 +38,7 @@ export function UsersSettings() {
       <ul className={styles.users}>
         {users.map((user) => (
           <li key={user.id}>
-            {canEditAvatar(me, user) ? (
+            {canEditProfile(me, user) ? (
               <button
                 type="button"
                 className={styles.avatarButton}
@@ -54,7 +54,7 @@ export function UsersSettings() {
             ) : (
               <UserAvatar user={user} size={40} />
             )}
-            {editable ? (
+            {canEditProfile(me, user) ? (
               <UserNameField user={user} onSave={run} />
             ) : (
               <span className={styles.userName}>{user.name}</span>
@@ -75,7 +75,7 @@ export function UsersSettings() {
       <p className={styles.hint}>
         {editable
           ? 'Admin quản lý danh mục, ngân sách, chi tiêu định kỳ, import CSV, khôi phục backup và sửa được mọi khoản chi. Thành viên chỉ sửa, xóa được khoản do mình nhập.'
-          : 'Chỉ admin đổi được tên và vai trò. Ảnh đại diện của mình thì bạn tự đổi được: bấm vào ảnh.'}
+          : 'Chỉ admin chuyển được vai trò. Tên và ảnh đại diện của mình thì bạn tự đổi được: sửa ô tên, hoặc bấm vào ảnh.'}
       </p>
 
       {avatarOf && <AvatarDialog user={avatarOf} onClose={() => setAvatarOf(null)} />}

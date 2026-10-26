@@ -1,6 +1,6 @@
 # Ghi chú phát hành
 
-Mỗi phiên bản một mục `## x.y.z`, mới nhất ở trên. Nội dung của mục là ghi chú hiện trong banner "Có phiên bản x.y.z" của app, nên viết ngắn, bằng lời của người dùng. Khi đẩy tag `vx.y.z`, GitHub Actions lấy đúng mục này làm ghi chú phát hành; thiếu mục thì không phát hành.
+Mỗi phiên bản một mục `## x.y.z`, mới nhất ở trên. Nội dung của mục là ghi chú hiện khi bấm "Xem chi tiết" trong popup cập nhật của app và ở Cài đặt → Phiên bản app (app đóng gói sẵn file này), nên viết ngắn, bằng lời của người dùng. Khi đẩy tag `vx.y.z`, GitHub Actions lấy đúng mục này làm ghi chú phát hành; thiếu mục thì không phát hành.
 
 ## 0.2.0
 

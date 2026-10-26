@@ -202,3 +202,25 @@
   font-size: calc(#{$size} * 0.5);
   line-height: 1;
 }
+
+/** Nút trông như liên kết, đặt trong câu hoặc dưới một đoạn ("Xem chi tiết", "Tạo dữ liệu mới"). */
+@mixin text-link {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 3px;
+
+  &:hover:not(:disabled) {
+    color: var(--color-primary-strong);
+    text-decoration-color: currentColor;
+  }
+
+  &:disabled {
+    cursor: progress;
+  }
+}

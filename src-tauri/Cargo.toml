@@ -28,9 +28,10 @@ tauri-plugin-updater = "2"
 # generate_context! cần serde_json khi tauri.conf.json có mục "plugins".
 serde_json = "1"
 
-# Mở bảng emoji của hệ điều hành (lệnh show_emoji_panel trong lib.rs).
+# Mở bảng emoji của hệ điều hành (lệnh show_emoji_panel trong lib.rs) và tìm ổ Google Drive
+# (lệnh find_sync_folders).
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_UI_Input_KeyboardAndMouse"] }
+windows-sys = { version = "0.61", features = ["Win32_UI_Input_KeyboardAndMouse", "Win32_Storage_FileSystem"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"

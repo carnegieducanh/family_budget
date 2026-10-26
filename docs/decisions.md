@@ -518,3 +518,43 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
   Lý do: icon macOS có lề trong suốt quanh ô; dùng bản 94% thì icon trên Dock to hơn các app khác. Chưa xem trên máy Mac.
 
 - Ở 16–24 px (khay hệ thống, thanh tiêu đề, taskbar) chỉ còn nhận ra tờ sổ trắng có vạch xanh; nhà và đồng ¥ chỉ rõ từ 40 px. Bản cài A/B (v0.1.0) vẫn icon cũ đến bản phát hành sau.
+
+## 2026-10-26 — Máy mới tự tìm dữ liệu gia đình, chọn tài khoản bằng thẻ
+
+- **Mở app lần đầu, trước khi hiện "Tạo dữ liệu mới / Tham gia", app tìm thư mục `FamilyBudget` đã có file `device-*.json` trong Google Drive for Desktop của máy. Thấy đúng một thư mục thì vào thẳng "Chọn tài khoản của bạn để bắt đầu" với hai thẻ người dùng; không thấy, thấy nhiều hơn một, hoặc tìm quá 8 giây thì hiện màn "Chưa tìm thấy" (mục dưới).** Lệnh Rust `find_sync_folders` (src-tauri/src/lib.rs).
+  Lý do: user thấy màn chào mừng của máy thứ hai không thân thiện, vì admin đã tạo sẵn hai tài khoản mà máy mới vẫn phải tự hiểu "Tham gia" và tự tìm thư mục. Thấy nhiều thư mục thì để người dùng chọn, vì app không biết thư mục nào đúng.
+
+- **Cách tìm: ổ Google Drive là ổ cố định có thư mục ẩn `.shortcut-targets-by-id` ở gốc (Windows), hoặc `~/Library/CloudStorage/GoogleDrive-*` (macOS); chỉ xét 2 cấp: `<My Drive hoặc Shared drives>/FamilyBudget` và `<…>/<thư mục>/FamilyBudget`, kể cả lối tắt tới thư mục được chia sẻ.** Không dựa vào tên "My Drive" vì tên này đổi theo ngôn ngữ; không tìm sâu hơn để khỏi duyệt cả Drive. Thư mục tìm được được cấp quyền đọc ghi như khi chọn qua hộp chọn thư mục (plugin persisted-scope giữ lại), và được lưu làm thư mục đồng bộ sau khi chọn tài khoản. Đã thử trên Windows (bản dev mới, tìm thấy `G:\My Drive\Family Budget\FamilyBudget`); macOS chưa thử, có thể macOS hỏi quyền truy cập file của Google Drive lần đầu.
+
+- **Người dùng hiện thành hai thẻ (ảnh đại diện 72 px, tên, vai trò Admin / Thành viên) thay cho nút "Tôi là …", ở cả ba chỗ: tự tìm thấy, tham gia sau khi chọn thư mục, máy đã có data.json nhưng chưa biết là của ai.** Bấm thẻ vẫn qua bước chọn ảnh đại diện (đã có ảnh thì chọn sẵn), nên bấm nhầm thẻ còn "Quay lại" được.
+
+- **Logo ở màn thiết lập to lên 80 px (trước 44 px)**, thêm bản `brand-mark-256.png` cho màn tỉ lệ cao.
+  Lý do: user muốn nhìn rõ hình sổ, nhà và đồng ¥ bên trong.
+
+- **Bỏ màn hai lựa chọn ngang nhau "Tạo dữ liệu mới (admin)" / "Tham gia (máy thứ hai)". Không tìm thấy dữ liệu thì hiện "Chưa tìm thấy dữ liệu gia đình trên Google Drive của máy này" kèm hướng dẫn 3 bước cho máy người nhà (cài và đăng nhập Google Drive for Desktop; dùng tài khoản khác thì nhờ người tạo chia sẻ thư mục, mở link và bấm "Thêm lối tắt vào Drive"; chờ Drive tải xong), nút chính "Tìm lại" và nút "Tự chọn thư mục...". "Tạo dữ liệu mới" chỉ còn là dòng phụ cuối màn ("Bạn là người đầu tiên dùng app trong gia đình?"), form tạo mới có cảnh báo chỉ làm trên máy đầu tiên.**
+  Lý do: user muốn máy thứ hai không bấm nhầm "Tạo dữ liệu mới" rồi tạo bộ dữ liệu thứ hai, và muốn bớt lựa chọn cho máy đó. Máy đầu tiên vẫn cần tạo mới và lúc đó cũng chưa có dữ liệu nào để tìm, nên app không phân biệt được hai máy; chỉ đẩy tạo mới xuống thành đường phụ.
+
+- **Không làm "chờ admin duyệt" hay ô nhập link Google Drive** (user gợi ý). App không có máy chủ, chỉ đọc thư mục Drive qua ổ đĩa Google Drive for Desktop tạo trên máy, nên không có kênh để admin duyệt, và link Drive dán vào app cũng không cho app quyền đọc thư mục. Bước "duyệt" thật chính là admin chia sẻ thư mục trên Google Drive; link dùng trong trình duyệt để thêm lối tắt. Hướng dẫn trên màn hình nói đúng hai việc đó.
+
+- **Thêm hai chốt chặn tạo bộ dữ liệu thứ hai:** đã tìm thấy dữ liệu gia đình thì màn chọn tài khoản không có nút "Quay lại" về bước tạo mới; bấm "Tạo dữ liệu" mà Google Drive của máy đã có thư mục gia đình ở chỗ khác thì báo lỗi kèm đường dẫn và không tạo. "Quay lại" ở các bước khác giờ tìm lại từ đầu.
+
+- **Màn chọn tài khoản (khi đã tìm thấy dữ liệu) chỉ còn câu "Chọn tài khoản của bạn để bắt đầu" và hai thẻ: bỏ dòng "Đã tìm thấy dữ liệu của gia đình trong <đường dẫn>. Chọn thư mục khác".**
+  Lý do: user thấy không cần thiết. Muốn dùng thư mục khác thì hiếm, và gia đình chỉ có một thư mục dữ liệu.
+
+## 2026-10-26 — Thành viên tự đổi được tên của mình
+
+- **Tên người dùng theo cùng quy tắc với ảnh đại diện: mỗi người tự đổi tên của mình ở Cài đặt → Người dùng và vai trò, admin đổi được tên của cả hai. Chuyển quyền admin vẫn chỉ admin làm.** `canEditProfile` (thay cho `canEditAvatar`) dùng chung cho tên và ảnh, ở cả UI lẫn store.
+  Lý do: user muốn máy thứ hai (thành viên) cũng đổi được tên. Chỉ cho đổi tên của chính mình, không đổi tên người kia, giống cách đã làm với ảnh đại diện. Vẫn giữ kiểm tra tên 2 người phải khác nhau.
+
+## 2026-10-26 — Popup báo cập nhật thay cho banner
+
+- **Có bản mới thì hiện popup giữa màn hình "Có bản cập nhật mới" (thay banner trên cùng): một câu "Family Budget x.y.z đã sẵn sàng để cài.", liên kết "Xem chi tiết" (bấm mới hiện ghi chú thay đổi, bấm lại "Ẩn chi tiết"), dòng nhắc app tự khởi động lại và dữ liệu không bị ảnh hưởng, nút "Để sau" và "Cập nhật".** Đóng popup bằng nút X, Esc hay bấm ra ngoài cũng như "Để sau": ẩn đến lần mở app sau. Đang tải, cài thì popup không đóng được, không có nút. Popup dùng ở cả màn chính lẫn màn thiết lập lần đầu. `UpdateDialog` (đổi tên từ `UpdateBanner`).
+  Lý do: user muốn thông báo cập nhật nổi bật và gọn; nội dung cập nhật chỉ hiện khi người dùng muốn xem.
+
+- **Cài đặt → Phiên bản app: "Xem nội dung bản này" dưới phiên bản đang dùng, và "Xem nội dung cập nhật" dưới "Có phiên bản x.y.z", đều ẩn đến khi bấm.** Ghi chú của bản đang dùng lấy từ docs/CHANGELOG.md đóng gói trong app (`?raw`, hàm `changelogSection` trong core/changelog.ts, cùng cách đọc với workflow phát hành), nên sau khi cập nhật vẫn xem lại được bản vừa cài có gì mới; ghi chú của bản mới lấy từ plugin-updater như trước.
+  Lý do: user muốn bấm "Để sau" hoặc bỏ qua chi tiết lúc đầu thì vẫn vào Cài đặt xem lại được nội dung cập nhật.
+
+## 2026-10-26 — "Máy khác" gọi theo tên người dùng
+
+- **Cài đặt → Đồng bộ qua Google Drive → Máy khác hiện "Máy Queen ghi dữ liệu lúc …" thay cho "Máy 8bab748d …". Mỗi máy ghi thêm `writtenBy` (userId của máy đó, lấy từ settings.json) vào đầu file `device-*.json`.** File của bản app cũ chưa có trường này thì vẫn gọi theo 8 ký tự đầu mã máy; hai máy của cùng một người (cài lại app, như bản B cũ `8bab748d` và bản B mới `934dbd87` đều là Queen) thì thành "Máy Queen (8bab748d)", "Máy Queen (934dbd87)".
+  Lý do: user muốn biết máy nào của ai. File cũ chỉ có mã máy, không có gì nói máy đó của ai (settings.json không sync), nên phải ghi thêm. Trường không bắt buộc, không tăng `schemaVersion`: bản 0.1.0, 0.2.0 đọc file không loại trường lạ ở đầu file, và phần đầu file khi gộp luôn giữ của máy mình (`merge`, `dataForJoin` bắt đầu từ dữ liệu rỗng), nên máy bản cũ không chép nhầm `writtenBy` của máy kia vào file của mình.

@@ -65,6 +65,7 @@ export interface DataFile {
   schemaVersion: 1;
   deviceId: string;
   writtenAt: string;
+  writtenBy?: string; // userId của người dùng máy ghi file device-*.json; bản app cũ không ghi
   users: User[];
   categories: Category[];
   transactions: Transaction[];
