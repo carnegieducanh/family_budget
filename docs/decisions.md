@@ -389,6 +389,7 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 - **Ảnh đại diện thay chữ cái đầu ở mọi chỗ trước đây hiện chữ cái (góc dưới sidebar, thẻ "Mỗi người đã trả" ở Tổng quan) và hiện ở Cài đặt → Người dùng. Chấm màu cạnh tên trong các bảng (Khoản chi, Tất toán, Định kỳ...) giữ nguyên.**
   Lý do: user yêu cầu thay chỗ hiện chữ cái đầu; chấm màu trong bảng nhỏ hơn mức ảnh còn nhận ra được.
+  (Cùng ngày đổi: tên trong bảng và câu cũng thay bằng ảnh, xem mục "Ảnh đại diện thay tên người".)
 
 - **Đổi ảnh: mỗi người tự đổi ảnh của mình, admin đổi được của cả hai (`canEditAvatar`).** Khác bảng phân quyền SPEC mục 7 ban đầu ("cài đặt người dùng" chỉ admin); tên, màu, vai trò vẫn chỉ admin đổi.
   Lý do: ảnh là thứ riêng của mỗi người, người dùng thường cũng phải đặt được ảnh của mình lúc tham gia.
@@ -397,3 +398,10 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
   Lý do: user yêu cầu khi khởi tạo tài khoản phải thiết lập ảnh; mỗi người chỉ chọn ảnh của chính mình, nên admin không chọn hộ người còn lại.
 
 - **Không tăng `schemaVersion`.** `avatar` là trường thêm, không bắt buộc; bản v0.1.0 không kiểm tra trường lạ và khi sửa người dùng vẫn giữ nguyên các trường khác của bản ghi, nên đọc và ghi lại dữ liệu có ảnh mà không làm mất ảnh (chỉ không hiện ảnh). Giá trị ảnh đọc từ máy kia chỉ được đưa vào `<img>` khi đúng dạng `data:image/jpeg|png|webp;base64,...` và không quá 150.000 ký tự; giá trị khác hiện như chưa có ảnh.
+
+## 2026-10-26 — Ảnh đại diện thay tên người
+
+- **Ở Tổng quan, Khoản chi, Tất toán, Định kỳ và hai form Sửa khoản chi, Sửa khoản định kỳ, chỗ nào trước đây hiện tên người (kèm chấm màu) nay chỉ hiện ảnh đại diện (`UserFace`). Câu tất toán thành "[ảnh] trả [ảnh] ¥x", lịch sử thành "[ảnh] → [ảnh]", dòng đã thanh toán thành "... · [ảnh] xác nhận". Di chuột lên ảnh thì hiện tên; trình đọc màn hình đọc tên (`role="img"` + `aria-label`).**
+  Lý do: user yêu cầu thay tên bằng ảnh đại diện của người tương ứng. App chỉ có hai người, ai cũng nhận ra ảnh của mình và của người kia. Người chưa có ảnh vẫn hiện chữ cái đầu trên nền màu.
+
+- **Giữ tên ở: bộ lọc "Clazuze trả" trong Khoản chi (ô chọn native không hiện được ảnh), màn thiết lập lần đầu (đang chọn "Tôi là ..." nên cần tên), Cài đặt → Người dùng và góc dưới sidebar (đã có ảnh cạnh tên).**

@@ -39,6 +39,13 @@
   }
 }
 
+// Nằm giữa dòng chữ khi đứng trong câu.
+.face {
+  display: inline-flex;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
 .photo {
   background: var(--color-surface-muted);
 

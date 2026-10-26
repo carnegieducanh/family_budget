@@ -10,7 +10,7 @@ import { Card } from '../../components/Card';
 import { CategoryLabel } from '../../components/CategoryLabel';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { PageHeader } from '../../components/PageHeader';
-import { UserName } from '../../components/UserDot';
+import { UserFace } from '../../components/UserDot';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import { useNow } from '../../state/useNow';
 import { RecurringEditor } from './RecurringEditor';
@@ -107,7 +107,7 @@ export function RecurringScreen() {
                   </td>
                   <td className={styles.num}>{formatYen(template.amount)}</td>
                   <td>
-                    <UserName user={usersById.get(template.paidBy)} />
+                    <UserFace user={usersById.get(template.paidBy)} />
                   </td>
                   <td className={styles.num}>{template.dayOfMonth}</td>
                   <td className={styles.status}>{currentMonthStatus(template, data, now)}</td>

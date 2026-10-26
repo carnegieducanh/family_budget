@@ -1,0 +1,8 @@
+// Ảnh đại diện và chữ trong câu tất toán nằm giữa dòng, kể cả khi câu đứng giữa đoạn văn.
+.line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3em;
+  vertical-align: middle;
+}

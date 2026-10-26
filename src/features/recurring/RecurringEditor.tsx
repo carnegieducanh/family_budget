@@ -7,7 +7,7 @@ import type { RecurringInput } from '../../core/recurring';
 import type { RecurringTemplate } from '../../core/types';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
-import { UserDot } from '../../components/UserDot';
+import { UserFace } from '../../components/UserDot';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import styles from './RecurringScreen.module.scss';
 
@@ -137,8 +137,7 @@ export function RecurringEditor({
                 className={paidBy === user.id ? styles.segmentActive : styles.segment}
                 onClick={() => setPaidBy(user.id)}
               >
-                <UserDot user={user} />
-                {user.name}
+                <UserFace user={user} size={28} />
               </button>
             ))}
           </div>

@@ -9,6 +9,7 @@ import type { Transaction, TransactionInput } from '../../core/types';
 import { Button } from '../../components/Button';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Modal } from '../../components/Modal';
+import { UserFace } from '../../components/UserDot';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import { useUiStore, type EditorState } from '../../state/uiStore';
 import styles from './TransactionEditor.module.scss';
@@ -122,7 +123,9 @@ function EditorForm({ editor }: { editor: Exclude<EditorState, { mode: 'closed' 
         )}
         {!locked && forbidden && (
           <p className={styles.locked}>
-            Khoản này do {creator?.name ?? 'người khác'} nhập, bạn chỉ xem được.
+            <span>
+              Khoản này do <UserFace user={creator} size={22} /> nhập, bạn chỉ xem được.
+            </span>
           </p>
         )}
 
@@ -192,8 +195,13 @@ function EditorForm({ editor }: { editor: Exclude<EditorState, { mode: 'closed' 
 
         {existing && (
           <p className={styles.meta}>
-            Nhập bởi {creator?.name ?? 'không rõ'}
-            {existing.paidBy !== existing.createdBy && ` · người trả ${payer?.name ?? 'không rõ'}`}
+            Nhập bởi <UserFace user={creator} size={20} />
+            {existing.paidBy !== existing.createdBy && (
+              <>
+                {' '}
+                · người trả <UserFace user={payer} size={20} />
+              </>
+            )}
             {existing.recurringId && ' · khoản định kỳ'}
           </p>
         )}

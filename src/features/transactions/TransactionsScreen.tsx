@@ -19,7 +19,7 @@ import { CategoryLabel } from '../../components/CategoryLabel';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { MonthHeader } from '../../components/MonthHeader';
 import { shortcutLabel } from '../../components/shortcut';
-import { UserName } from '../../components/UserDot';
+import { UserFace } from '../../components/UserDot';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import { useUiStore } from '../../state/uiStore';
 import { useNow } from '../../state/useNow';
@@ -173,7 +173,7 @@ export function TransactionsScreen() {
                     </td>
                     <td className={styles.amount}>{formatYen(tx.amount)}</td>
                     <td>
-                      <UserName user={usersById.get(tx.paidBy)} />
+                      <UserFace user={usersById.get(tx.paidBy)} />
                     </td>
                     {!locked && (
                       <td className={styles.actions} onClick={(e) => e.stopPropagation()}>

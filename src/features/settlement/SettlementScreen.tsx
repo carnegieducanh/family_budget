@@ -23,12 +23,12 @@ import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { MonthHeader } from '../../components/MonthHeader';
-import { UserName } from '../../components/UserDot';
+import { UserFace } from '../../components/UserDot';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import { useUiStore } from '../../state/uiStore';
 import { useNow } from '../../state/useNow';
-import { describeDirection, describeSettlement, userName } from './describe';
 import styles from './SettlementScreen.module.scss';
+import { SettlementDirection, SettlementSentence } from './SettlementText';
 
 export function SettlementScreen() {
   const month = useUiStore((s) => s.month);
@@ -74,7 +74,7 @@ export function SettlementScreen() {
               return (
                 <tr key={user.id}>
                   <td>
-                    <UserName user={user} />
+                    <UserFace user={user} size={28} />
                   </td>
                   <td className={styles.num}>{formatYen(paid)}</td>
                   <td className={styles.num}>{formatYen(settlement.sharePerPerson)}</td>
@@ -100,7 +100,9 @@ export function SettlementScreen() {
           <span className={styles.resultIcon} aria-hidden="true">
             <Handshake size={20} />
           </span>
-          <div className={styles.resultText}>{describeSettlement(settlement, users)}</div>
+          <div className={styles.resultText}>
+            <SettlementSentence settlement={settlement} users={users} size={30} />
+          </div>
           {!past && <span className={styles.provisional}>Tạm tính</span>}
         </div>
 
@@ -131,7 +133,8 @@ export function SettlementScreen() {
           onCancel={() => setConfirming(false)}
           onConfirm={markSettled}
         >
-          {describeSettlement(settlement, users)} cho {formatMonthLabel(month)}.
+          <SettlementSentence settlement={settlement} users={users} size={20} /> cho{' '}
+          {formatMonthLabel(month)}.
         </ConfirmDialog>
       )}
     </>
@@ -168,7 +171,8 @@ function SettledStatus({ settlement, record, change, users, onMark }: SettledSta
     return (
       <p className={styles.settled}>
         <CircleCheck size={16} aria-hidden="true" /> Đã thanh toán lúc{' '}
-        {formatDateTime(record.settledAt)} · {userName(users, record.settledBy)} xác nhận
+        {formatDateTime(record.settledAt)} ·{' '}
+        <UserFace user={users.find((u) => u.id === record.settledBy)} size={22} /> xác nhận
       </p>
     );
   }
@@ -239,7 +243,9 @@ function HistoryTable({ data, users, now, selected }: HistoryTableProps) {
               <td>{formatMonthLabel(month)}</td>
               <td className={styles.num}>{formatYen(settlement.total)}</td>
               <td className={styles.num}>{formatYen(settlement.amount)}</td>
-              <td>{describeDirection(settlement, users)}</td>
+              <td>
+                <SettlementDirection settlement={settlement} users={users} />
+              </td>
               <td className={styles[status.tone]}>
                 <span className={styles.status}>
                   <status.icon size={14} aria-hidden="true" /> {status.label}

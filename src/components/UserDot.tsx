@@ -19,7 +19,7 @@ export function UserDot({ user, title }: { user: User | undefined; title?: strin
 
 /**
  * Ảnh đại diện tròn của người: ảnh, emoji trên nền nhạt màu của người đó, hoặc chữ cái đầu
- * của tên trên nền màu nếu chưa đặt. Luôn đặt cạnh tên.
+ * của tên trên nền màu nếu chưa đặt. Đặt cạnh tên; đứng một mình thì dùng UserFace.
  */
 export function UserAvatar({ user, size = 32 }: { user: AvatarUser | undefined; size?: number }) {
   const color = user?.color ?? 'var(--color-text-muted)';
@@ -56,6 +56,19 @@ export function UserAvatar({ user, size = 32 }: { user: AvatarUser | undefined; 
       aria-hidden="true"
     >
       {initial}
+    </span>
+  );
+}
+
+/**
+ * Ảnh đại diện đứng thay tên người trong bảng và trong câu. Tên vẫn có ở tooltip và cho
+ * trình đọc màn hình.
+ */
+export function UserFace({ user, size = 24 }: { user: User | undefined; size?: number }) {
+  const name = user?.name ?? 'không rõ';
+  return (
+    <span className={styles.face} role="img" aria-label={name} title={name}>
+      <UserAvatar user={user} size={size} />
     </span>
   );
 }
