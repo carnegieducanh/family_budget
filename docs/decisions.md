@@ -505,3 +505,16 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
   Lý do: mỗi danh mục chỉ có một emoji; bảng của Windows và macOS không tự đóng sau khi chọn, nếu không thay thì chọn nhầm rồi chọn lại sẽ thành hai emoji nối nhau.
 
 - Đã thử trên Windows 11 (bản dev): bảng mở, chọn liên tiếp 👍 → ⏰ → 🎧 thì ô chỉ còn emoji cuối; dòng có sẵn chọn xong bấm Esc hai lần thì về icon cũ, không lưu. Bảng hiện ở chỗ Windows tự chọn (có khi ở màn hình khác với cửa sổ app khi dùng nhiều màn hình). Phần macOS mới kiểm là biên dịch được (`cargo check --target aarch64-apple-darwin` cho đoạn code AppKit), chưa chạy trên máy Mac.
+
+## 2026-10-26 — Icon app: sổ tiết kiệm gập kiểu ゆうちょ
+
+- **Icon app thay logo mặc định của Tauri bằng sổ tiết kiệm gập (có nhà và đồng ¥) trên ô vuông bo góc xanh, ảnh user tạo bằng ChatGPT theo phong cách app ゆうちょ銀行. Ảnh gốc, bản đã làm sạch và các bản master nằm ở `src-tauri/icons/_source/`. Logo trong app (`BrandMark`: đầu sidebar và màn thiết lập lần đầu) cũng đổi sang cùng hình, là ảnh PNG cắt sát ô xanh (`src/assets/brand-mark-64.png`, `-128.png`) thay cho SVG mái nhà + đồng xu.**
+  Lý do: user muốn logo trong app giống icon app. Dùng ảnh cắt từ cùng nguồn chứ không vẽ lại bằng SVG để hai chỗ giống hệt nhau; có bản 128 px cho màn tỉ lệ cao.
+
+- **Windows: ô xanh chiếm 94% ô icon và được kéo thành vuông tuyệt đối (ảnh gốc rộng hơn cao khoảng 2,5%), theo lựa chọn của user sau khi xem ảnh thử ở cỡ thật. `icon.ico` có đủ 10 cỡ 16–256 px dạng PNG-in-ICO.**
+  Lý do: thiếu cỡ 20/24/40 px thì ở màn 125/150% Windows phải tự co giãn nên icon mờ. Ảnh ChatGPT có ô xanh chỉ đục khoảng 98% (alpha 246–254) và lấm tấm điểm gần trong suốt quanh mép, nên alpha được làm sạch trước (≤ 16 thành 0, ≥ 240 thành 255).
+
+- **macOS (`icon.icns`) và các file `Square*Logo.png`, `StoreLogo.png`: ô xanh chiếm khoảng 80% khung theo lưới icon của Apple.**
+  Lý do: icon macOS có lề trong suốt quanh ô; dùng bản 94% thì icon trên Dock to hơn các app khác. Chưa xem trên máy Mac.
+
+- Ở 16–24 px (khay hệ thống, thanh tiêu đề, taskbar) chỉ còn nhận ra tờ sổ trắng có vạch xanh; nhà và đồng ¥ chỉ rõ từ 40 px. Bản cài A/B (v0.1.0) vẫn icon cũ đến bản phát hành sau.
