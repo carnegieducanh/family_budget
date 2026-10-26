@@ -68,17 +68,10 @@ function AppearanceSettings() {
         <dt>Theme</dt>
         <dd>
           <ThemeSwitcher />
-          <p className={styles.hint}>
-            “Theo hệ thống” đổi theo chế độ sáng/tối của Windows hoặc macOS. Lựa chọn chỉ áp dụng
-            cho máy này.
-          </p>
         </dd>
         <dt>Cỡ chữ</dt>
         <dd>
           <FontSizeSwitcher />
-          <p className={styles.hint}>
-            Đổi cỡ chữ trên mọi màn hình của app. Lựa chọn chỉ áp dụng cho máy này.
-          </p>
         </dd>
       </dl>
     </Card>
