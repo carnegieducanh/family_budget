@@ -2,6 +2,13 @@
 
 Mỗi phiên bản một mục `## x.y.z`, mới nhất ở trên. Nội dung của mục là ghi chú hiện khi bấm "Xem chi tiết" trong popup cập nhật của app và ở Cài đặt → Phiên bản app (app đóng gói sẵn file này), nên viết ngắn, bằng lời của người dùng. Khi đẩy tag `vx.y.z`, GitHub Actions lấy đúng mục này làm ghi chú phát hành; thiếu mục thì không phát hành.
 
+## 0.5.0
+
+- Theme Sáng dịu mắt hơn: bỏ nền trắng, dùng màu giấy ngà ấm.
+- Đổi theme Sáng/Tối có hiệu ứng chuyển mượt.
+- Thanh tiêu đề cửa sổ cùng màu với app (Windows 11).
+- Mở app với kích thước cửa sổ của lần trước.
+
 ## 0.4.0
 
 - Cửa sổ app thu nhỏ được tới 640 × 480, vừa nửa màn hình laptop. Cửa sổ hẹp thì sidebar chỉ còn icon.
