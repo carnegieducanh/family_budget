@@ -6,10 +6,11 @@ import { useColorScheme } from '../../components/useColorScheme';
 import styles from './CategoryBreakdown.module.scss';
 
 // Slot 1 là xanh ゆうちょ #009900. Bảng màu đã kiểm bằng validator của skill dataviz cho nền
-// card của app (sáng #ffffff, tối #171d17): với mọi số lát từ 2 đến 4, mọi cặp kề nhau trên
-// vòng tròn (kể cả cặp nối vòng lát cuối ↔ slot 1) đạt cổng CVD và normal-vision. Cam, đỏ, vàng
-// (tối) lẫn với xanh lá khi mù màu đỏ-lục nên không có trong bảng. Màu hồng ở chế độ sáng dưới
-// 3:1 so với nền nên danh sách số liệu bên cạnh biểu đồ là bắt buộc, không chỉ để trang trí.
+// card của app (sáng #ebe8e1, trước đó #ffffff; tối #171d17): với mọi số lát từ 2 đến 4, mọi cặp
+// kề nhau trên vòng tròn (kể cả cặp nối vòng lát cuối ↔ slot 1) đạt cổng CVD và normal-vision.
+// Cam, đỏ, vàng (tối) lẫn với xanh lá khi mù màu đỏ-lục nên không có trong bảng. Màu hồng ở chế độ
+// sáng dưới 3:1 so với nền nên danh sách số liệu bên cạnh biểu đồ là bắt buộc, không chỉ để
+// trang trí.
 const SLOT_COLORS = {
   light: ['#009900', '#2a78d6', '#e87ba4', '#6250d6'],
   dark: ['#009900', '#3987e5', '#d55181', '#9085e9'],

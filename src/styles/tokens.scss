@@ -6,19 +6,21 @@
 @mixin light-tokens {
   color-scheme: light;
 
-  // Bảng màu theo app ゆうちょ通帳アプリ (đo từ ảnh chụp màn hình chính thức trên App Store và
-  // trang jp-bank.japanpost.jp). Nền, viền lấy từ website ゆうちょ; chữ lấy từ app.
-  --color-bg: #f6f7ef;
-  --color-sidebar: #fcfcfc;
-  --color-surface: #ffffff;
-  --color-surface-muted: #eff1e4;
-  --color-surface-hover: #f6f7ef;
+  // Màu xanh và chữ theo app ゆうちょ通帳アプリ (đo từ ảnh chụp màn hình chính thức trên App Store).
+  // Không dùng trắng cho đỡ chói: card, ô nhập, popup là giấy ngà ấm #ebe8e1; nền trang và sidebar
+  // sẫm hơn một bậc để card vẫn nổi; viền và nền phụ cùng tông ấm. Chữ phụ đậm hơn bản ゆうちょ
+  // (#667366) để vẫn ≥ 4.5:1 trên nền trang và nền phụ.
+  --color-bg: #e2ded5;
+  --color-sidebar: #e2ded5;
+  --color-surface: #ebe8e1;
+  --color-surface-muted: #dcd8ce;
+  --color-surface-hover: #e5e2da;
   // Rê chuột trên sidebar: nền ngả xanh, nhạt hơn --color-primary-soft của mục đang chọn.
   --color-sidebar-hover: #e9f5e1;
-  --color-border: #e4e6d9;
-  --color-border-strong: #cdceca;
+  --color-border: #d3cdc1;
+  --color-border-strong: #bcb5a7;
   --color-text: #39414a;
-  --color-text-muted: #667366;
+  --color-text-muted: #556155;
   --color-overlay: rgba(31, 41, 31, 0.4);
 
   --shadow-xs: 0 1px 2px rgba(31, 56, 31, 0.06);
@@ -54,7 +56,7 @@
   --color-on-danger: #ffffff;
 
   // Mũi tên của <select> (data URI không dùng được currentColor).
-  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23667366' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23556155' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 
 @mixin dark-tokens {

@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { create } from 'zustand';
 
@@ -29,6 +30,14 @@ function readStored(): ThemePreference {
   }
 }
 
+/** Thanh tiêu đề cùng màu sidebar của theme đang áp dụng (lệnh set_title_bar_color, Windows 11). */
+function applyTitleBarColor() {
+  const color = getComputedStyle(document.documentElement)
+    .getPropertyValue('--color-sidebar')
+    .trim();
+  if (color) invoke('set_title_bar_color', { color }).catch(() => undefined);
+}
+
 /** Đặt data-theme cho CSS và theme cửa sổ (thanh tiêu đề của hệ điều hành). */
 function apply(preference: ThemePreference) {
   const root = document.documentElement;
@@ -38,6 +47,7 @@ function apply(preference: ThemePreference) {
   getCurrentWindow()
     .setTheme(preference === 'system' ? null : preference)
     .catch(() => undefined);
+  applyTitleBarColor();
 }
 
 interface ThemeState {
@@ -55,12 +65,21 @@ export const useThemeStore = create<ThemeState>()((set) => ({
     } catch {
       // Không lưu được thì vẫn đổi theme cho lần mở app này.
     }
-    apply(preference);
-    set({ preference });
+    // set() nằm trong change: React vẽ lại (biểu đồ tô màu bằng JS) ngay ở microtask sau đó,
+    // trước khi trình duyệt chụp ảnh theme mới, nên cũng mờ dần cùng phần còn lại.
+    const change = () => {
+      apply(preference);
+      set({ preference });
+    };
+    // Cả màn hình mờ dần sang theme mới (View Transitions API); WebView không hỗ trợ thì đổi ngay.
+    if (document.startViewTransition) document.startViewTransition(change);
+    else change();
   },
 }));
 
 /** Gọi một lần khi mở app: áp dụng theme đã lưu cho cả thanh tiêu đề của cửa sổ. */
 export function initTheme() {
   apply(useThemeStore.getState().preference);
+  // Chọn "Theo hệ thống" thì màu sidebar đổi theo hệ điều hành mà không qua apply().
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTitleBarColor);
 }

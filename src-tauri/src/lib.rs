@@ -50,6 +50,39 @@ fn show_emoji_panel(app: tauri::AppHandle) {
     let _ = app;
 }
 
+/// Tô thanh tiêu đề của cửa sổ cùng màu với sidebar (`color` dạng `#rrggbb`, gửi từ
+/// state/themeStore.ts mỗi khi đổi theme), để thanh tiêu đề trắng của hệ điều hành không lệch
+/// với nền app. Chỉ Windows 11 có API này: Windows 10 bỏ qua, macOS giữ thanh tiêu đề hệ thống.
+#[tauri::command]
+fn set_title_bar_color(window: tauri::WebviewWindow, color: String) {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::Graphics::Dwm::{DWMWA_CAPTION_COLOR, DwmSetWindowAttribute};
+        let Some(rgb) = color
+            .trim()
+            .strip_prefix('#')
+            .filter(|hex| hex.len() == 6)
+            .and_then(|hex| u32::from_str_radix(hex, 16).ok())
+        else {
+            return;
+        };
+        // COLORREF xếp kênh màu ngược: 0x00BBGGRR.
+        let colorref = (rgb >> 16) | (rgb & 0xff00) | ((rgb & 0xff) << 16);
+        if let Ok(hwnd) = window.hwnd() {
+            unsafe {
+                DwmSetWindowAttribute(
+                    hwnd.0,
+                    DWMWA_CAPTION_COLOR as u32,
+                    (&raw const colorref).cast(),
+                    size_of::<u32>() as u32,
+                )
+            };
+        }
+    }
+    #[cfg(not(windows))]
+    let _ = (window, color);
+}
+
 /// Thư mục chứa file của các máy trong thư mục Drive (`SYNC_SUBFOLDER` bên JS).
 const SYNC_SUBFOLDER: &str = "FamilyBudget";
 
@@ -166,8 +199,39 @@ async fn find_sync_folders(app: tauri::AppHandle) -> Vec<String> {
         .collect()
 }
 
+/// Cửa sổ chính mở ẩn (tauri.conf.json → "visible": false) để kịp đặt lại kích thước lần trước
+/// mà không nháy cỡ mặc định. Cỡ đã lưu có thể lớn hơn màn hình đang dùng (lần trước mở trên
+/// màn hình ngoài) nên thu lại cho vừa. Căn giữa trước khi phóng to để lúc thu nhỏ lại, cửa sổ
+/// cũng nằm giữa màn hình.
+fn show_main_window(app: &tauri::App) -> tauri::Result<()> {
+    use tauri::Manager;
+    use tauri_plugin_window_state::{StateFlags, WindowExt};
+    let Some(window) = app.get_webview_window("main") else {
+        return Ok(());
+    };
+    window.restore_state(StateFlags::SIZE)?;
+    if let Some(monitor) = window.current_monitor()? {
+        let area = monitor.work_area().size;
+        let inner = window.inner_size()?;
+        let outer = window.outer_size()?;
+        let width = inner
+            .width
+            .min(area.width.saturating_sub(outer.width - inner.width));
+        let height = inner
+            .height
+            .min(area.height.saturating_sub(outer.height - inner.height));
+        if (width, height) != (inner.width, inner.height) {
+            window.set_size(tauri::PhysicalSize::new(width, height))?;
+        }
+    }
+    window.center()?;
+    window.restore_state(StateFlags::MAXIMIZED)?;
+    window.show()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    use tauri_plugin_window_state::StateFlags;
     tauri::Builder::default()
         // persisted-scope phải đăng ký sau fs, nếu không quyền truy cập thư mục Drive
         // đã chọn sẽ không được khôi phục khi mở lại app.
@@ -177,8 +241,18 @@ pub fn run() {
         // Cập nhật app (SPEC mục 9): kiểm tra, tải, cài bản mới rồi khởi động lại.
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        // Nhớ kích thước cửa sổ (và trạng thái phóng to) của lần mở trước; vị trí thì không,
+        // cửa sổ luôn mở giữa màn hình. Cửa sổ chính được đặt lại trong show_main_window.
+        .plugin(
+            tauri_plugin_window_state::Builder::new()
+                .with_state_flags(StateFlags::SIZE | StateFlags::MAXIMIZED)
+                .skip_initial_state("main")
+                .build(),
+        )
+        .setup(|app| Ok(show_main_window(app)?))
         .invoke_handler(tauri::generate_handler![
             show_emoji_panel,
+            set_title_bar_color,
             find_sync_folders
         ])
         .run(tauri::generate_context!())
