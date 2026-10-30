@@ -11,8 +11,9 @@ import styles from './SyncIndicator.module.scss';
 /**
  * Trạng thái sync ở góc dưới sidebar, kèm nút "Sync ngay". Khi chưa kết nối thư mục Drive,
  * bấm vào dòng trạng thái để chọn thư mục ngay, không phải vào Cài đặt.
+ * `compact` (sidebar chỉ còn icon): một nút sync có chấm trạng thái, nội dung ở tooltip.
  */
-export function SyncIndicator() {
+export function SyncIndicator({ compact = false }: { compact?: boolean }) {
   const running = useSyncStore((s) => s.running);
   const last = useSyncStore((s) => s.last);
   const lastSuccessAt = useSyncStore((s) => s.lastSuccessAt);
@@ -34,6 +35,28 @@ export function SyncIndicator() {
     } finally {
       setConnecting(false);
     }
+  }
+
+  if (compact) {
+    const lines = [view.main, ...view.extra];
+    if (notConnected && connectError) lines.push({ text: connectError, tone: 'error' });
+    // Chấm lấy màu của dòng nặng nhất, vì các dòng phụ chỉ còn trong tooltip.
+    const tone =
+      (['error', 'warning'] as const).find((t) => lines.some((line) => line.tone === t)) ??
+      view.main.tone;
+    const action = notConnected ? 'Bấm để chọn thư mục Google Drive' : 'Bấm để sync ngay';
+    return (
+      <button
+        type="button"
+        className={`${styles.compact} ${styles[tone]}`}
+        disabled={running || connecting}
+        title={[...lines.map((line) => line.text), action].join('\n')}
+        onClick={() => void (notConnected ? connect() : syncNow())}
+      >
+        <RefreshCw size={18} className={running ? styles.spin : undefined} aria-hidden="true" />
+        <span className={styles.dot} aria-hidden="true" />
+      </button>
+    );
   }
 
   return (

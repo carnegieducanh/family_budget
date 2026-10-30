@@ -3,6 +3,26 @@
 //   .table { @include m.data-table; }
 
 /**
+ * Cửa sổ hẹp hơn 1024 px (bề rộng tối thiểu trước đây): sidebar chỉ còn icon, lề nội dung hẹp
+ * lại. Cùng mốc với useNarrowWindow.ts. Từ 1024 px trở lên giao diện giữ như cũ.
+ */
+@mixin narrow {
+  @media (max-width: 1023px) {
+    @content;
+  }
+}
+
+/**
+ * Cửa sổ dưới 840 px: vùng nội dung hẹp hơn lúc cửa sổ 1024 px có sidebar đầy đủ (~720 px),
+ * lưới 2 cột xếp thành 1 cột.
+ */
+@mixin compact {
+  @media (max-width: 839px) {
+    @content;
+  }
+}
+
+/**
  * Dải gradient xanh ở đầu vùng cuộn, nhạt dần về màu nền như phần đầu màn hình chính của app
  * ゆうちょ. Cuộn theo nội dung (background-attachment: local), card nằm đè lên phần nhạt dần.
  */
@@ -37,13 +57,18 @@
     text-transform: uppercase;
     white-space: nowrap;
     color: var(--color-text-muted);
+
+    // Cửa sổ nhỏ: tiêu đề dài hơn nội dung cột ("Người trả" trên cột ảnh) được xuống dòng.
+    @include compact {
+      white-space: normal;
+    }
   }
 
   tbody tr:last-child td {
     border-bottom: none;
   }
 
-  // Cửa sổ hẹp (gần bề rộng tối thiểu 1024 px): lề ô nhỏ lại để các cột vừa card.
+  // Cửa sổ hẹp (dưới 1200 px): lề ô nhỏ lại để các cột vừa card.
   @media (max-width: 1199px) {
     th,
     td {

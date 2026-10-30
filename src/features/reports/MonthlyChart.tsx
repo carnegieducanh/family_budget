@@ -33,13 +33,19 @@ export function MonthlyChart({ totals, selected, onSelect }: MonthlyChartProps) 
             dataKey="month"
             tickLine={false}
             axisLine={false}
-            interval={0}
+            // Biểu đồ hẹp: cách đều bỏ bớt nhãn, luôn giữ nhãn cuối (tháng đang chọn). Để
+            // recharts đo đúng chỗ cần: tickFormatter cho nội dung nhãn, class
+            // recharts-cartesian-axis-tick-value để nó đọc cỡ chữ của nhãn.
+            interval="equidistantPreserveEnd"
+            tickFormatter={(value: string) => shortMonth(value)}
             tick={({ x, y, payload }) => (
               <text
                 x={x}
                 y={Number(y) + 12}
                 textAnchor="middle"
-                className={payload.value === selected ? styles.tickSelected : styles.tick}
+                className={`recharts-cartesian-axis-tick-value ${
+                  payload.value === selected ? styles.tickSelected : styles.tick
+                }`}
               >
                 {shortMonth(String(payload.value))}
               </text>

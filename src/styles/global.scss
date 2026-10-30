@@ -120,6 +120,12 @@ summary:focus-visible,
   box-shadow: var(--focus-ring);
 }
 
+// Biểu đồ recharts có tabindex (để xem tooltip bằng phím mũi tên) nên nhận focus khi bấm chuột,
+// và WebView vẽ viền tối quanh cả biểu đồ dù không phải :focus-visible.
+.recharts-surface:focus {
+  outline: none;
+}
+
 // Bỏ nút tăng giảm của ô số; số tiền gõ trực tiếp.
 input[type='number'] {
   appearance: textfield;

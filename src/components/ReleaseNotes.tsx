@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { releaseNoteItems } from '../core/changelog';
 import styles from './ReleaseNotes.module.scss';
+import { useSmoothScroll } from './useSmoothScroll';
 
 /** Ghi chú phát hành dạng danh sách (các dòng `- ...` trong docs/CHANGELOG.md). */
 export function ReleaseNotes({ notes }: { notes: string }) {
+  const [scrollRef] = useSmoothScroll();
   return (
-    <ul className={styles.list}>
+    <ul ref={scrollRef} className={styles.list}>
       {releaseNoteItems(notes).map((item, index) => (
         <li key={index}>{item}</li>
       ))}

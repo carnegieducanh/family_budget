@@ -31,7 +31,8 @@
   font-size: var(--font-size-xs);
 }
 
-.tickSelected {
+// Thêm .chart để thắng quy tắc nhãn trục chung ở trên (nhãn tháng cũng mang class đó).
+.chart .tickSelected {
   fill: var(--color-text);
   font-weight: 700;
 }
@@ -82,6 +83,10 @@
 
 // --- Bảng chi theo danh mục
 
+.tableWrap {
+  @include m.table-scroll;
+}
+
 .table {
   @include m.data-table;
 }
@@ -97,6 +102,10 @@
 
 .meterCell {
   width: 40%;
+
+  @include m.compact {
+    width: 30%;
+  }
 }
 
 .meterRow {
@@ -105,6 +114,17 @@
   gap: var(--space-2);
   font-size: var(--font-size-sm);
   white-space: nowrap;
+
+  // Cửa sổ nhỏ: nhãn "Trên 80%" / "Vượt" xuống dòng riêng dưới thanh để bảng vừa card.
+  @include m.compact {
+    flex-wrap: wrap;
+    row-gap: 2px;
+
+    .warningText,
+    .overText {
+      flex-basis: 100%;
+    }
+  }
 }
 
 // Nền thanh là bậc nhạt của cùng màu với phần đã dùng (giống Tổng quan).

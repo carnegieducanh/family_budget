@@ -346,7 +346,7 @@ Viết các hàm `can(user, action, record?)` trong `core/permissions.ts`, dùng
 
 App có 9 màn hình, bố cục sidebar trái + vùng nội dung; màn hình chính là Tổng quan tháng.
 
-Bố cục chung: cửa sổ tối thiểu 1024 × 700, sidebar điều hướng bên trái, trạng thái sync ở góc dưới sidebar, popup giữa màn hình khi có bản cập nhật mới. Theme Sáng / Tối / Theo hệ thống (mặc định), chọn ở sidebar hoặc Cài đặt → Giao diện, lưu riêng từng máy. Các màn hình có chọn tháng dùng chung một bộ chọn `‹ Tháng 10/2026 ›`.
+Bố cục chung: cửa sổ tối thiểu 640 × 480 (vừa nửa màn hình laptop 14"), sidebar điều hướng bên trái (bấm logo ở đầu sidebar để về Tổng quan), trạng thái sync ở góc dưới sidebar, popup giữa màn hình khi có bản cập nhật mới. Cửa sổ hẹp hơn 1024 px thì sidebar chỉ còn icon (tên mục ở tooltip, chọn theme ở Cài đặt). Theme Sáng / Tối / Theo hệ thống (mặc định), chọn ở sidebar hoặc Cài đặt → Giao diện, lưu riêng từng máy. Các màn hình có chọn tháng dùng chung một bộ chọn `‹ Tháng 10/2026 ›`.
 
 1. **Thiết lập lần đầu** (chỉ hiện khi chưa có `userId`)
    - Tìm sẵn dữ liệu gia đình trong Google Drive (mục 5). Thấy thì hiện ngay "Chọn tài khoản của bạn để bắt đầu" với hai thẻ người dùng (ảnh đại diện, tên, vai trò), không kèm gì khác; không có nút quay về bước tạo mới.

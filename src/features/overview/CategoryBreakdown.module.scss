@@ -1,7 +1,10 @@
+// Card hẹp (cửa sổ nhỏ, chữ lớn): bảng xuống dưới biểu đồ.
 .layout {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-8);
+  justify-content: center;
+  gap: var(--space-5) var(--space-8);
 }
 
 .donut {
@@ -15,7 +18,7 @@
 }
 
 .legend {
-  flex: 1;
+  flex: 1 1 20em;
   min-width: 0;
   border-collapse: collapse;
 
@@ -37,8 +40,10 @@
   vertical-align: middle;
 }
 
+// max-width: 0 để tên dài không giữ bảng rộng ra; width: 100% cho cột tên lấp phần còn lại.
 .name {
   width: 100%;
+  max-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

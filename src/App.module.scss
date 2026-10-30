@@ -17,6 +17,15 @@
   max-width: var(--content-max-width);
   margin: 0 auto;
   padding: var(--space-8) var(--space-8) var(--space-10);
+
+  @include m.narrow {
+    padding: var(--space-6) var(--space-5) var(--space-8);
+  }
+
+  @include m.compact {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
 }
 
 // Đổi màn hình: nội dung màn mới hiện dần và trượt nhẹ lên. Màn cũ biến mất ngay, không chờ

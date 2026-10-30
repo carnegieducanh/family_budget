@@ -587,3 +587,48 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 - **Popup "Yêu cầu tất toán" chỉ mở sau lượt sync đầu tiên khi mở app, và chờ đến khi không còn modal nào khác đang mở** (popup "Khoản chi mới", form khoản chi…): `modalStack` có thêm `useOpenModalCount` để popup biết khi nào tới lượt. Chờ sync để không hiện yêu cầu mà máy kia đã hủy. Có nhiều yêu cầu thì hiện tháng cũ trước, từng cái một.
 
 - **Không tăng `schemaVersion`.** Các trường mới đều không bắt buộc; bản 0.2.0 trở về trước đọc file không loại trường lạ. Máy còn chạy bản cũ không thấy popup và vẫn bấm "Đã thanh toán" một bước được; bấm như vậy thì yêu cầu (nếu có) vẫn nằm trong bản ghi. Hai máy nên cập nhật cùng lúc.
+
+## 2026-10-30 — Cửa sổ co được tới 640 × 480
+
+- **Cửa sổ tối thiểu 640 × 480 thay cho 1024 × 700; cửa sổ mặc định 1200 × 800 tự thu cho vừa vùng làm việc của màn hình lúc mở (`preventOverflow` của Tauri).** Thay quyết định "tối thiểu 1024 × 700" ở Giai đoạn 0.
+  Lý do: user báo trên màn 14" không co app nhỏ hơn được. Laptop 14" scale 150–200% chỉ còn 1280 × 670–770 px CSS trên taskbar: 700 px cao gần hết màn, 1024 px rộng thì không đặt được cạnh cửa sổ khác. 640 px là nửa màn 1280 (Windows Snap). `preventOverflow` là tùy chọn có sẵn của Tauri nên không cần viết Rust.
+
+- **Từ 1024 px trở lên giao diện giữ y như cũ. Dưới 1024 px (mixin `narrow`, hook `useNarrowWindow`): sidebar chỉ còn cột icon** — tên mục ở tooltip, nhóm "Quản lý" tách bằng đường kẻ thay cho nhãn, khối sync thành một nút "Sync ngay" có chấm trạng thái (chấm lấy màu của dòng nặng nhất, nội dung ở tooltip; chưa kết nối thì bấm để chọn thư mục), bỏ ô chọn theme (đã có ở Cài đặt → Giao diện), khối người dùng chỉ còn ảnh. Lề vùng nội dung hẹp lại.
+  Lý do: sidebar 240 px chiếm gần nửa cửa sổ 640 px. Cột icon khoảng 60 px; ở cửa sổ 840 px vùng nội dung vẫn rộng bằng lúc cửa sổ 1024 px có sidebar đầy đủ, nên các bảng đã chỉnh cho 1024 px vẫn vừa.
+
+- **Dưới 840 px (mixin `compact`): lưới 2 cột ở Tổng quan thành 1 cột; lề trong card và vùng nội dung nhỏ thêm; tiêu đề cột bảng được xuống dòng ("Người trả" trên cột chỉ có ảnh); tên danh mục ở bảng Khoản chi cắt ở 120 px thay vì 160 px; bảng Báo cáo đưa nhãn "Trên 80%" / "Vượt" xuống dòng dưới thanh.** Không dùng container query theo bề rộng vùng nội dung: container query bật layout containment, các modal (`position: fixed`, không qua portal) sẽ canh theo vùng nội dung thay vì cửa sổ.
+
+- **Thẻ "Chi theo danh mục" ở Tổng quan: bảng chú thích xuống dưới biểu đồ khi bên cạnh còn dưới 20em; tên danh mục dài cắt bằng "…" thay vì giữ bảng rộng ra (`max-width: 0` trên ô tên).** Trục tháng của biểu đồ Báo cáo bỏ bớt nhãn cách đều khi chật (`equidistantPreserveEnd`, luôn giữ tháng đang chọn ở cuối); nhãn tháng mang class `recharts-cartesian-axis-tick-value` để recharts đo đúng cỡ chữ, nên ở 1024 px vẫn hiện đủ 12 nhãn như trước. Bảng Báo cáo có khung cuộn ngang trong card như các bảng khác.
+
+- Đã xem trên bản UI dev B ở 640, 720, 800, 900, 1024 px, cỡ chữ Nhỏ và Lớn, theme tối; đo phần tử tràn qua cổng debug của WebView2. Còn lại: ở 640–~680 px, bảng lịch sử Tất toán và bảng Định kỳ (7 cột có nút) cuộn ngang trong card khoảng 30–60 px; từ 720 px mọi bảng vừa card ở cỡ Nhỏ. Cửa sổ cao 480 px với cỡ chữ Lớn trở lên thì cột icon dài hơn cửa sổ, cuộn bằng con lăn (ẩn thanh cuộn để khỏi bóp cột). macOS chưa xem.
+
+## 2026-10-30 — Tắt kiểm tra chính tả
+
+- **`spellcheck="false"` trên thẻ `<html>` (index.html): mọi ô nhập và ô nhiều dòng, kể cả trong popup, không còn gạch đỏ dưới chữ.** Thuộc tính này được kế thừa nên không phải đặt từng ô; ô nào cần bật lại thì đặt `spellCheck` riêng.
+  Lý do: user thấy gạch đỏ khó chịu. Tên người, tên danh mục, ghi chú tiếng Việt lẫn tên tiếng Nhật (Gyomu Super, Kawaguchiko…) đều bị trình kiểm tra chính tả của WebView báo sai, nên chỉ gây nhiễu.
+
+## 2026-10-30 — Bỏ viền tối quanh biểu đồ khi bấm
+
+- **`.recharts-surface:focus { outline: none }` trong global.scss: bấm vào biểu đồ Báo cáo (hay biểu đồ tròn ở Tổng quan) không còn hiện khung viền tối quanh cả biểu đồ.** Recharts 3 cho vùng vẽ `tabindex=0` (để xem tooltip bằng phím mũi tên), nên bấm chuột là nó nhận focus và WebView vẽ viền dù không phải `:focus-visible`. Giữ `tabindex`, chỉ bỏ viền.
+  Lý do: user thấy khung viền đen quanh biểu đồ ở màn Báo cáo.
+
+## 2026-10-30 — Cuộn mượt bằng Lenis
+
+- **Cuộn bằng con lăn chuột / touchpad mượt ở mọi vùng cuộn dọc của app: vùng nội dung, sidebar, thân popup, màn thiết lập lần đầu, danh sách ghi chú phiên bản, bảng xem trước CSV.** Dùng Lenis 1.3.27, cài bằng npm (gói `lenis`, import `lenis/dist/lenis.css` ở main.tsx), không qua CDN: CSP của app chỉ cho script `'self'`, và app desktop không nên tải code từ mạng. Hook `components/useSmoothScroll.ts` trả về callback ref (gắn được cả vùng hiện ra sau, như bảng CSV) và instance.
+  Lý do: user muốn cuộn mượt cho toàn app.
+
+- **Mỗi vùng cuộn một instance Lenis (`wrapper` là chính vùng đó), không phải một instance cho cả trang:** app không cuộn `window` mà cuộn từng vùng `overflow: auto`. Vùng lồng nhau (ghi chú phiên bản trong popup) cuộn hết thì Lenis chuyền phần còn lại ra vùng ngoài, như cuộn gốc. `naiveDimensions: true` để đo chiều cao nội dung mỗi lần cần, vì nội dung đổi liên tục và không có một khối con cố định để Lenis theo dõi.
+
+- **Thông số: `duration: 0.7`, easing ease-out cubic `1 - (1 - t)^3`, `wheelMultiplier: 0.6` (mỗi nấc lăn 60 px; cuộn gốc 100 px), `respectReducedMotion: false`.** Máy user tắt "Hiệu ứng hoạt hình" của Windows nên WebView báo `prefers-reduced-motion: reduce`; Lenis mặc định tắt cuộn mượt lúc đó, giống lý do hiệu ứng chuyển màn hình luôn chạy.
+  Bản đầu dùng expo-out và `wheelMultiplier: 0.9`: mỗi nấc 90 px, đi nửa quãng trong 80 ms đầu (tốc độ lúc bắt đầu gấp ~7 lần tốc độ trung bình), 5 nấc liên tiếp đi 450 px trong khoảng 0,3 giây; user thấy hơi nhanh, chóng mặt. Bản hiện tại đo được: một nấc sau ~80 ms mới đi 21 px (trước 57 px), 5 nấc đi 300 px, vẫn dừng hẳn trong 0,7 giây. Không kéo dài `duration` vì trang trôi lâu sau khi thôi lăn cũng gây chóng mặt.
+
+- **Popup không qua portal nên nằm trong vùng nội dung: lớp nền popup có `data-lenis-prevent` để lăn chuột trên popup không cuộn trang phía sau** (trước đây cuộn gốc cũng không cuộn trang phía sau). Thân popup có Lenis riêng.
+
+- **Vẫn là cuộn gốc: bàn phím, kéo thanh cuộn, lăn ngang bằng touchpad, Shift + lăn chuột** (`virtualScroll` bỏ qua sự kiện có Shift để bảng rộng hơn card cuộn ngang như cũ). Đổi màn hình gọi `lenis.scrollTo(0, { immediate: true })` thay cho `scrollTo` gốc, nếu không đoạn cuộn mượt đang chạy dở sẽ kéo trang mới xuống.
+
+- Không có link neo `#...` nào trong app nên không cần xử lý link neo. Đã thử trên bản UI dev B qua cổng debug WebView2: lăn 600 px thì trang tăng dần qua nhiều khung hình, dừng ở 540 px sau khoảng 0,5 giây (kể cả khi giả lập reduced motion; số đo với thông số bản đầu); đổi màn hình giữa lúc cuộn thì về 0 ngay; lăn trên popup không cuộn trang; thân popup và sidebar (cửa sổ thấp) cuộn mượt riêng; lăn ngang trên bảng Định kỳ vẫn cuộn bảng. Shift + lăn chuột không giả lập được qua CDP (Windows đổi thành lăn ngang trước khi tới WebView), chưa thử bằng chuột thật. macOS chưa thử.
+
+## 2026-10-30 — Bấm logo ở sidebar để về Tổng quan
+
+- **Khối logo + tên app ở đầu sidebar là một nút: bấm vào thì về màn Tổng quan, tooltip "Tổng quan", nền đổi màu khi rê chuột như khối người dùng ở cuối sidebar. Cột icon (cửa sổ hẹp) cũng vậy.** Khoảng cách từ logo tới menu chuyển từ padding sang margin để vùng bấm chỉ vừa khối logo.
+  Lý do: user muốn bấm logo để về Tổng quan, như logo về trang chủ trên web.

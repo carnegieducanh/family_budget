@@ -10,6 +10,7 @@ import { Button } from '../../components/Button';
 import { ThemeSwitcher } from '../../components/ThemeSwitcher';
 import { UpdateDialog } from '../../components/UpdateDialog';
 import { UserAvatar } from '../../components/UserDot';
+import { useSmoothScroll } from '../../components/useSmoothScroll';
 import { useDataStore } from '../../state/dataStore';
 import {
   exportFileKey,
@@ -56,9 +57,10 @@ export function SetupScreen() {
   }, [mode]);
 
   const search = () => setMode('searching');
+  const [scrollRef] = useSmoothScroll();
 
   return (
-    <div className={styles.page}>
+    <div ref={scrollRef} className={styles.page}>
       <div className={styles.theme}>
         <ThemeSwitcher compact />
       </div>

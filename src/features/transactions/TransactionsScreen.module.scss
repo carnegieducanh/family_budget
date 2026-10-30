@@ -68,6 +68,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  @include m.compact {
+    max-width: 120px;
+  }
 }
 
 // Ghi chú nhận phần bề rộng còn lại của bảng và là cột co lại khi cửa sổ hẹp.

@@ -3,6 +3,7 @@ import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from 'react
 import { Button } from './Button';
 import styles from './Modal.module.scss';
 import { openModals, pushModal, removeModal } from './modalStack';
+import { useSmoothScroll } from './useSmoothScroll';
 
 interface ModalProps {
   title: string;
@@ -18,6 +19,7 @@ export function Modal({ title, onClose, children, footer, width = 440 }: ModalPr
   useLayoutEffect(() => {
     onCloseRef.current = onClose;
   });
+  const [bodyRef] = useSmoothScroll();
 
   useEffect(() => {
     pushModal(id);
@@ -34,8 +36,14 @@ export function Modal({ title, onClose, children, footer, width = 440 }: ModalPr
     };
   }, [id]);
 
+  // data-lenis-prevent: popup nằm trong vùng nội dung (không qua portal) nên lăn chuột trên popup
+  // không được cuộn trang phía sau; thân popup có cuộn mượt riêng.
   return (
-    <div className={styles.overlay} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className={styles.overlay}
+      data-lenis-prevent
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div
         className={styles.dialog}
         role="dialog"
@@ -60,7 +68,9 @@ export function Modal({ title, onClose, children, footer, width = 440 }: ModalPr
             <X size={18} />
           </Button>
         </div>
-        <div className={styles.body}>{children}</div>
+        <div ref={bodyRef} className={styles.body}>
+          {children}
+        </div>
         {footer && <div className={styles.footer}>{footer}</div>}
       </div>
     </div>

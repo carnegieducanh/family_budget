@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useLayoutEffect, useState, type ReactElement } from 'react';
 import { Button } from './components/Button';
 import { isAnyModalOpen } from './components/modalStack';
 import { Sidebar } from './components/Sidebar';
 import { UpdateDialog } from './components/UpdateDialog';
+import { useSmoothScroll } from './components/useSmoothScroll';
 import { BudgetScreen } from './features/budget/BudgetScreen';
 import { CategoriesScreen } from './features/categories/CategoriesScreen';
 import { OverviewScreen } from './features/overview/OverviewScreen';
@@ -54,12 +55,13 @@ function MainLayout() {
   const screen = useUiStore((s) => s.screen);
   const saveError = useDataStore((s) => s.saveError);
   const Current = SCREENS[screen];
-  const contentRef = useRef<HTMLElement>(null);
+  const [contentRef, lenisRef] = useSmoothScroll();
 
-  // Đổi màn hình thì về đầu trang, không giữ vị trí cuộn của màn trước.
+  // Đổi màn hình thì về đầu trang, không giữ vị trí cuộn của màn trước. Qua Lenis để dừng
+  // luôn đoạn cuộn mượt đang chạy dở, nếu không nó tiếp tục kéo trang mới xuống.
   useLayoutEffect(() => {
-    contentRef.current?.scrollTo({ top: 0 });
-  }, [screen]);
+    lenisRef.current?.scrollTo(0, { immediate: true });
+  }, [screen, lenisRef]);
 
   // Khi mở app: sinh khoản định kỳ của tháng này (SPEC mục 6), đặt mốc báo khoản chi mới nếu
   // máy chưa có, rồi bắt đầu lịch sync: sync ngay, định kỳ, khi focus lại cửa sổ và sau mỗi

@@ -72,6 +72,35 @@
   margin-left: calc(-1 * 10px + 8px + var(--space-2));
 }
 
+// Sidebar chỉ còn icon: một nút sync cỡ bằng mục điều hướng, chấm trạng thái ở góc trên phải.
+.compact {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--control-height) + 8px);
+  height: var(--control-height);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+
+  .dot {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    margin: 0;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--color-sidebar-hover);
+  }
+
+  &:disabled {
+    cursor: progress;
+  }
+}
+
 .spin {
   animation: spin 1s linear infinite;
 }

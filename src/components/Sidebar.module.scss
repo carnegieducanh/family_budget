@@ -9,11 +9,22 @@
   border-right: 1px solid var(--color-border);
 }
 
+// Logo + tên app, bấm để về Tổng quan. Khoảng cách tới menu để ở margin cho vùng bấm vừa khối.
 .brand {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-1) var(--space-2) var(--space-5);
+  margin-bottom: var(--space-4);
+  padding: var(--space-1) var(--space-2);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  transition: background-color var(--transition-fast);
+
+  &:hover {
+    background: var(--color-sidebar-hover);
+  }
 }
 
 .brandText {
@@ -172,4 +183,53 @@
 .role {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
+}
+
+// Cửa sổ hẹp: cột icon. Nút rộng theo chiều cao nút để vẫn vừa khi phóng chữ.
+.rail {
+  width: auto;
+  align-items: center;
+  padding: var(--space-3) var(--space-2);
+  // Thanh cuộn 12 px sẽ bóp cột icon; cửa sổ thấp thì vẫn cuộn bằng con lăn.
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  .brand {
+    margin-bottom: var(--space-3);
+    padding: var(--space-1);
+  }
+
+  .nav {
+    gap: var(--space-3);
+  }
+
+  // Nhóm Quản lý: đường kẻ thay cho nhãn.
+  .group + .group {
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .item {
+    justify-content: center;
+    width: calc(var(--control-height) + 8px);
+    padding: 0;
+  }
+
+  .bottom {
+    align-items: center;
+  }
+
+  .footer {
+    display: flex;
+    justify-content: center;
+    align-self: stretch;
+  }
+
+  .profile {
+    width: auto;
+    padding: 6px;
+  }
 }

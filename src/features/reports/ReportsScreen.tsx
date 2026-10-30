@@ -61,34 +61,36 @@ export function ReportsScreen() {
           {rows.length === 0 && totalBudget === null ? (
             <p className={styles.empty}>Chưa có khoản chi hay ngân sách nào trong tháng.</p>
           ) : (
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Danh mục</th>
-                  <th className={styles.num}>Đã chi</th>
-                  <th className={styles.num}>Ngân sách</th>
-                  <th className={styles.meterCell}>Đã dùng</th>
-                </tr>
-              </thead>
-              <tbody>
-                <BudgetRow
-                  label={<strong>Tổng</strong>}
-                  spent={total}
-                  budget={totalBudget}
-                  level={totalBudget === null ? null : budgetLevel(total, totalBudget)}
-                  strong
-                />
-                {rows.map((row) => (
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Danh mục</th>
+                    <th className={styles.num}>Đã chi</th>
+                    <th className={styles.num}>Ngân sách</th>
+                    <th className={styles.meterCell}>Đã dùng</th>
+                  </tr>
+                </thead>
+                <tbody>
                   <BudgetRow
-                    key={row.categoryId}
-                    label={<CategoryLabel category={categoriesById.get(row.categoryId)} />}
-                    spent={row.spent}
-                    budget={row.budget}
-                    level={row.level}
+                    label={<strong>Tổng</strong>}
+                    spent={total}
+                    budget={totalBudget}
+                    level={totalBudget === null ? null : budgetLevel(total, totalBudget)}
+                    strong
                   />
-                ))}
-              </tbody>
-            </table>
+                  {rows.map((row) => (
+                    <BudgetRow
+                      key={row.categoryId}
+                      label={<CategoryLabel category={categoriesById.get(row.categoryId)} />}
+                      spent={row.spent}
+                      budget={row.budget}
+                      level={row.level}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Card>
 

@@ -5,6 +5,7 @@ import { formatDate } from '../../core/month';
 import { Button } from '../../components/Button';
 import { CategoryLabel } from '../../components/CategoryLabel';
 import { Modal } from '../../components/Modal';
+import { useSmoothScroll } from '../../components/useSmoothScroll';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import { chooseFileToOpen, readUtf8File } from '../../storage/files';
 import styles from './data.module.scss';
@@ -88,6 +89,7 @@ function ImportPreviewDialog({
 }) {
   const { data } = useReadyData();
   const [saving, setSaving] = useState(false);
+  const [tableScrollRef] = useSmoothScroll();
   const categoriesById = new Map(data.categories.map((c) => [c.id, c]));
   const usersById = new Map(data.users.map((u) => [u.id, u]));
   const statusClass = {
@@ -129,7 +131,7 @@ function ImportPreviewDialog({
       {preview.rows.length === 0 ? (
         <p className={styles.hint}>File không có dòng dữ liệu nào.</p>
       ) : (
-        <table className={styles.previewTable}>
+        <table ref={tableScrollRef} className={styles.previewTable}>
           <thead>
             <tr>
               <th>Dòng</th>

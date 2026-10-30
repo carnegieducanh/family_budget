@@ -16,8 +16,9 @@
         "title": "Family Budget",
         "width": 1200,
         "height": 800,
-        "minWidth": 1024,
-        "minHeight": 700,
+        "minWidth": 640,
+        "minHeight": 480,
+        "preventOverflow": true,
         "center": true,
         "dragDropEnabled": false
       }
