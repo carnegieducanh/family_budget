@@ -2,6 +2,10 @@
 
 Mỗi phiên bản một mục `## x.y.z`, mới nhất ở trên. Nội dung của mục là ghi chú hiện khi bấm "Xem chi tiết" trong popup cập nhật của app và ở Cài đặt → Phiên bản app (app đóng gói sẵn file này), nên viết ngắn, bằng lời của người dùng. Khi đẩy tag `vx.y.z`, GitHub Actions lấy đúng mục này làm ghi chú phát hành; thiếu mục thì không phát hành.
 
+## 0.5.1
+
+- Sửa lỗi đồng bộ: khi chọn một thư mục Drive đã có sẵn dữ liệu gia đình nhưng mang tên khác (ví dụ "FamilyBudget (1)" do Google Drive tự đổi tên), app dùng luôn thư mục đó, không tạo thêm thư mục con khiến hai máy không thấy nhau.
+
 ## 0.5.0
 
 - Theme Sáng dịu mắt hơn: bỏ nền trắng, dùng màu giấy ngà ấm.
