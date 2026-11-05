@@ -122,7 +122,7 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 - **Hộp chọn thư mục cấp quyền đọc ghi cho thư mục đã chọn và mọi thư mục con (`recursive: true`).** Không cấp quyền fs nào khác ngoài thư mục app data.
   Lý do: app cần tạo và ghi trong `<thư mục>/FamilyBudget/`.
 
-- **File đồng bộ nằm trong `<thư mục đã chọn>/FamilyBudget/`; nếu người dùng chọn thẳng một thư mục tên `FamilyBudget` thì dùng luôn thư mục đó.**
+- **File đồng bộ nằm trong `<thư mục đã chọn>/FamilyBudget/`; nếu người dùng chọn thẳng một thư mục tên `FamilyBudget` thì dùng luôn thư mục đó.** (Từ 2026-11-05 cũng dùng luôn thư mục đã chứa sẵn file của các máy, xem mục cùng ngày.)
   Lý do: khi dùng 2 tài khoản Google, người kia có thể thêm lối tắt tới chính thư mục `FamilyBudget`; tránh tạo `FamilyBudget/FamilyBudget` khiến hai máy không thấy nhau.
 
 - **Chỉ đọc file khớp `device-<id>.json` / `device-<id>.enc.json` với id chỉ gồm chữ, số, dấu gạch.**
@@ -648,3 +648,8 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 - **Chọn Sáng / Tối / Theo hệ thống thì cả màn hình mờ dần sang theme mới trong 0.8 giây, bằng View Transitions API (`document.startViewTransition` trong `themeStore`, thời gian đặt ở `global.scss`).** WebView chụp màn hình trước và sau khi đổi rồi chuyển dần giữa hai ảnh, nên nền, chữ và biểu đồ (tô màu bằng JS) đổi cùng lúc. Trong 0.8 giây đó màn hình là ảnh chụp, không bấm hay cuộn được. Chạy cả khi Windows/macOS tắt hiệu ứng, như hiệu ứng chuyển màn hình.
   Lý do: user muốn lúc đổi theme có chuyển mượt (theo skill theme-toggle-transition). Không dùng `transition` màu cho mọi phần tử: cách đó đè lên transition rê chuột có sẵn của nút, và biểu đồ vẽ bằng JS vẫn đổi màu tức thì. Thanh tiêu đề cửa sổ do hệ điều hành vẽ, không nằm trong ảnh chụp, nên đổi màu ngay lúc bắt đầu. Hệ điều hành tự đổi sáng/tối lúc đang chọn "Theo hệ thống" thì đổi ngay, không có hiệu ứng. macOS cần WKWebView của Safari 18 trở lên; máy cũ hơn đổi theme ngay như trước.
+
+## 2026-11-05 — Dùng luôn thư mục đã có file của các máy
+
+- **Thư mục chọn trong hộp chọn thư mục không mang tên `FamilyBudget` nhưng đã chứa sẵn file `device-*.json` / `device-*.enc.json` và không có thư mục con `FamilyBudget` thì chính nó là thư mục dữ liệu; app không tạo thư mục con `FamilyBudget` bên trong nữa.** Có thư mục con `FamilyBudget` thì vẫn dùng thư mục con như trước, nên các máy đã kết nối không đổi chỗ ghi. Thư mục trống hoặc chỉ có file khác: tạo thư mục con như trước. Hàm `holdsDeviceFiles` (src/core/deviceFiles.ts), dùng trong `resolveDataDir`. Mỗi lượt sync xác định thư mục dữ liệu một lần, rồi đọc và ghi trong cùng thư mục đó. Đọc thư mục lỗi thì lượt sync báo lỗi, không đoán thư mục con, để không ghi nhầm chỗ rồi tách thành hai bộ file.
+  Lý do: Google Drive cho phép hai thư mục trùng tên. Google Drive for Desktop hiện cái thứ hai thành `FamilyBudget (1)`; ví dụ khi khôi phục từ thùng rác một thư mục `FamilyBudget` đã xóa, trong lúc đã có thư mục mới cùng tên (user gặp). Chọn `FamilyBudget (1)` thì app cũ ghi vào `FamilyBudget (1)/FamilyBudget/`, máy kia không thấy. Màn chào mừng tự tìm dữ liệu (`find_sync_folders`) vẫn chỉ tìm thư mục tên đúng `FamilyBudget`, để không phải duyệt sâu thêm một cấp trong Drive.

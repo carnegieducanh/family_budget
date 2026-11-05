@@ -5,6 +5,8 @@ import { exists, mkdir, readDir, readTextFile, remove } from '@tauri-apps/plugin
 import {
   SYNC_SUBFOLDER,
   deviceFileName,
+  holdsDeviceFiles,
+  isSyncSubfolderName,
   parseDeviceFileName,
   type DeviceFileInfo,
 } from '../core/deviceFiles';
@@ -19,19 +21,25 @@ import type { SyncAdapter } from './SyncAdapter';
 // giữ sau khi mở lại app (plugin-persisted-scope).
 
 /**
- * Thư mục chứa file của các máy: `<syncFolder>/FamilyBudget`. Nếu người dùng chọn thẳng
- * thư mục FamilyBudget (ví dụ lối tắt tới thư mục được chia sẻ) thì dùng luôn thư mục đó.
+ * Thư mục chứa file của các máy: `<syncFolder>/FamilyBudget`. Dùng luôn thư mục đã chọn khi
+ * người dùng chọn thẳng thư mục FamilyBudget (ví dụ lối tắt tới thư mục được chia sẻ), hoặc
+ * một thư mục đã chứa sẵn file của các máy, như "FamilyBudget (1)" (`holdsDeviceFiles`).
+ * Lỗi đọc thư mục thì ném ra, không đoán thư mục con, để không ghi nhầm chỗ.
  */
 export async function resolveDataDir(syncFolder: string): Promise<string> {
-  const name = await basename(syncFolder);
-  return name.toLowerCase() === SYNC_SUBFOLDER.toLowerCase()
-    ? syncFolder
-    : join(syncFolder, SYNC_SUBFOLDER);
+  if (isSyncSubfolderName(await basename(syncFolder))) return syncFolder;
+  const nested = await join(syncFolder, SYNC_SUBFOLDER);
+  // Thư mục chưa có (Drive đổi tên, xóa...): chỉ để hiện đường dẫn, lượt sync báo thiếu thư mục.
+  if (!(await exists(syncFolder))) return nested;
+  return holdsDeviceFiles(await readDir(syncFolder)) ? syncFolder : nested;
 }
 
 /** Mọi file `device-*.json` trong thư mục Drive, kể cả file của máy này. */
 export async function listDeviceFiles(syncFolder: string): Promise<DeviceFileInfo[]> {
-  const dataDir = await resolveDataDir(syncFolder);
+  return listDeviceFilesIn(await resolveDataDir(syncFolder));
+}
+
+async function listDeviceFilesIn(dataDir: string): Promise<DeviceFileInfo[]> {
   if (!(await exists(dataDir))) return [];
   return (await readDir(dataDir))
     .filter((entry) => !entry.isDirectory)
@@ -50,8 +58,14 @@ export function createDriveFolderAdapter(
   deviceId: string,
   encrypted = false,
 ): SyncAdapter {
+  // Một adapter dùng cho một lượt sync: đọc và ghi trong cùng một thư mục, kể cả khi thư mục
+  // thay đổi giữa chừng. Lỗi thì lần sau tìm lại.
   let dataDirPromise: Promise<string> | null = null;
-  const dataDir = () => (dataDirPromise ??= resolveDataDir(syncFolder));
+  const dataDir = () =>
+    (dataDirPromise ??= resolveDataDir(syncFolder).catch((error: unknown) => {
+      dataDirPromise = null;
+      throw error;
+    }));
 
   return {
     async isReady() {
@@ -64,7 +78,7 @@ export function createDriveFolderAdapter(
     },
 
     async listRemote() {
-      return (await listDeviceFiles(syncFolder))
+      return (await listDeviceFilesIn(await dataDir()))
         .filter((file) => file.deviceId !== deviceId)
         .map(({ name, deviceId: id }) => ({ name, deviceId: id }));
     },

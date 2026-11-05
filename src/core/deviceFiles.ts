@@ -24,3 +24,24 @@ export function parseDeviceFileName(name: string): DeviceFileInfo | null {
   if (!match?.[1]) return null;
   return { name, deviceId: match[1], encrypted: match[2] !== undefined };
 }
+
+/** Tên thư mục FamilyBudget, không phân biệt hoa thường. */
+export function isSyncSubfolderName(name: string): boolean {
+  return name.toLowerCase() === SYNC_SUBFOLDER.toLowerCase();
+}
+
+export interface FolderEntry {
+  name: string;
+  isDirectory: boolean;
+}
+
+/**
+ * Thư mục người dùng chọn (không tên FamilyBudget) đã chứa sẵn file của các máy và không có
+ * thư mục con FamilyBudget, thì chính nó là thư mục dữ liệu, không tạo thư mục con nữa. Gặp khi
+ * Google Drive có hai thư mục trùng tên và hiện một cái thành "FamilyBudget (1)", hoặc người
+ * dùng đổi tên thư mục. Đã có thư mục con FamilyBudget thì vẫn dùng thư mục con như trước.
+ */
+export function holdsDeviceFiles(entries: readonly FolderEntry[]): boolean {
+  if (entries.some((e) => e.isDirectory && isSyncSubfolderName(e.name))) return false;
+  return entries.some((e) => !e.isDirectory && parseDeviceFileName(e.name) !== null);
+}
