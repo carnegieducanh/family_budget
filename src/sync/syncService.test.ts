@@ -11,8 +11,11 @@ import {
   FOCUS_MIN_GAP_MS,
   LOCAL_CHANGE_DELAY_MS,
   NEEDS_PASSWORD_MESSAGE,
+  REWRITE_AFTER_MS,
   createSyncScheduler,
+  readRemoteFiles,
   syncOnce,
+  type LastWrite,
   type SyncEnv,
   type SyncOutcome,
 } from './syncService';
@@ -376,6 +379,122 @@ describe('syncOnce với mã hóa (SPEC mục 9)', () => {
     folder.files.set('device-device-b.enc.json', '{"v":1}');
     const outcome = await a.sync();
     expect(outcome.kind === 'ok' && outcome.problems.map((p) => p.reason)).toEqual(['invalid']);
+  });
+});
+
+/** Bộ nhớ lần ghi gần nhất, như appSync. */
+function lastWriteMemory(): NonNullable<SyncEnv['lastWrite']> {
+  let last: LastWrite | null = null;
+  return {
+    get: () => last,
+    set: (value) => {
+      last = value;
+    },
+  };
+}
+
+describe('không ghi lại file y hệt lần trước', () => {
+  it('chỉ ghi khi dữ liệu đổi, khi đổi nơi ghi, hoặc đã quá 6 giờ', async () => {
+    const { folder, a } = household();
+    let writes = 0;
+    let location = 'thư mục 1';
+    const env: SyncEnv = {
+      ...a.env,
+      target: async () => {
+        const target = await a.env.target();
+        if (!target) return null;
+        const adapter = target.adapter;
+        return {
+          ...target,
+          location,
+          adapter: {
+            ...adapter,
+            writeOwn: async (content) => {
+              writes++;
+              await adapter.writeOwn(content);
+            },
+          },
+        };
+      },
+      lastWrite: lastWriteMemory(),
+    };
+    const sync = async () => {
+      tick();
+      expect((await syncOnce(env)).kind).toBe('ok');
+    };
+
+    await sync();
+    expect(writes).toBe(1);
+    await sync();
+    expect(writes).toBe(1); // không có gì đổi
+
+    a.add(input(500));
+    await sync();
+    expect(writes).toBe(2);
+    expect(parseDataFile(folder.files.get(deviceFileName('device-a'))!).transactions).toHaveLength(
+      1,
+    );
+
+    tick(REWRITE_AFTER_MS / 60_000);
+    await sync();
+    expect(writes).toBe(3); // quá 6 giờ: ghi lại dù không đổi
+
+    location = 'thư mục 2';
+    await sync();
+    expect(writes).toBe(4);
+  });
+});
+
+describe('nơi sync có exchange (ghi và đọc trong một lần gọi)', () => {
+  it('một lần gọi mỗi lượt; phần vừa gộp được ghi ở lượt sau; không đổi gì thì không gửi file', async () => {
+    const { folder, a, b } = household();
+    b.add(input(700, 'user-b'));
+    await b.sync();
+
+    const sent: (string | null)[] = [];
+    const base = folder.adapter('device-a');
+    const notUsed = async (): Promise<never> => {
+      throw new Error('không được gọi khi có exchange');
+    };
+    const env: SyncEnv = {
+      ...a.env,
+      target: async () => {
+        const target = await a.env.target();
+        if (!target) return null;
+        return {
+          ...target,
+          adapter: {
+            isReady: async () => true,
+            listRemote: notUsed,
+            readRemote: notUsed,
+            writeOwn: notUsed,
+            exchange: async (own) => {
+              sent.push(own);
+              if (own !== null) await base.writeOwn(own);
+              return (await readRemoteFiles(base)).flatMap((f) => ('content' in f ? [f] : []));
+            },
+          },
+        };
+      },
+      lastWrite: lastWriteMemory(),
+    };
+    const fileA = () => parseDataFile(folder.files.get(deviceFileName('device-a'))!);
+
+    tick();
+    expect((await syncOnce(env)).kind).toBe('ok');
+    expect(sent).toHaveLength(1);
+    expect(a.amounts()).toEqual([700]); // đã gộp khoản của B
+    expect(fileA().transactions).toHaveLength(0); // file ghi với dữ liệu trước khi gộp
+
+    tick();
+    await syncOnce(env);
+    expect(sent[1]).not.toBeNull();
+    expect(active(fileA().transactions).map((t) => t.amount)).toEqual([700]);
+
+    tick();
+    await syncOnce(env);
+    expect(sent[2]).toBeNull();
+    expect(sent).toHaveLength(3);
   });
 });
 

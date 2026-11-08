@@ -68,6 +68,9 @@ function doGet() {
 
 /**
  * Yêu cầu từ bản web: JSON `{ key, action, ... }`.
+ * - `sync`: (nếu có `name` + `content`) ghi file của máy hỏi, rồi trả về các file `device-*.json`
+ *   của máy khác (trừ máy `exclude`). File có trong `known` với cùng thời điểm sửa thì chỉ báo
+ *   `unchanged`, không gửi nội dung. Một lần gọi cho cả lượt sync.
  * - `list`: nội dung mọi file `device-*.json` trong thư mục, trừ file của máy `exclude`.
  * - `write`: ghi `content` vào file `name` (tạo mới nếu chưa có).
  * Trả về `{ ok: true, ... }` hoặc `{ ok: false, error }`.
@@ -77,7 +80,8 @@ function doPost(e) {
   try {
     const request = JSON.parse(e.postData.contents);
     checkKey_(request.key);
-    if (request.action === 'list') result = list_(request.exclude);
+    if (request.action === 'sync') result = sync_(request);
+    else if (request.action === 'list') result = list_(request.exclude);
     else if (request.action === 'write') result = write_(request.name, request.content);
     else throw new Error('Yêu cầu không hợp lệ.');
   } catch (error) {
@@ -172,6 +176,24 @@ function list_(exclude) {
       content: file.getBlob().getDataAsString('UTF-8'),
       modified: file.getLastUpdated().toISOString(),
     })),
+  };
+}
+
+function sync_(request) {
+  if (request.content !== undefined && request.content !== null) {
+    write_(request.name, request.content);
+  }
+  const known = request.known && typeof request.known === 'object' ? request.known : {};
+  const exclude = typeof request.exclude === 'string' ? request.exclude : '';
+  return {
+    ok: true,
+    files: deviceFiles_(folder_(), exclude).map((file) => {
+      const name = file.getName();
+      const modified = file.getLastUpdated().toISOString();
+      return known[name] === modified
+        ? { name, modified, unchanged: true }
+        : { name, modified, content: file.getBlob().getDataAsString('UTF-8') };
+    }),
   };
 }
 

@@ -11,6 +11,7 @@ import {
   createSyncScheduler,
   syncOnce,
   type RawRemoteFile,
+  type LastWrite,
   type SyncEnv,
   type SyncOutcome,
   type SyncScheduler,
@@ -30,6 +31,9 @@ export function settingsKey(settings: Settings | null): Promise<FileKey | null> 
   return cachedKey.key;
 }
 
+/** Lần ghi file của máy này gần nhất trong lần mở app này (mở lại app thì lượt đầu luôn ghi). */
+let lastWrite: LastWrite | null = null;
+
 const env: SyncEnv = {
   async target() {
     // Thư mục, khóa và chế độ ghi lấy từ cùng một bản settings, để tên file luôn khớp nội dung.
@@ -44,6 +48,7 @@ const env: SyncEnv = {
       readKey,
       writeKey,
       writtenBy: settings.userId,
+      location: settings.syncFolder,
     };
   },
   getData() {
@@ -56,6 +61,12 @@ const env: SyncEnv = {
   },
   applyMerged: (data) => useDataStore.getState().applyMerged(data),
   now: () => new Date(),
+  lastWrite: {
+    get: () => lastWrite,
+    set: (value) => {
+      lastWrite = value;
+    },
+  },
 };
 
 let scheduler: SyncScheduler | null = null;

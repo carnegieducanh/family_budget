@@ -40,6 +40,14 @@ export interface SyncTarget {
   writeKey: FileKey | null;
   /** Người dùng của máy này, ghi vào file để máy kia hiện "Máy <tên>"; null khi chưa thiết lập. */
   writtenBy: string | null;
+  /** Nơi ghi (đường dẫn thư mục, URL script): đổi nơi sync thì ghi lại dù dữ liệu không đổi. */
+  location?: string;
+}
+
+/** Lần ghi file của máy này gần nhất: dấu nội dung (nơi ghi, kiểu mã hóa, dữ liệu) và thời điểm. */
+export interface LastWrite {
+  mark: string;
+  at: number;
 }
 
 export interface SyncEnv {
@@ -52,7 +60,18 @@ export interface SyncEnv {
   /** Thay dữ liệu local bằng kết quả merge: cập nhật bộ nhớ và lưu data.json. */
   applyMerged(data: DataFile): void;
   now(): Date;
+  /**
+   * Nhớ lần ghi file của máy này gần nhất (trong bộ nhớ), để không ghi lại file y hệt mỗi lượt.
+   * Không có thì lượt nào cũng ghi.
+   */
+  lastWrite?: { get(): LastWrite | null; set(value: LastWrite): void };
 }
+
+/**
+ * Dữ liệu không đổi thì vẫn ghi lại file của máy này sau chừng này thời gian: file trên Drive bị
+ * xóa nhầm thì tự có lại, và máy khác vẫn thấy "ghi dữ liệu lúc" gần đây.
+ */
+export const REWRITE_AFTER_MS = 6 * 60 * 60 * 1000;
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -106,8 +125,35 @@ export function openRemoteFiles(
 }
 
 /**
+ * File của máy này cần ghi lên nơi sync (mã hóa nếu máy này bật mã hóa); null nếu giống hệt lần
+ * ghi trước (cùng nơi ghi, cùng kiểu mã hóa, cùng dữ liệu) và lần đó chưa quá REWRITE_AFTER_MS.
+ */
+async function ownFile(
+  env: SyncEnv,
+  target: SyncTarget,
+  now: Date,
+): Promise<{ content: string; write: LastWrite } | null> {
+  const data = env.getData();
+  const by = target.writtenBy ? { writtenBy: target.writtenBy } : {};
+  const mark = [
+    target.location ?? '',
+    target.writeKey ? 'enc' : 'plain',
+    serializeDataFile({ ...data, writtenAt: '', ...by }),
+  ].join('|');
+  const last = env.lastWrite?.get();
+  if (last && last.mark === mark && now.getTime() - last.at < REWRITE_AFTER_MS) return null;
+  const json = serializeDataFile({ ...data, writtenAt: now.toISOString(), ...by });
+  const content = target.writeKey ? await encryptFile(json, target.writeKey) : json;
+  return { content, write: { mark, at: now.getTime() } };
+}
+
+/**
  * Một lượt sync: đọc và giải mã file máy khác, gộp, backup + lưu nếu có thay đổi, rồi ghi
- * file của mình (mã hóa nếu máy này bật mã hóa).
+ * file của mình (nếu khác lần ghi trước).
+ *
+ * Nơi sync có `exchange` (Google Apps Script, mỗi lần gọi mất 1–3 giây) thì ghi và đọc trong
+ * một lần gọi: ghi file của máy này với dữ liệu trước khi gộp, phần vừa gộp được ghi ở lượt sau.
+ * Máy khác không thiếu gì vì phần đó vốn đến từ file của chúng.
  */
 export async function syncOnce(env: SyncEnv): Promise<SyncOutcome> {
   let target: SyncTarget | null;
@@ -117,14 +163,25 @@ export async function syncOnce(env: SyncEnv): Promise<SyncOutcome> {
     return failed('Không đọc được khóa mã hóa trên máy này', error);
   }
   if (!target) return { kind: 'not-configured' };
-  const { adapter, readKey, writeKey, writtenBy } = target;
+  const { adapter, readKey } = target;
   if (!(await adapter.isReady())) return { kind: 'folder-missing' };
 
   let files: RemoteFile[];
-  try {
-    files = await openRemoteFiles(await readRemoteFiles(adapter), readKey);
-  } catch (error) {
-    return failed('Không đọc được thư mục Drive', error);
+  if (adapter.exchange) {
+    try {
+      const own = await ownFile(env, target, env.now());
+      const raw = await adapter.exchange(own?.content ?? null);
+      if (own) env.lastWrite?.set(own.write);
+      files = await openRemoteFiles(raw, readKey);
+    } catch (error) {
+      return failed('Không đồng bộ được với thư mục Drive', error);
+    }
+  } else {
+    try {
+      files = await openRemoteFiles(await readRemoteFiles(adapter), readKey);
+    } catch (error) {
+      return failed('Không đọc được thư mục Drive', error);
+    }
   }
 
   const before = env.getData();
@@ -144,15 +201,16 @@ export async function syncOnce(env: SyncEnv): Promise<SyncOutcome> {
   }
 
   const now = env.now();
-  try {
-    const json = serializeDataFile({
-      ...env.getData(),
-      writtenAt: now.toISOString(),
-      ...(writtenBy ? { writtenBy } : {}),
-    });
-    await adapter.writeOwn(writeKey ? await encryptFile(json, writeKey) : json);
-  } catch (error) {
-    return failed('Không ghi được file lên thư mục Drive', error);
+  if (!adapter.exchange) {
+    try {
+      const own = await ownFile(env, target, now);
+      if (own) {
+        await adapter.writeOwn(own.content);
+        env.lastWrite?.set(own.write);
+      }
+    } catch (error) {
+      return failed('Không ghi được file lên thư mục Drive', error);
+    }
   }
 
   return {

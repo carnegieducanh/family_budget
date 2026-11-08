@@ -291,7 +291,7 @@ Cần iOS 16.4 trở lên (Cài đặt → Cài đặt chung → Giới thiệu 
 Dùng hằng ngày:
 
 - Nút **+** tròn ở góc dưới để thêm khoản chi; bấm vào một khoản để sửa hoặc xóa.
-- Icon ở góc trên: xoay khi đang sync, bấm để sync ngay; hình tam giác đỏ là có lỗi (mất mạng, sai mã...), bấm vào để xem lý do. Ảnh đại diện mở Cài đặt (theme, cỡ chữ, đồng bộ, đổi kết nối).
+- Icon ở góc trên: mũi tên xoay là đang sync, đám mây có dấu tích xanh là đã sync xong (bấm để sync ngay), hình tam giác đỏ là có lỗi (mất mạng, sai mã...), bấm vào để xem lý do. Ảnh đại diện mở Cài đặt (theme, cỡ chữ, đồng bộ, đổi kết nối).
 - Điện thoại sync khi mở app, khi quay lại app, mỗi 5 phút và 2 giây sau mỗi thay đổi; rời app ngay sau khi lưu thì app ghi ngay lúc rời. Mất mạng vẫn mở app và nhập được, có mạng lại thì tự sync.
 - Bản mới của app tự có khi mở app lúc có mạng, không cần cập nhật gì.
 

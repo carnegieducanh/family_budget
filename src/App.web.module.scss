@@ -38,8 +38,11 @@
   color: var(--color-text);
   transition: background-color var(--transition-fast);
 
-  &:hover {
-    background: var(--color-sidebar-hover);
+  // Chỉ máy có chuột: trên điện thoại, :hover dính lại sau khi chạm.
+  @media (hover: hover) {
+    &:hover {
+      background: var(--color-sidebar-hover);
+    }
   }
 }
 
@@ -99,8 +102,10 @@
     background-color var(--transition-fast),
     transform var(--transition-fast);
 
-  &:hover {
-    background: var(--color-primary-hover);
+  @media (hover: hover) {
+    &:hover {
+      background: var(--color-primary-hover);
+    }
   }
 
   &:active {
