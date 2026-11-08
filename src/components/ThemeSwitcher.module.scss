@@ -5,6 +5,17 @@
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
+
+  // Điện thoại khổ 320 px (iPhone SE/mini bật Phóng to màn hình) với cỡ chữ lớn: dù chữ trong nút
+  // đã gãy dòng, ba nút vẫn rộng hơn card. Nút không vừa thì xuống hàng dưới thay vì thò ra ngoài.
+  // Khổ từ 360 px giữ như cũ.
+  @media (max-width: 359px) {
+    flex-wrap: wrap;
+
+    .option {
+      white-space: nowrap;
+    }
+  }
 }
 
 .compact {

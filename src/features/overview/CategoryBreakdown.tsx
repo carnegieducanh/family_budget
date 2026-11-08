@@ -92,8 +92,10 @@ export function CategoryBreakdown({ spending, categories }: CategoryBreakdownPro
               return (
                 <div className={styles.tooltip}>
                   <span className={styles.swatch} style={{ background: slice.fill }} />
-                  {slice.icon} {slice.label}: <strong>{formatYen(slice.amount)}</strong> (
-                  {percent(slice.amount)})
+                  <span>
+                    {slice.icon} {slice.label}: <strong>{formatYen(slice.amount)}</strong> (
+                    {percent(slice.amount)})
+                  </span>
                 </div>
               );
             }}

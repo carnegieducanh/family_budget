@@ -81,11 +81,14 @@
   min-height: 0;
 }
 
+// Chỉ cuộn dọc: thứ gì lỡ rộng hơn màn hình (tooltip, chữ dài) bị cắt chứ không làm cả màn
+// trượt ngang khi vuốt. Bảng rộng có khung cuộn ngang riêng (m.table-scroll) vẫn cuộn được.
 .content {
   @include m.brand-band;
   flex: 1;
   min-width: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 // Lề dưới chừa chỗ cho nút + nổi để không che số tiền của dòng cuối.

@@ -1,3 +1,5 @@
+@use '../../styles/mixins' as m;
+
 // Card hẹp (cửa sổ nhỏ, chữ lớn): bảng xuống dưới biểu đồ.
 .layout {
   display: flex;
@@ -70,6 +72,18 @@
   box-shadow: var(--shadow-md);
   font-size: var(--font-size-sm);
   white-space: nowrap;
+
+  // Điện thoại: tooltip không rộng hơn biểu đồ (180 px), chữ dài thì xuống dòng. Recharts chỉ giữ
+  // được tooltip trong khung biểu đồ khi nó vừa khung; rộng hơn thì thò ra ngoài card, vùng nội
+  // dung rộng hơn màn hình và vuốt bị trượt ngang (cỡ chữ lớn, tên danh mục dài).
+  @include m.phone {
+    max-width: 180px;
+    white-space: normal;
+  }
+
+  > .swatch {
+    flex-shrink: 0;
+  }
 }
 
 .empty {

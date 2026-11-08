@@ -20,6 +20,11 @@ label {
   touch-action: manipulation;
 }
 
+// Lát biểu đồ tròn có sự kiện bấm nên iPhone phủ ô xám lên cả khung của lát khi chạm.
+.recharts-wrapper {
+  -webkit-tap-highlight-color: transparent;
+}
+
 // iPhone tự phóng to trang khi chạm vào ô nhập có chữ nhỏ hơn 16px: trên màn cảm ứng, ô nhập
 // luôn từ 16px trở lên (cỡ chữ Vừa trở lên vốn đã lớn hơn).
 @media (pointer: coarse) {

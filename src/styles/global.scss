@@ -128,8 +128,11 @@ summary:focus-visible,
 }
 
 // Biểu đồ recharts có tabindex (để xem tooltip bằng phím mũi tên) nên nhận focus khi bấm chuột,
-// và WebView vẽ viền tối quanh cả biểu đồ dù không phải :focus-visible.
-.recharts-surface:focus {
+// và WebView vẽ viền tối quanh cả biểu đồ dù không phải :focus-visible. Recharts 3 đặt tabindex
+// lên cả khung SVG, nhóm lát (g.recharts-pie, g.recharts-pie-sector) lẫn từng lát; trình duyệt
+// focus vào phần tử nào tùy loại (Chromium: hình lát, Safari iPhone: nhóm bọc lát) rồi vẽ khung
+// quanh lát vừa chạm. Bỏ viền cho mọi phần tử trong biểu đồ.
+.recharts-wrapper :focus {
   outline: none;
 }
 
