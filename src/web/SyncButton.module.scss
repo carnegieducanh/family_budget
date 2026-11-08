@@ -50,14 +50,36 @@
   }
 }
 
-// Vừa sync xong: đám mây có dấu tích nảy nhẹ một lần để người dùng thấy đã xong.
+// Đang sync / đã sync: icon kèm chữ trong khung bo tròn. Xong thì nền xanh nhạt, nảy nhẹ một lần.
+.pill {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 5px;
+  height: calc(var(--font-size-sm) + 18px);
+  padding: 0 10px 0 8px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  white-space: nowrap;
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
 .done {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
   animation: done-pop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4);
 }
 
 @keyframes done-pop {
   from {
     opacity: 0;
-    transform: scale(0.4);
+    transform: scale(0.6);
   }
 }

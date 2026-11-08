@@ -738,3 +738,8 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
   Lý do: trước đây mỗi lượt sync (5 phút một lần, mỗi lần quay lại cửa sổ) đều ghi lại file chỉ để đổi `writtenAt`, nên file của máy tính đang bật luôn bị tính là "đã đổi" và điện thoại phải tải lại; Drive cũng phải đẩy file lên liên tục. Ghi lại sau 6 giờ để file bị xóa nhầm trên Drive tự có lại, và dòng "Máy … ghi dữ liệu lúc …" ở Cài đặt của máy khác không cũ quá 6 giờ khi máy vẫn bật (trước đây không cũ quá 5 phút). App desktop có thay đổi này từ bản phát hành sau.
 
 - **Không làm "ghi file gọn" (bỏ thụt dòng trong JSON).** Lý do: không làm app desktop nhanh hơn thấy được (đọc file trên ổ máy, vài mili giây), và phần lợi cho điện thoại (file nhỏ hơn khoảng 25%) đã gần như hết khi script chỉ gửi file đã đổi. User chỉ muốn làm nếu giúp app desktop nhanh hơn.
+
+## 2026-11-08 — Trạng thái sync của bản web có chữ "Đang sync" / "Đã sync"
+
+- **Thay đám mây có dấu tích bằng kiểu user chọn (phương án G trong 8 phương án xem trước): đang sync là mũi tên xoay kèm chữ "Đang sync"; xong là dấu tích trong vòng tròn kèm chữ "Đã sync" trên nền xanh nhạt (`--color-primary-soft`), nảy nhẹ một lần lúc vừa xong. Có lỗi vẫn là tam giác, chưa kết nối vẫn là đám mây gạch, chỉ có icon.** Thanh trên chật (cỡ chữ Lớn, Rất lớn) thì tên "Family Budget" rút gọn bằng "…", logo và nút bên phải giữ nguyên cỡ.
+  Lý do: user thấy icon đám mây chưa đủ rõ để biết đã sync xong; có chữ thì không phải đoán.

@@ -22,6 +22,7 @@
 
 .topActions {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: var(--space-1);
 }
@@ -46,7 +47,19 @@
   }
 }
 
+// Thanh trên chật (cỡ chữ lớn, chữ "Đang sync" bên phải): tên app rút gọn bằng "…".
+.brand {
+  min-width: 0;
+
+  > img {
+    flex-shrink: 0;
+  }
+}
+
 .brandName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: calc(15px * var(--font-scale));
   font-weight: 700;
   letter-spacing: -0.01em;

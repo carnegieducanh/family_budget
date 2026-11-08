@@ -1,4 +1,4 @@
-import { CloudCheck, CloudOff, RefreshCw, TriangleAlert } from 'lucide-react';
+import { CircleCheck, CloudOff, RefreshCw, TriangleAlert } from 'lucide-react';
 import { useDataStore } from '../state/dataStore';
 import { useSyncStore } from '../state/syncStore';
 import { useUiStore } from '../state/uiStore';
@@ -8,9 +8,10 @@ import { describeSyncStatus } from '../sync/syncStatus';
 import styles from './SyncButton.module.scss';
 
 /**
- * Trạng thái sync ở thanh trên của bản web: mũi tên xoay khi đang sync, đám mây có dấu tích khi
- * lượt sync gần nhất xong (nảy nhẹ một lần lúc vừa xong), tam giác khi có lỗi. Bấm để sync ngay;
- * có lỗi hoặc chưa kết nối thì mở Cài đặt để đọc lý do (điện thoại không có tooltip).
+ * Trạng thái sync ở thanh trên của bản web. Đang sync: mũi tên xoay kèm chữ "Đang sync"; lượt
+ * sync gần nhất xong: "Đã sync" có dấu tích trên nền xanh nhạt (nảy nhẹ một lần lúc vừa xong);
+ * có lỗi: tam giác; chưa kết nối: đám mây gạch. Bấm để sync ngay; có lỗi hoặc chưa kết nối thì
+ * mở Cài đặt để đọc lý do (điện thoại không có tooltip).
  */
 export function SyncButton() {
   const connected = useDataStore((s) => Boolean(s.settings?.syncFolder && s.settings.syncKey));
@@ -18,6 +19,7 @@ export function SyncButton() {
   const last = useSyncStore((s) => s.last);
   const lastSuccessAt = useSyncStore((s) => s.lastSuccessAt);
   const now = useNow();
+  const openSettings = () => useUiStore.getState().setScreen('settings');
 
   if (!connected) {
     return (
@@ -26,7 +28,7 @@ export function SyncButton() {
         className={`${styles.button} ${styles.muted}`}
         aria-label="Chưa kết nối Google Drive. Mở Cài đặt"
         title="Chưa kết nối Google Drive"
-        onClick={() => useUiStore.getState().setScreen('settings')}
+        onClick={openSettings}
       >
         <CloudOff size={20} aria-hidden="true" />
       </button>
@@ -37,23 +39,39 @@ export function SyncButton() {
   const tone = status.main.tone;
   const problem = tone === 'error' || tone === 'warning';
   const synced = !running && !problem && last?.kind === 'ok';
-  // Đổi loại icon thì React dựng lại icon, nên hiệu ứng nảy của `done` chạy lại mỗi lần sync xong.
-  const Icon = running ? RefreshCw : problem ? TriangleAlert : synced ? CloudCheck : RefreshCw;
   const text = status.main.text.replace(/\.$/, '');
+
+  if (running || synced) {
+    // Cùng một nút từ lúc đang sync tới lúc xong: thêm class `done` thì hiệu ứng nảy chạy lại.
+    return (
+      <button
+        type="button"
+        className={synced ? `${styles.pill} ${styles.done}` : styles.pill}
+        aria-label={`${text}. Sync ngay`}
+        title={status.main.text}
+        disabled={running}
+        onClick={() => void syncNow()}
+      >
+        {running ? (
+          <RefreshCw size={16} className={styles.spin} aria-hidden="true" />
+        ) : (
+          <CircleCheck size={16} aria-hidden="true" />
+        )}
+        <span aria-hidden="true">{running ? 'Đang sync' : 'Đã sync'}</span>
+      </button>
+    );
+  }
+
+  const Icon = problem ? TriangleAlert : RefreshCw;
   return (
     <button
       type="button"
       className={`${styles.button} ${styles[tone]}`}
       aria-label={problem ? `${text}. Mở Cài đặt` : `${text}. Sync ngay`}
       title={status.main.text}
-      disabled={running}
-      onClick={() => (problem ? useUiStore.getState().setScreen('settings') : void syncNow())}
+      onClick={problem ? openSettings : () => void syncNow()}
     >
-      <Icon
-        size={20}
-        className={running ? styles.spin : synced ? styles.done : undefined}
-        aria-hidden="true"
-      />
+      <Icon size={20} aria-hidden="true" />
     </button>
   );
 }
