@@ -1,0 +1,12 @@
+@use '../styles/mixins' as m;
+
+.banner {
+  @include m.callout(danger);
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.warning {
+  @include m.callout(warning);
+  justify-content: space-between;
+}

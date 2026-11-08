@@ -82,7 +82,8 @@ export interface DataFile {
 export interface Settings {
   deviceId: string; // UUID tạo lần chạy đầu
   userId: string | null; // máy này là của ai
-  syncFolder: string | null; // đường dẫn thư mục Drive
+  syncFolder: string | null; // đường dẫn thư mục Drive; bản web: URL ứng dụng web của Apps Script
+  syncKey?: string; // bản web: mã kết nối của Apps Script (apps-script/Code.gs)
   syncIntervalMin: number; // mặc định 5
   /**
    * Mã hóa file trên Drive (SPEC mục 9). `enabled`: ghi file của máy này dạng mã hóa.

@@ -2,7 +2,7 @@ import { DEFAULT_SYNC_INTERVAL_MIN } from '../core/defaults';
 import { parseDeviceFileName } from '../core/deviceFiles';
 import type { Settings } from '../core/types';
 import { onWindowFocus } from '../platform/nativeWindow';
-import { createSyncAdapter } from '../platform/syncAdapter';
+import { SYNC_AFTER_CHANGE_MS, createSyncAdapter } from '../platform/syncAdapter';
 import { useDataStore } from '../state/dataStore';
 import { useSyncStore } from '../state/syncStore';
 import { createSnapshot } from '../storage/backup';
@@ -37,8 +37,10 @@ const env: SyncEnv = {
     if (!settings?.syncFolder) return null;
     const readKey = await settingsKey(settings);
     const writeKey = settings.encryption.enabled ? readKey : null;
+    const adapter = createSyncAdapter(settings, writeKey !== null);
+    if (!adapter) return null;
     return {
-      adapter: createSyncAdapter(settings.syncFolder, settings.deviceId, writeKey !== null),
+      adapter,
       readKey,
       writeKey,
       writtenBy: settings.userId,
@@ -84,10 +86,11 @@ export function startSync(): SyncScheduler {
   const { settings } = useDataStore.getState();
   useSyncStore.setState({ lastSuccessAt: settings?.lastSyncAt ?? null });
 
-  const current = createSyncScheduler(() => syncOnce(env), {
-    onStart: () => useSyncStore.getState().started(),
-    onFinish,
-  });
+  const current = createSyncScheduler(
+    () => syncOnce(env),
+    { onStart: () => useSyncStore.getState().started(), onFinish },
+    SYNC_AFTER_CHANGE_MS,
+  );
   scheduler = current;
   current.setIntervalMinutes(settings?.syncIntervalMin ?? DEFAULT_SYNC_INTERVAL_MIN);
 
@@ -105,6 +108,14 @@ export function startSync(): SyncScheduler {
     (unlisten) => cleanups.push(unlisten),
     (error: unknown) => console.warn('Không theo dõi được focus cửa sổ:', error),
   );
+
+  // Rời app (chuyển sang app khác, khóa màn hình điện thoại, thu nhỏ cửa sổ) khi thay đổi vừa
+  // nhập chưa lên Drive: ghi ngay, không chờ hết thời gian debounce.
+  const onHidden = () => {
+    if (document.visibilityState === 'hidden') current.flushLocalChange();
+  };
+  document.addEventListener('visibilitychange', onHidden);
+  cleanups.push(() => document.removeEventListener('visibilitychange', onHidden));
 
   void current.request();
   return current;

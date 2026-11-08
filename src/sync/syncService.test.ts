@@ -457,6 +457,29 @@ describe('createSyncScheduler', () => {
     expect(run).toHaveBeenCalledTimes(1);
   });
 
+  it('đặt được thời gian chờ sau thay đổi local (bản web)', async () => {
+    const run = vi.fn(async () => OK);
+    const scheduler = createSyncScheduler(run, {}, 2_000);
+    scheduler.notifyLocalChange();
+    await vi.advanceTimersByTimeAsync(1_999);
+    expect(run).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('rời app khi đang chờ sau thay đổi local → sync ngay, không sync lần nữa khi hết giờ chờ', async () => {
+    const run = vi.fn(async () => OK);
+    const scheduler = createSyncScheduler(run);
+    scheduler.flushLocalChange(); // không có thay đổi đang chờ: không làm gì
+    expect(run).not.toHaveBeenCalled();
+    scheduler.notifyLocalChange();
+    scheduler.flushLocalChange();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(run).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(LOCAL_CHANGE_DELAY_MS);
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
   it('sync định kỳ theo chu kỳ, đổi chu kỳ thì hẹn lại', async () => {
     const run = vi.fn(async () => OK);
     const scheduler = createSyncScheduler(run);

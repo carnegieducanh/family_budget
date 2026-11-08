@@ -69,6 +69,9 @@ describe('parseSettings', () => {
     expect(parseSettings(serializeSettings(settings))).toEqual(settings);
     const seen = { ...settings, newTransactionsSeenUntil: '2026-10-25T09:00:00.000Z' };
     expect(parseSettings(serializeSettings(seen))).toEqual(seen);
+    // Bản web: URL Apps Script nằm ở syncFolder, mã kết nối ở syncKey.
+    const web = { ...settings, syncFolder: 'https://script.google.com/x/exec', syncKey: 'k' };
+    expect(parseSettings(serializeSettings(web))).toEqual(web);
   });
 
   it('điền giá trị mặc định cho trường thiếu', () => {

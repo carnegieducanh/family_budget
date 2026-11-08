@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { BrandMark } from '../components/BrandMark';
 import { Button } from '../components/Button';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
@@ -9,65 +9,72 @@ import { dataForJoin, type RemoteProblem } from '../core/sync';
 import type { DataFile, User } from '../core/types';
 import { AvatarStep, ProfileChoice } from '../features/setup/ProfileChoice';
 import { useDataStore } from '../state/dataStore';
+import type { ScriptConnection } from '../storage/scriptAdapter';
+import { ConnectionFields } from './ConnectionFields';
+import { parseConnection, readFamilyFiles } from './scriptConnect';
 import styles from '../features/setup/SetupScreen.module.scss';
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+interface Candidate {
+  connection: ScriptConnection;
+  data: DataFile;
+}
+
 /**
- * Thiết lập lần đầu của bản web. Chưa nối được Google Drive từ trình duyệt, nên tạm mở dữ liệu
- * gia đình từ file của app trên máy tính (device-*.json trên Drive, hoặc data.json), rồi chọn
- * tài khoản như máy thứ hai của app desktop. Bản web không tạo dữ liệu gia đình mới.
+ * Thiết lập lần đầu của bản web: dán link và mã kết nối của Google Apps Script mà admin đã cài
+ * (apps-script/Code.gs), app đọc dữ liệu gia đình trên Drive qua script, rồi chọn tài khoản như
+ * máy thứ hai của app desktop. Bản web không tạo dữ liệu gia đình mới.
  */
 export function WebSetupScreen() {
   const local = useDataStore((s) => s.data);
   const hasLocalData = local !== null && active(local.users).length > 0;
-  const [opened, setOpened] = useState<DataFile | null>(null);
+  const [url, setUrl] = useState('');
+  const [secret, setSecret] = useState('');
+  const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [problems, setProblems] = useState<RemoteProblem[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [reading, setReading] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [chosen, setChosen] = useState<User | null>(null);
   const [saving, setSaving] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   const [scrollRef] = useSmoothScroll();
 
   // Đã có dữ liệu trên trình duyệt này nhưng chưa biết là của ai: chỉ chọn tài khoản.
-  const candidate = hasLocalData ? local : opened;
+  const family = hasLocalData ? local : candidate?.data;
 
-  async function open(files: FileList | null) {
-    if (!files || files.length === 0) return;
+  async function connect(event: FormEvent) {
+    event.preventDefault();
     setError(null);
-    setReading(true);
+    setProblems([]);
+    setChecking(true);
     try {
+      const connection = parseConnection(url, secret);
       const deviceId = useDataStore.getState().settings?.deviceId;
       if (!deviceId) throw new Error('Chưa đọc được settings.');
-      const remote = await Promise.all(
-        [...files].map(async (file) => ({ name: file.name, content: await file.text() })),
-      );
-      const result = dataForJoin(deviceId, remote, new Date());
+      const files = await readFamilyFiles(connection, deviceId);
+      const result = dataForJoin(deviceId, files, new Date());
       setProblems(result.problems);
-      if (result.kind === 'error') {
-        setOpened(null);
-        setError(result.message);
-      } else {
-        setOpened(result.data);
-      }
+      if (result.kind === 'error') setError(result.message);
+      else setCandidate({ connection, data: result.data });
     } catch (e) {
       setError(errorMessage(e));
     } finally {
-      setReading(false);
-      if (inputRef.current) inputRef.current.value = ''; // chọn lại cùng file vẫn đọc lại
+      setChecking(false);
     }
   }
 
   async function finish(user: User, avatar: string) {
-    if (!candidate) return;
     setSaving(true);
     try {
       const store = useDataStore.getState();
-      if (hasLocalData) await store.chooseUser(user.id, avatar);
-      else await store.joinHousehold(candidate, user.id, avatar, null, null);
+      if (hasLocalData) {
+        await store.chooseUser(user.id, avatar);
+      } else if (candidate) {
+        const { connection, data } = candidate;
+        await store.joinHousehold(data, user.id, avatar, connection.url, null, connection.key);
+      }
     } catch (e) {
       setError(errorMessage(e));
       setSaving(false);
@@ -85,7 +92,7 @@ export function WebSetupScreen() {
   );
 
   let body;
-  if (chosen && candidate) {
+  if (chosen && family) {
     body = (
       <AvatarStep
         user={chosen}
@@ -98,16 +105,16 @@ export function WebSetupScreen() {
         onDone={(avatar) => void finish(chosen, avatar)}
       />
     );
-  } else if (candidate) {
+  } else if (family) {
     body = (
       <div className={styles.form}>
         <p className={styles.lead}>Chọn tài khoản của bạn để bắt đầu.</p>
-        <ProfileChoice users={householdUsers(candidate)} disabled={saving} onChoose={setChosen} />
+        <ProfileChoice users={householdUsers(family)} disabled={saving} onChoose={setChosen} />
         {error && <p className={styles.error}>{error}</p>}
         {problemList}
         {!hasLocalData && (
           <div className={styles.buttons}>
-            <Button onClick={() => setOpened(null)} disabled={saving}>
+            <Button onClick={() => setCandidate(null)} disabled={saving}>
               Quay lại
             </Button>
           </div>
@@ -116,41 +123,29 @@ export function WebSetupScreen() {
     );
   } else {
     body = (
-      <div className={styles.form}>
+      <form className={styles.form} onSubmit={(e) => void connect(e)}>
         <p className={styles.lead}>
-          Bản web chưa kết nối được Google Drive. Để dùng thử, hãy mở file dữ liệu của app trên máy
-          tính:
+          Kết nối với dữ liệu của gia đình trên Google Drive. Người tạo dữ liệu (admin) cài script
+          kết nối theo hướng dẫn, rồi gửi bạn link và mã kết nối.
         </p>
-        <div className={styles.steps}>
-          <ul>
-            <li>
-              file <code>device-….json</code> trong thư mục FamilyBudget trên Google Drive (chọn
-              được nhiều file cùng lúc), hoặc
-            </li>
-            <li>
-              file <code>data.json</code> trong thư mục dữ liệu của app.
-            </li>
-          </ul>
-        </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".json,application/json"
-          multiple
-          hidden
-          onChange={(e) => void open(e.target.files)}
+        <ConnectionFields
+          url={url}
+          secret={secret}
+          disabled={checking}
+          onUrl={setUrl}
+          onSecret={setSecret}
         />
-        <Button
-          variant="primary"
-          disabled={reading}
-          className={styles.pick}
-          onClick={() => inputRef.current?.click()}
-        >
-          {reading ? 'Đang đọc...' : 'Mở file dữ liệu...'}
-        </Button>
         {error && <p className={styles.error}>{error}</p>}
         {problemList}
-      </div>
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={checking || !url.trim() || !secret.trim()}
+          className={styles.pick}
+        >
+          {checking ? 'Đang đọc dữ liệu...' : 'Kết nối'}
+        </Button>
+      </form>
     );
   }
 

@@ -251,3 +251,36 @@ npm run tauri build
 ```
 
 File cài nằm ở `src-tauri/target/release/bundle/nsis/` (Windows) hoặc `src-tauri/target/release/bundle/dmg/` (macOS).
+
+## 4. Bản web cho iPhone
+
+Bản web dùng trên điện thoại có 3 màn Tổng quan, Khoản chi, Tất toán. Mỗi điện thoại là thêm một "máy": nó ghi file `device-<mã máy>.json` của mình vào cùng thư mục `FamilyBudget` trên Google Drive, nên app trên máy tính tự thấy khoản chi nhập từ điện thoại (và ngược lại) mà không cần cài gì thêm.
+
+Điện thoại không đọc được thư mục Google Drive như máy tính, nên đi qua một script nhỏ (Google Apps Script, miễn phí) chạy bằng tài khoản Google của admin. Script chỉ đọc các file `device-*.json` và ghi file của điện thoại trong thư mục đó, không xóa gì; mỗi yêu cầu phải kèm mã kết nối.
+
+### 4.1. Cài script kết nối (admin, làm một lần trên máy tính)
+
+Dùng **tài khoản Google đang giữ thư mục FamilyBudget** (tài khoản đã tạo dữ liệu). Hai điện thoại dùng chung script này, kể cả khi người kia dùng tài khoản Google khác.
+
+1. Mở <https://script.google.com> → **Dự án mới** (New project). Đặt tên dự án, ví dụ `Family Budget`.
+2. Xóa nội dung có sẵn trong `Code.gs`, dán toàn bộ file [`apps-script/Code.gs`](../apps-script/Code.gs) của repo vào → bấm biểu tượng lưu.
+3. Trên thanh công cụ, chọn hàm **`caiDat`** → **Chạy** (Run). Lần đầu Google hỏi quyền: **Xem xét quyền** → chọn tài khoản → "Google chưa xác minh ứng dụng này" → **Nâng cao** → **Đi tới Family Budget (không an toàn)** → **Cho phép**. Cảnh báo này xuất hiện vì script do chính bạn viết, chưa gửi Google duyệt.
+4. Xem **Nhật ký thực thi** (Execution log) ở dưới: dòng "Thư mục dữ liệu" phải là thư mục các máy đang dùng, và dòng **MÃ KẾT NỐI** là mã cần gửi cho điện thoại.
+   - Báo thấy nhiều thư mục FamilyBudget: mở app trên máy tính → Cài đặt → Sync để biết thư mục đang dùng, mở thư mục đó trên drive.google.com, chép phần cuối link (`https://drive.google.com/drive/folders/<ID>`) vào dòng `const FOLDER_ID = '';` ở đầu script, lưu rồi chạy lại `caiDat`.
+   - Báo không thấy thư mục: kiểm tra đang dùng đúng tài khoản Google.
+5. **Triển khai** (Deploy) → **Tùy chọn triển khai mới** (New deployment) → bấm bánh răng, chọn **Ứng dụng web** (Web app):
+   - Thực thi dưới dạng (Execute as): **Tôi** (tài khoản của bạn).
+   - Người có quyền truy cập (Who has access): **Bất kỳ ai** (Anyone). Không cần đăng nhập Google trên điện thoại; mã kết nối là thứ bảo vệ dữ liệu.
+   - Bấm **Triển khai**, chép **URL ứng dụng web** (dạng `https://script.google.com/macros/s/…/exec`).
+6. Gửi URL và mã kết nối cho người dùng điện thoại (qua tin nhắn riêng). Mở URL trong trình duyệt sẽ thấy dòng "Family Budget: cầu nối đang chạy".
+
+Lưu ý:
+
+- Ai có cả link lẫn mã kết nối thì đọc và ghi được dữ liệu gia đình. Lỡ gửi nhầm: chạy hàm `doiMaKetNoi` trong trình soạn thảo để đổi mã, rồi nhập mã mới trên các điện thoại (Cài đặt → Đồng bộ → Đổi kết nối).
+- Khi file `apps-script/Code.gs` có bản mới: dán lại, lưu, rồi **Triển khai → Quản lý các bản triển khai** → sửa bản đang dùng → Phiên bản: **Phiên bản mới** → Triển khai. Làm như vậy giữ nguyên URL; nếu tạo "Tùy chọn triển khai mới" thì URL đổi và các điện thoại phải nhập lại link.
+
+### 4.2. Kết nối trên điện thoại
+
+Mở bản web, dán **Link kết nối** (URL ứng dụng web) và **Mã kết nối** → **Kết nối** → chọn tài khoản của mình → chọn ảnh đại diện → **Hoàn tất**. Điện thoại sync khi mở app, khi quay lại app, mỗi 5 phút và 2 giây sau mỗi thay đổi; rời app ngay sau khi lưu thì app ghi ngay lúc rời. Trạng thái sync và các máy khác xem ở Cài đặt (bấm ảnh đại diện góc trên) → Đồng bộ qua Google Drive.
+
+Bản web không đọc được dữ liệu đã mã hóa (mục 2.4).

@@ -83,14 +83,15 @@ interface DataState {
   /**
    * Máy thứ hai: dùng dữ liệu đọc từ thư mục Drive, chọn "Tôi là ..." và đặt ảnh đại diện.
    * `encryption`: khóa dẫn xuất từ mật khẩu chung, nếu dữ liệu trong thư mục đã được mã hóa.
-   * `syncFolder` null: chưa kết nối nơi sync (bản web mở dữ liệu từ file).
+   * Bản web: `syncFolder` là URL Apps Script, `syncKey` là mã kết nối.
    */
   joinHousehold(
     data: DataFile,
     userId: string,
     avatar: string,
-    syncFolder: string | null,
+    syncFolder: string,
     encryption: StoredKey | null,
+    syncKey?: string,
   ): Promise<void>;
   /** Máy đã có data.json nhưng chưa biết là của ai: chọn "Tôi là ..." và đặt ảnh đại diện. */
   chooseUser(userId: string, avatar: string): Promise<void>;
@@ -305,7 +306,7 @@ export const useDataStore = create<DataState>()((set, get) => {
       set({ data, settings: nextSettings, status: 'ready', saveError: null });
     },
 
-    async joinHousehold(joined, userId, avatar, syncFolder, encryption) {
+    async joinHousehold(joined, userId, avatar, syncFolder, encryption, syncKey) {
       const settings = requireSettings();
       if (get().data) throw new DomainError('Máy này đã có dữ liệu, hãy chọn "Tôi là ...".');
       if (joined.deviceId !== settings.deviceId) throw new DomainError('Dữ liệu không đúng máy.');
@@ -315,6 +316,7 @@ export const useDataStore = create<DataState>()((set, get) => {
         ...settings,
         userId,
         syncFolder,
+        ...(syncKey ? { syncKey } : {}),
         ...(encryption ? { encryption: { enabled: true, ...encryption } } : {}),
       };
       await saveData(data);

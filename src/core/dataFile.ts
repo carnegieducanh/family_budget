@@ -144,6 +144,7 @@ export function parseSettings(json: string): Settings {
     deviceId: raw.deviceId,
     userId: typeof raw.userId === 'string' ? raw.userId : null,
     syncFolder: typeof raw.syncFolder === 'string' ? raw.syncFolder : null,
+    ...(typeof raw.syncKey === 'string' ? { syncKey: raw.syncKey } : {}),
     syncIntervalMin:
       typeof raw.syncIntervalMin === 'number' && raw.syncIntervalMin > 0
         ? raw.syncIntervalMin

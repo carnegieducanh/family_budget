@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState, type ReactElement } from 'react';
 import { Handshake, LayoutDashboard, Receipt, type LucideIcon } from 'lucide-react';
 import { BrandMark } from './components/BrandMark';
 import { Button } from './components/Button';
+import { SyncBanner } from './components/SyncBanner';
 import { UserAvatar } from './components/UserDot';
 import { useSmoothScroll } from './components/useSmoothScroll';
 import { OverviewScreen } from './features/overview/OverviewScreen';
@@ -70,7 +71,7 @@ function MainLayout() {
   }, [screen, lenisRef]);
 
   // Như app desktop: sinh khoản định kỳ của tháng này, đặt mốc báo khoản chi mới, rồi bắt đầu
-  // lịch sync (chưa kết nối nơi sync thì mỗi lượt dừng ngay ở "chưa kết nối").
+  // lịch sync qua Google Apps Script.
   useEffect(() => {
     useDataStore.getState().generateRecurring();
     useDataStore.getState().initNewTransactionsMark();
@@ -112,6 +113,7 @@ function MainLayout() {
               </Button>
             </div>
           )}
+          <SyncBanner />
           {/* key: mỗi lần đổi màn hình khối này dựng lại nên hiệu ứng hiện ra chạy lại. */}
           <div key={screen} className={styles.screen}>
             <Current />

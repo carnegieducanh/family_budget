@@ -176,8 +176,10 @@ export interface SyncScheduler {
    * một lượt chạy tiếp theo. Promise trả về kết quả của lượt bao gồm yêu cầu này.
    */
   request(): Promise<SyncOutcome>;
-  /** Có thay đổi local (debounce 10 giây). */
+  /** Có thay đổi local (debounce 10 giây, bản web ngắn hơn). */
   notifyLocalChange(): void;
+  /** Đang chờ debounce sau thay đổi local thì sync ngay (người dùng rời app). */
+  flushLocalChange(): void;
   /** Cửa sổ app được focus lại. */
   notifyFocus(): void;
   /** Đặt chu kỳ sync định kỳ. */
@@ -194,6 +196,7 @@ export interface SchedulerHooks {
 export function createSyncScheduler(
   run: () => Promise<SyncOutcome>,
   hooks: SchedulerHooks = {},
+  localChangeDelayMs = LOCAL_CHANGE_DELAY_MS,
 ): SyncScheduler {
   let loop: Promise<void> | null = null;
   let waiters: Array<(outcome: SyncOutcome) => void> = [];
@@ -235,7 +238,17 @@ export function createSyncScheduler(
 
     notifyLocalChange() {
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => void request(), LOCAL_CHANGE_DELAY_MS);
+      debounceTimer = setTimeout(() => {
+        debounceTimer = undefined;
+        void request();
+      }, localChangeDelayMs);
+    },
+
+    flushLocalChange() {
+      if (debounceTimer === undefined) return;
+      clearTimeout(debounceTimer);
+      debounceTimer = undefined;
+      void request();
     },
 
     notifyFocus() {
