@@ -265,9 +265,9 @@ Dùng **tài khoản Google đang giữ thư mục FamilyBudget** (tài khoản 
 1. Mở <https://script.google.com> → **Dự án mới** (New project). Đặt tên dự án, ví dụ `Family Budget`.
 2. Xóa nội dung có sẵn trong `Code.gs`, dán toàn bộ file [`apps-script/Code.gs`](../apps-script/Code.gs) của repo vào → bấm biểu tượng lưu.
 3. Trên thanh công cụ, chọn hàm **`caiDat`** → **Chạy** (Run). Lần đầu Google hỏi quyền: **Xem xét quyền** → chọn tài khoản → "Google chưa xác minh ứng dụng này" → **Nâng cao** → **Đi tới Family Budget (không an toàn)** → **Cho phép**. Cảnh báo này xuất hiện vì script do chính bạn viết, chưa gửi Google duyệt.
-4. Xem **Nhật ký thực thi** (Execution log) ở dưới: dòng "Thư mục dữ liệu" phải là thư mục các máy đang dùng, và dòng **MÃ KẾT NỐI** là mã cần gửi cho điện thoại.
-   - Báo thấy nhiều thư mục FamilyBudget: mở app trên máy tính → Cài đặt → Sync để biết thư mục đang dùng, mở thư mục đó trên drive.google.com, chép phần cuối link (`https://drive.google.com/drive/folders/<ID>`) vào dòng `const FOLDER_ID = '';` ở đầu script, lưu rồi chạy lại `caiDat`.
-   - Báo không thấy thư mục: kiểm tra đang dùng đúng tài khoản Google.
+4. Xem **Nhật ký thực thi** (Execution log) ở dưới: dòng "Thư mục dữ liệu" phải là thư mục `FamilyBudget` đang chứa file của các máy (trên máy tính: Cài đặt → Sync → dòng "File đồng bộ nằm ở"), dòng "Số file của các máy" bằng số máy đã dùng app (ít nhất 1), và dòng **MÃ KẾT NỐI** là mã cần gửi cho điện thoại. Để trống `FOLDER_ID` là đủ trong hầu hết trường hợp.
+   - Báo thấy nhiều thư mục FamilyBudget: mở thư mục đang dùng trên drive.google.com, chép phần cuối link (`https://drive.google.com/drive/folders/<ID>`) vào dòng `const FOLDER_ID = '';` ở đầu script, lưu rồi chạy lại `caiDat`. Dán ID của thư mục FamilyBudget, hoặc của thư mục đã chọn trong app (thư mục cha, ví dụ "Family Budget") đều được: script tự dùng thư mục con FamilyBudget bên trong, như app.
+   - Báo không thấy thư mục, hoặc thư mục không có file nào: kiểm tra đang dùng đúng tài khoản Google (tài khoản giữ thư mục), và `FOLDER_ID` để trống hoặc là đúng thư mục nói trên.
 5. **Triển khai** (Deploy) → **Tùy chọn triển khai mới** (New deployment) → bấm bánh răng, chọn **Ứng dụng web** (Web app):
    - Thực thi dưới dạng (Execute as): **Tôi** (tài khoản của bạn).
    - Người có quyền truy cập (Who has access): **Bất kỳ ai** (Anyone). Không cần đăng nhập Google trên điện thoại; mã kết nối là thứ bảo vệ dữ liệu.
@@ -279,8 +279,20 @@ Lưu ý:
 - Ai có cả link lẫn mã kết nối thì đọc và ghi được dữ liệu gia đình. Lỡ gửi nhầm: chạy hàm `doiMaKetNoi` trong trình soạn thảo để đổi mã, rồi nhập mã mới trên các điện thoại (Cài đặt → Đồng bộ → Đổi kết nối).
 - Khi file `apps-script/Code.gs` có bản mới: dán lại, lưu, rồi **Triển khai → Quản lý các bản triển khai** → sửa bản đang dùng → Phiên bản: **Phiên bản mới** → Triển khai. Làm như vậy giữ nguyên URL; nếu tạo "Tùy chọn triển khai mới" thì URL đổi và các điện thoại phải nhập lại link.
 
-### 4.2. Kết nối trên điện thoại
+### 4.2. Cài lên iPhone và kết nối
 
-Mở bản web, dán **Link kết nối** (URL ứng dụng web) và **Mã kết nối** → **Kết nối** → chọn tài khoản của mình → chọn ảnh đại diện → **Hoàn tất**. Điện thoại sync khi mở app, khi quay lại app, mỗi 5 phút và 2 giây sau mỗi thay đổi; rời app ngay sau khi lưu thì app ghi ngay lúc rời. Trạng thái sync và các máy khác xem ở Cài đặt (bấm ảnh đại diện góc trên) → Đồng bộ qua Google Drive.
+Cần iOS 16.4 trở lên (Cài đặt → Cài đặt chung → Giới thiệu → Phiên bản iOS).
+
+1. Mở link bản web bằng **Safari** (không dùng Chrome trên iPhone: chỉ Safari thêm được vào Màn hình chính đúng cách).
+2. Bấm nút **Chia sẻ** → **Thêm vào MH chính** (Add to Home Screen) → **Thêm**.
+3. Mở **Family Budget** từ Màn hình chính, rồi mới kết nối: app ở Màn hình chính có dữ liệu riêng, không dùng chung với tab Safari. Kết nối trong tab Safari rồi mới thêm vào Màn hình chính thì phải kết nối lại.
+4. Dán **Link kết nối** (URL ứng dụng web) và **Mã kết nối** → **Kết nối** → chọn tài khoản của mình → chọn ảnh đại diện → **Hoàn tất**.
+
+Dùng hằng ngày:
+
+- Nút **+** tròn ở góc dưới để thêm khoản chi; bấm vào một khoản để sửa hoặc xóa.
+- Icon ở góc trên: xoay khi đang sync, bấm để sync ngay; hình tam giác đỏ là có lỗi (mất mạng, sai mã...), bấm vào để xem lý do. Ảnh đại diện mở Cài đặt (theme, cỡ chữ, đồng bộ, đổi kết nối).
+- Điện thoại sync khi mở app, khi quay lại app, mỗi 5 phút và 2 giây sau mỗi thay đổi; rời app ngay sau khi lưu thì app ghi ngay lúc rời. Mất mạng vẫn mở app và nhập được, có mạng lại thì tự sync.
+- Bản mới của app tự có khi mở app lúc có mạng, không cần cập nhật gì.
 
 Bản web không đọc được dữ liệu đã mã hóa (mục 2.4).

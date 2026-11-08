@@ -1,0 +1,15 @@
+{
+  "name": "Family Budget",
+  "short_name": "Family Budget",
+  "description": "Chi tiêu chung của gia đình",
+  "lang": "vi",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#e2ded5",
+  "theme_color": "#e2ded5",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

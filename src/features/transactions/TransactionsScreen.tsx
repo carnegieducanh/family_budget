@@ -18,6 +18,7 @@ import { CategoryLabel } from '../../components/CategoryLabel';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { MonthHeader } from '../../components/MonthHeader';
 import { shortcutLabel } from '../../components/shortcut';
+import { usePhoneLayout } from '../../components/usePhoneLayout';
 import { UserFace } from '../../components/UserDot';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import { useUiStore } from '../../state/uiStore';
@@ -35,6 +36,7 @@ export function TransactionsScreen() {
   const openCreate = useUiStore((s) => s.openCreate);
   const openEdit = useUiStore((s) => s.openEdit);
   const { data, me, users } = useReadyData();
+  const phone = usePhoneLayout();
 
   const [categoryId, setCategoryId] = useState('');
   const [paidBy, setPaidBy] = useState('');
@@ -115,7 +117,13 @@ export function TransactionsScreen() {
             </option>
           ))}
         </select>
-        <Button variant="primary" onClick={openCreate} title={shortcutLabel('N')}>
+        {/* Điện thoại có nút + nổi ở góc dưới (App.web.tsx), không cần nút này. */}
+        <Button
+          variant="primary"
+          className={styles.addButton}
+          onClick={openCreate}
+          title={shortcutLabel('N')}
+        >
           <Plus size={16} aria-hidden="true" />
           Thêm khoản chi
         </Button>
@@ -128,6 +136,38 @@ export function TransactionsScreen() {
           <p className={styles.empty}>Chưa có khoản chi nào trong {formatMonthLabel(month)}.</p>
         ) : rows.length === 0 ? (
           <p className={styles.empty}>Không có khoản nào khớp bộ lọc.</p>
+        ) : phone ? (
+          // Điện thoại: mỗi khoản một dòng, bấm để mở popup sửa (có nút Xóa) hoặc xem.
+          <ul className={styles.list}>
+            {rows.map((tx) => {
+              const category = categoriesById.get(tx.categoryId);
+              return (
+                <li key={tx.id}>
+                  <button type="button" className={styles.item} onClick={() => openEdit(tx.id)}>
+                    <span className={styles.tile} aria-hidden="true">
+                      {category?.icon ?? '❔'}
+                    </span>
+                    <span className={styles.itemMain}>
+                      <span className={styles.itemTitle}>
+                        {tx.note || category?.name || 'Không rõ'}
+                      </span>
+                      <span className={styles.itemMeta}>
+                        <span className={styles.itemMetaText}>
+                          {formatDate(tx.date).slice(0, 5)}
+                          {tx.note && category && ` · ${category.name}`}
+                        </span>
+                        {tx.recurringId && <span className={styles.tag}>định kỳ</span>}
+                      </span>
+                    </span>
+                    <span className={styles.itemSide}>
+                      <span className={styles.amount}>{formatYen(tx.amount)}</span>
+                      <UserFace user={usersById.get(tx.paidBy)} size={20} />
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         ) : (
           <div className={styles.tableWrap}>
             <table className={styles.table}>

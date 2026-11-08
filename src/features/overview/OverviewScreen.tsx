@@ -95,7 +95,14 @@ export function OverviewScreen() {
               <Button variant="ghost" size="sm" onClick={() => setScreen('transactions')}>
                 Xem tất cả
               </Button>
-              <Button variant="primary" size="sm" onClick={openCreate} title={shortcutLabel('N')}>
+              {/* Điện thoại có nút + nổi ở góc dưới (App.web.tsx), không cần nút này. */}
+              <Button
+                variant="primary"
+                size="sm"
+                className={styles.addButton}
+                onClick={openCreate}
+                title={shortcutLabel('N')}
+              >
                 <Plus size={16} aria-hidden="true" />
                 Thêm khoản chi
               </Button>

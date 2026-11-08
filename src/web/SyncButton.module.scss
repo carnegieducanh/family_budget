@@ -1,0 +1,48 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  transition: background-color var(--transition-fast);
+
+  &:hover:not(:disabled) {
+    background: var(--color-sidebar-hover);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+// Màu theo trạng thái sync (SyncTone).
+.ok {
+  color: var(--color-success-text);
+}
+
+.busy,
+.muted {
+  color: var(--color-text-muted);
+}
+
+.warning {
+  color: var(--color-warning-text);
+}
+
+.error {
+  color: var(--color-danger-text);
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

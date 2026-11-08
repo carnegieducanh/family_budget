@@ -23,6 +23,16 @@
 }
 
 /**
+ * Màn hình điện thoại (bản web): hẹp hơn 640 px. Cửa sổ app desktop không co nhỏ hơn 640 px nên
+ * không bao giờ vào mốc này. Cùng mốc với usePhoneLayout.ts.
+ */
+@mixin phone {
+  @media (max-width: 639px) {
+    @content;
+  }
+}
+
+/**
  * Dải gradient xanh ở đầu vùng cuộn, nhạt dần về màu nền như phần đầu màn hình chính của app
  * ゆうちょ. Cuộn theo nội dung (background-attachment: local), card nằm đè lên phần nhạt dần.
  */

@@ -14,6 +14,7 @@ import { useNow } from '../state/useNow';
 import { syncNow } from '../sync/appSync';
 import { describeSyncStatus, remoteDeviceName } from '../sync/syncStatus';
 import { ConnectionFields } from './ConnectionFields';
+import { InstallHint } from './InstallHint';
 import { connectScript, parseConnection } from './scriptConnect';
 import styles from '../features/settings/SettingsScreen.module.scss';
 
@@ -51,7 +52,14 @@ export function WebSettingsScreen() {
             <dd>
               <code className={styles.path}>{deviceId}</code>
             </dd>
+            <dt>Phiên bản</dt>
+            <dd>
+              {__APP_VERSION__} (bản web, build lúc {formatDateTime(__BUILD_TIME__)})
+            </dd>
           </dl>
+          <div className={styles.section}>
+            <InstallHint />
+          </div>
         </Card>
       </div>
     </div>

@@ -1,0 +1,31 @@
+// Chỉnh riêng cho bản web trên điện thoại (App.web.tsx import file này; app desktop không dùng).
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+// Trang không nảy khi kéo quá đầu/cuối; vùng nội dung tự cuộn bên trong.
+body {
+  overscroll-behavior: none;
+}
+
+// Chạm không có ô xám nhấp nháy, và không chờ xem có chạm đúp (phóng to) hay không.
+button,
+a,
+input,
+select,
+textarea,
+label {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+// iPhone tự phóng to trang khi chạm vào ô nhập có chữ nhỏ hơn 16px: trên màn cảm ứng, ô nhập
+// luôn từ 16px trở lên (cỡ chữ Vừa trở lên vốn đã lớn hơn).
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em) !important;
+  }
+}

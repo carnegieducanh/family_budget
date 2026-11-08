@@ -23,6 +23,11 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-3);
+
+  // Điện thoại: ngày và danh mục mỗi ô một hàng, đủ chỗ cho ô nhập chữ 16px.
+  @include m.phone {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .amount {

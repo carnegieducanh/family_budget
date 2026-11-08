@@ -11,6 +11,7 @@ import { AvatarStep, ProfileChoice } from '../features/setup/ProfileChoice';
 import { useDataStore } from '../state/dataStore';
 import type { ScriptConnection } from '../storage/scriptAdapter';
 import { ConnectionFields } from './ConnectionFields';
+import { InstallHint } from './InstallHint';
 import { parseConnection, readFamilyFiles } from './scriptConnect';
 import styles from '../features/setup/SetupScreen.module.scss';
 
@@ -124,6 +125,7 @@ export function WebSetupScreen() {
   } else {
     body = (
       <form className={styles.form} onSubmit={(e) => void connect(e)}>
+        <InstallHint beforeSetup />
         <p className={styles.lead}>
           Kết nối với dữ liệu của gia đình trên Google Drive. Người tạo dữ liệu (admin) cài script
           kết nối theo hướng dẫn, rồi gửi bạn link và mã kết nối.

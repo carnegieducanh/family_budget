@@ -27,6 +27,20 @@
     margin: 0;
     min-width: 0;
   }
+
+  // Điện thoại: nhãn nằm trên nội dung thay vì cột bên trái.
+  @include m.phone {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+
+    dt {
+      padding-top: 0;
+    }
+
+    dd + dt {
+      margin-top: var(--space-3);
+    }
+  }
 }
 
 .path {

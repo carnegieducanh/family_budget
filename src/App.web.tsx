@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState, type ReactElement } from 'react';
-import { Handshake, LayoutDashboard, Receipt, type LucideIcon } from 'lucide-react';
+import { Handshake, LayoutDashboard, Plus, Receipt, type LucideIcon } from 'lucide-react';
 import { BrandMark } from './components/BrandMark';
 import { Button } from './components/Button';
 import { SyncBanner } from './components/SyncBanner';
@@ -14,14 +14,19 @@ import { TransactionsScreen } from './features/transactions/TransactionsScreen';
 import { useDataStore, useReadyData } from './state/dataStore';
 import { useUiStore, type Screen } from './state/uiStore';
 import { startSync } from './sync/appSync';
+import { SyncButton } from './web/SyncButton';
 import { WebSettingsScreen } from './web/WebSettingsScreen';
 import { WebSetupScreen } from './web/WebSetupScreen';
+import { registerServiceWorker } from './web/registerServiceWorker';
 import { claimSingleTab } from './web/singleTab';
 import styles from './App.web.module.scss';
+import './web/web.scss';
 
 // Bản web (điện thoại) của App.tsx: chỉ 3 màn Tổng quan, Khoản chi, Tất toán, chuyển bằng thanh
-// tab ở đáy màn hình; Cài đặt mở bằng ảnh đại diện ở góc trên. Không có cập nhật app (trang web
-// tự lên bản mới khi tải lại).
+// tab ở đáy màn hình; nút + nổi để thêm khoản chi; Cài đặt mở bằng ảnh đại diện ở góc trên. Không
+// có cập nhật app: trang web tự lên bản mới khi mở lại lúc có mạng.
+
+registerServiceWorker();
 
 function App() {
   const status = useDataStore((s) => s.status);
@@ -59,6 +64,7 @@ const SCREENS: Partial<Record<Screen, () => ReactElement>> = {
 function MainLayout() {
   const screen = useUiStore((s) => s.screen);
   const setScreen = useUiStore((s) => s.setScreen);
+  const openCreate = useUiStore((s) => s.openCreate);
   const saveError = useDataStore((s) => s.saveError);
   const { me } = useReadyData();
   const Current = SCREENS[screen] ?? OverviewScreen;
@@ -90,36 +96,52 @@ function MainLayout() {
           <BrandMark size={28} />
           <span className={styles.brandName}>Family Budget</span>
         </button>
-        <button
-          type="button"
-          className={onSettings ? `${styles.profile} ${styles.profileActive}` : styles.profile}
-          aria-label="Cài đặt"
-          aria-current={onSettings ? 'page' : undefined}
-          onClick={() => setScreen('settings')}
-        >
-          <UserAvatar user={me} size={32} />
-        </button>
+        <div className={styles.topActions}>
+          <SyncButton />
+          <button
+            type="button"
+            className={onSettings ? `${styles.profile} ${styles.profileActive}` : styles.profile}
+            aria-label="Cài đặt"
+            aria-current={onSettings ? 'page' : undefined}
+            onClick={() => setScreen('settings')}
+          >
+            <UserAvatar user={me} size={32} />
+          </button>
+        </div>
       </header>
 
-      <main ref={contentRef} className={styles.content}>
-        <div className={styles.inner}>
-          {saveError && (
-            <div className={styles.saveError} role="alert">
-              <span>
-                Không lưu được dữ liệu xuống máy: {saveError}. Thay đổi vẫn còn trong app.
-              </span>
-              <Button size="sm" onClick={() => useDataStore.getState().retrySave()}>
-                Thử lưu lại
-              </Button>
+      <div className={styles.body}>
+        <main ref={contentRef} className={styles.content}>
+          <div className={styles.inner}>
+            {saveError && (
+              <div className={styles.saveError} role="alert">
+                <span>
+                  Không lưu được dữ liệu xuống máy: {saveError}. Thay đổi vẫn còn trong app.
+                </span>
+                <Button size="sm" onClick={() => useDataStore.getState().retrySave()}>
+                  Thử lưu lại
+                </Button>
+              </div>
+            )}
+            <SyncBanner />
+            {/* key: mỗi lần đổi màn hình khối này dựng lại nên hiệu ứng hiện ra chạy lại. */}
+            <div key={screen} className={styles.screen}>
+              <Current />
             </div>
-          )}
-          <SyncBanner />
-          {/* key: mỗi lần đổi màn hình khối này dựng lại nên hiệu ứng hiện ra chạy lại. */}
-          <div key={screen} className={styles.screen}>
-            <Current />
           </div>
-        </div>
-      </main>
+        </main>
+        {!onSettings && (
+          <button
+            type="button"
+            className={styles.fab}
+            aria-label="Thêm khoản chi"
+            title="Thêm khoản chi"
+            onClick={openCreate}
+          >
+            <Plus size={28} strokeWidth={2.4} aria-hidden="true" />
+          </button>
+        )}
+      </div>
 
       <nav className={styles.tabs} aria-label="Màn hình">
         {TABS.map(({ screen: target, icon: Icon, label }) => {

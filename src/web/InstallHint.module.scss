@@ -1,0 +1,18 @@
+@use '../styles/mixins' as m;
+
+.hint {
+  @include m.callout(warning);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+
+  ol {
+    margin: 0;
+    padding-left: var(--space-5);
+  }
+
+  svg {
+    vertical-align: -2px;
+  }
+}

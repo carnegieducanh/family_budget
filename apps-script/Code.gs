@@ -16,16 +16,31 @@
 
 // Để trống thì hàm caiDat tự tìm thư mục FamilyBudget có dữ liệu. Nếu caiDat báo thấy nhiều thư
 // mục, dán ID của thư mục đúng vào đây (phần cuối link thư mục trên Google Drive:
-// https://drive.google.com/drive/folders/<ID>) rồi chạy lại caiDat.
+// https://drive.google.com/drive/folders/<ID>) rồi chạy lại caiDat. Dán ID của thư mục đã chọn
+// trong app trên máy tính cũng được: như app, script tự dùng thư mục con FamilyBudget bên trong.
 const FOLDER_ID = '';
 
 // Cùng mẫu tên file với app (src/core/deviceFiles.ts).
 const DEVICE_FILE_RE = /^device-([A-Za-z0-9-]+?)(\.enc)?\.json$/;
 
-/** Chạy một lần trong trình soạn thảo: chọn thư mục dữ liệu và tạo mã kết nối. */
+/**
+ * Chạy một lần trong trình soạn thảo (và chạy lại sau khi sửa FOLDER_ID): chọn thư mục dữ liệu
+ * và tạo mã kết nối. Không thấy file của máy nào thì báo lỗi, không in mã.
+ */
 function caiDat() {
   const props = PropertiesService.getScriptProperties();
   const folder = findFolder_();
+  const count = deviceFiles_(folder, '').length;
+  if (count === 0) {
+    throw new Error(
+      'Thư mục "' +
+        folder.getName() +
+        '" (' +
+        folder.getUrl() +
+        ') không có file device-*.json nào, cũng không có thư mục con FamilyBudget chứa các file đó. ' +
+        'Hãy để trống FOLDER_ID, hoặc dán ID của thư mục FamilyBudget đang chứa file của các máy.',
+    );
+  }
   props.setProperty('FOLDER_ID', folder.getId());
   let secret = props.getProperty('SECRET');
   if (!secret) {
@@ -33,7 +48,7 @@ function caiDat() {
     props.setProperty('SECRET', secret);
   }
   console.log('Thư mục dữ liệu: ' + folder.getName() + ' — ' + folder.getUrl());
-  console.log('Số file của các máy: ' + deviceFiles_(folder, '').length);
+  console.log('Số file của các máy: ' + count);
   console.log('MÃ KẾT NỐI: ' + secret);
   console.log('Tiếp theo: Triển khai → Tùy chọn triển khai mới → Ứng dụng web.');
 }
@@ -80,15 +95,32 @@ function checkKey_(key) {
   if (typeof key !== 'string' || key !== secret) throw new Error('Sai mã kết nối.');
 }
 
+/** Thư mục dữ liệu mà caiDat đã chọn (lưu trong Script Properties). */
 function folder_() {
-  const id = FOLDER_ID || PropertiesService.getScriptProperties().getProperty('FOLDER_ID');
+  const id = PropertiesService.getScriptProperties().getProperty('FOLDER_ID');
   if (!id) throw new Error('Script chưa cài đặt xong: hãy chạy hàm caiDat trong trình soạn thảo.');
   return DriveApp.getFolderById(id);
 }
 
-/** Thư mục có dữ liệu: FOLDER_ID nếu có, nếu không thì thư mục tên FamilyBudget duy nhất có file của các máy. */
+/**
+ * Thư mục chứa file của các máy, theo cùng luật với app trên máy tính (resolveDataDir): thư mục
+ * tên FamilyBudget, hoặc đã có file device-*.json, thì dùng chính nó; nếu không thì dùng thư mục
+ * con FamilyBudget bên trong (nếu có).
+ */
+function dataFolder_(folder) {
+  if (folder.getName().toLowerCase() === 'familybudget') return folder;
+  if (deviceFiles_(folder, '').length > 0) return folder;
+  const children = folder.getFolders();
+  while (children.hasNext()) {
+    const child = children.next();
+    if (!child.isTrashed() && child.getName().toLowerCase() === 'familybudget') return child;
+  }
+  return folder;
+}
+
+/** Thư mục có dữ liệu: theo FOLDER_ID nếu có, nếu không thì thư mục tên FamilyBudget duy nhất có file của các máy. */
 function findFolder_() {
-  if (FOLDER_ID) return DriveApp.getFolderById(FOLDER_ID);
+  if (FOLDER_ID) return dataFolder_(DriveApp.getFolderById(FOLDER_ID));
   const found = [];
   const folders = DriveApp.getFoldersByName('FamilyBudget');
   while (folders.hasNext()) {

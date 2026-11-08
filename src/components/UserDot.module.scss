@@ -1,3 +1,5 @@
+@use '../styles/mixins' as m;
+
 .dot {
   display: inline-block;
   flex-shrink: 0;
@@ -69,4 +71,13 @@
 .emoji {
   font-weight: 400;
   text-shadow: none;
+}
+
+// Điện thoại: trong ô bảng (Tất toán) chỉ còn ảnh, tên ẩn bằng cỡ chữ 0 nhưng trình đọc màn hình
+// vẫn đọc được; ảnh đặt cỡ chữ riêng nên không bị ảnh hưởng.
+@include m.phone {
+  td .faceName {
+    gap: 0;
+    font-size: 0;
+  }
 }

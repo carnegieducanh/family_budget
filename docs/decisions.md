@@ -684,3 +684,34 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 - **Thanh cảnh báo sync (máy kia dùng bản mới hơn, lỗi mã hóa, lệch giờ) tách thành `components/SyncBanner.tsx`, dùng chung cho app desktop và bản web.**
 
 - **Đã thử bằng máy chủ Apps Script giả chạy đúng file `Code.gs` (DriveApp giả đọc ghi một thư mục trên đĩa, trả lời 302 + CORS như Google, từ chối preflight) và một bản desktop thử riêng (`com.familybudget.webtest`, thư mục "Drive" nằm trong thư mục dữ liệu của nó, đã xóa sau khi thử):** điện thoại giả (Edge, khung iPhone) kết nối, mã sai bị từ chối, chọn Queen; khoản thêm trên điện thoại lên "Drive" 0,2 giây sau khi rời app; app desktop hiện popup "Khoản chi mới" với khoản đó và liệt kê "Máy Queen (722c6fc2)"; khoản thêm trên máy tính về điện thoại sau "Sync ngay", kèm popup. Chưa thử với Apps Script và Google Drive thật.
+
+## 2026-11-08 — Bản web, bước 3: giao diện điện thoại và cài vào Màn hình chính
+
+- **Mốc "điện thoại" mới: màn hình hẹp hơn 640 px (mixin `phone` trong `styles/_mixins.scss`, hook `components/usePhoneLayout.ts`).** Cửa sổ app desktop không co nhỏ hơn 640 px nên không bao giờ vào mốc này; mọi thay đổi bên dưới chỉ có ở bản web trên điện thoại, dù nằm trong file dùng chung.
+  - Khoản chi: bảng thành danh sách, mỗi khoản một dòng (icon danh mục, ghi chú hoặc tên danh mục, ngày · danh mục, nhãn định kỳ, số tiền, ảnh người trả); bấm vào dòng để mở popup sửa (có nút Xóa) hoặc xem. Ô tìm kiếm lên đầu, hai bộ lọc chung một hàng.
+  - Tổng quan: "5 khoản gần nhất" thành hai dòng, người trả chỉ còn ảnh.
+  - Tất toán: bảng chữ nhỏ hơn, lề ô hẹp, người chỉ còn ảnh (tên vẫn có cho trình đọc màn hình); bảng lịch sử bỏ cột Tổng chi, trạng thái được xuống dòng; bỏ icon bắt tay trong hộp kết quả.
+  - Cài đặt: nhãn nằm trên nội dung thay vì cột trái.
+  - Popup: sát phía trên màn hình để bàn phím không che ô nhập, lề hẹp; popup khoản chi xếp Ngày và Danh mục thành hai hàng.
+  - Nút "Thêm khoản chi" trong màn Khoản chi và Tổng quan ẩn đi, thay bằng nút **+** tròn nổi ở góc dưới phải (trên thanh tab, ẩn ở Cài đặt).
+    Lý do: bảng nhiều cột tràn ngang ở bề rộng iPhone (375–430 px). Không đổi bố cục desktop.
+
+- **Thanh trên của bản web có icon trạng thái sync (`web/SyncButton.tsx`): xoay khi đang sync, tam giác đỏ/vàng khi có lỗi hoặc cảnh báo, đám mây gạch khi chưa kết nối. Bình thường bấm là sync ngay; có lỗi hoặc chưa kết nối thì bấm mở Cài đặt.**
+  Lý do: điện thoại không có tooltip, chữ lỗi chỉ đọc được ở Cài đặt → Đồng bộ.
+
+- **Trên màn cảm ứng, ô nhập luôn có chữ từ 16 px (`web/web.scss`), chạm không có ô xám và không chờ chạm đúp.**
+  Lý do: Safari trên iPhone tự phóng to cả trang khi chạm vào ô nhập chữ nhỏ hơn 16 px (cỡ chữ mặc định Nhỏ của app là 14 px).
+
+- **Bản web là PWA: `web-public/` (chỉ bản web dùng, `publicDir` của Vite) có `manifest.webmanifest` (`display: standalone`), `apple-touch-icon.png` 180 px, icon 192/512 px, favicon; plugin `webApp` trong `vite.config.ts` chèn manifest, icon và các thẻ meta của Safari vào trang (thanh trạng thái `default`, `viewport-fit=cover`, `theme-color` đổi theo theme lúc chạy), và tạo `sw.js` từ khuôn `src/web/sw.js`. `base: './'` để chạy được ở thư mục con của GitHub Pages. `index.html` và bản build của app desktop không đổi.**
+  - Service worker lưu sẵn mọi file của bản build; mở trang thì lấy bản mới trên mạng trước, mất mạng thì dùng bản đã lưu; file JS/CSS/font (tên có mã băm) lấy từ cache trước. Chỉ xử lý GET cùng nguồn, yêu cầu tới Apps Script đi thẳng ra mạng. Mỗi bản build có tên cache riêng, bản cũ bị xóa khi bản mới chạy. Chỉ đăng ký ở bản build, không ở `npm run dev:web`.
+  - Icon iPhone: ô xanh của icon desktop (`_source/family-budget-icon-tile.png`), 4 góc trong suốt được tô bằng gradient lấy từ màu 4 góc của ô (iOS tự bo góc, phần trong suốt sẽ thành màu đen); quyển sổ giữ cỡ lớn như icon desktop.
+  - Cài đặt → Máy này có phiên bản và thời điểm build (`__APP_VERSION__`, `__BUILD_TIME__`), để biết điện thoại đã lên bản mới chưa.
+    Lý do: thêm vào Màn hình chính thì mở toàn màn hình như app, và Safari không tự xóa dữ liệu của trang lâu không mở; service worker để mở được app khi không có mạng (dữ liệu vẫn nằm trong IndexedDB, có mạng lại thì sync). Không dùng `vite-plugin-pwa` để khỏi thêm thư viện (SPEC mục 1.2); service worker chỉ khoảng 50 dòng.
+
+- **Màn thiết lập và Cài đặt của bản web có hướng dẫn "Dùng như app trên iPhone" (Chia sẻ → Thêm vào MH chính) khi đang mở trong tab trình duyệt của điện thoại, nhắc thêm vào Màn hình chính trước rồi mới kết nối.**
+  Lý do: trên iPhone, app ở Màn hình chính có kho dữ liệu riêng, không dùng chung với tab Safari; kết nối trong Safari rồi mới thêm thì phải kết nối lại.
+
+- **Đã thử bằng Edge giả lập iPhone (390 và 375 px, theme sáng và tối) với máy chủ Apps Script giả: không màn nào tràn ngang; bản build (`vite preview`) đăng ký được service worker, tải được manifest và icon, mở lại được khi mất mạng với dữ liệu trong máy (icon sync báo lỗi). Chưa thử trên iPhone thật** (cần https: bước 4).
+
+- **(Sửa sau khi user thử thật) `caiDat` chọn thư mục theo cùng luật với app desktop: thư mục tên FamilyBudget, hoặc đã có file `device-*.json`, thì dùng chính nó; nếu không thì dùng thư mục con FamilyBudget bên trong. Không thấy file nào thì `caiDat` báo lỗi và không in mã kết nối. Lúc chạy, script chỉ dùng thư mục `caiDat` đã chọn (lưu trong Script Properties), không đọc thẳng `FOLDER_ID`.**
+  Lý do: app desktop trên máy user chọn `G:\My Drive\Family Budget` (có dấu cách), file của các máy nằm ở thư mục con `Family Budget/FamilyBudget/`; dán ID của thư mục cha (là thư mục hiện ở Cài đặt → Sync → "Thư mục Drive") làm script trỏ vào thư mục không có file nào, mà bản cũ vẫn in mã kết nối như thành công.
