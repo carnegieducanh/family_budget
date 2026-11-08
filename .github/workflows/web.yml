@@ -1,0 +1,63 @@
+# Bản web cho điện thoại: mỗi lần đẩy code lên main (có thay đổi ở phần web), GitHub Actions kiểm
+# tra code, build `npm run build:web` rồi đưa thư mục dist-web lên GitHub Pages:
+#   https://carnegieducanh.github.io/family_budget/
+# Chuẩn bị một lần: repo → Settings → Pages → Source: GitHub Actions (docs/INSTALL.md mục 4.3).
+# Không đụng tới bản desktop (workflow "Phát hành" chỉ chạy khi đẩy tag vX.Y.Z).
+
+name: Bản web
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'web-public/**'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Mỗi lúc chỉ một lần đưa lên; lần đang chạy dở không bị hủy giữa chừng.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Kiểm tra và build bản web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+      - run: npm run build:web
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-web
+
+  deploy:
+    name: Đưa lên GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

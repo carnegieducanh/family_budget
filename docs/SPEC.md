@@ -35,7 +35,9 @@ App ghi các khoản chi chung hàng tháng của 2 người trong gia đình, c
 - Export và import CSV (UTF-8 có BOM để Excel mở đúng tiếng Việt).
 - Sync tự động, backup tự động, thông báo khi có bản cập nhật.
 
-**Ngoài phạm vi MVP:** khoản thu (thu nhập), ảnh hóa đơn, nhiều loại tiền, khoản chi riêng hoặc tỉ lệ khác 50/50, bản mobile, khóa app bằng mật khẩu, sync qua LAN, server riêng.
+**Ngoài phạm vi MVP:** khoản thu (thu nhập), ảnh hóa đơn, nhiều loại tiền, khoản chi riêng hoặc tỉ lệ khác 50/50, khóa app bằng mật khẩu, sync qua LAN, server riêng.
+
+**Thêm sau MVP — bản web cho iPhone (2026-11-08):** cùng mã nguồn, build riêng bằng `npm run build:web`, đặt trên GitHub Pages và cài vào Màn hình chính như app (PWA). Chỉ 3 màn Tổng quan, Khoản chi, Tất toán và Cài đặt gọn. Mỗi điện thoại là thêm một "máy": ghi file `device-<deviceId>.json` của mình vào cùng thư mục FamilyBudget qua một Google Apps Script chạy bằng tài khoản admin (`apps-script/Code.gs`), nên app desktop không phải sửa. Dữ liệu trên điện thoại nằm trong IndexedDB; không có mã hóa. Chi tiết: docs/decisions.md (các mục ngày 2026-11-08), docs/INSTALL.md mục 4.
 
 ## 3. Công nghệ và cấu trúc project
 

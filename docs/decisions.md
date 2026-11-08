@@ -715,3 +715,8 @@ Ghi lại những điểm `SPEC.md` chưa nói rõ và phương án đã chọn.
 
 - **(Sửa sau khi user thử thật) `caiDat` chọn thư mục theo cùng luật với app desktop: thư mục tên FamilyBudget, hoặc đã có file `device-*.json`, thì dùng chính nó; nếu không thì dùng thư mục con FamilyBudget bên trong. Không thấy file nào thì `caiDat` báo lỗi và không in mã kết nối. Lúc chạy, script chỉ dùng thư mục `caiDat` đã chọn (lưu trong Script Properties), không đọc thẳng `FOLDER_ID`.**
   Lý do: app desktop trên máy user chọn `G:\My Drive\Family Budget` (có dấu cách), file của các máy nằm ở thư mục con `Family Budget/FamilyBudget/`; dán ID của thư mục cha (là thư mục hiện ở Cài đặt → Sync → "Thư mục Drive") làm script trỏ vào thư mục không có file nào, mà bản cũ vẫn in mã kết nối như thành công.
+
+## 2026-11-08 — Bản web, bước 4: đưa lên GitHub Pages
+
+- **Bản web nằm ở GitHub Pages của chính repo (`https://carnegieducanh.github.io/family_budget/`), đưa lên bằng workflow "Bản web" (`.github/workflows/web.yml`) mỗi khi đẩy lên `main` có thay đổi ở phần web, hoặc chạy tay. Workflow kiểm tra code (typecheck, lint, format, test) trước khi build; hỏng thì không đưa lên.**
+  Lý do: miễn phí, có https (iPhone cần https để thêm vào Màn hình chính với service worker), không thêm dịch vụ mới; repo vốn public và trang không chứa dữ liệu gia đình (dữ liệu chỉ đọc được bằng link + mã kết nối của Apps Script, không nằm trong repo). Đưa lên từ `main` thay vì nhánh riêng vì môi trường `github-pages` mặc định chỉ cho nhánh mặc định đưa lên. Workflow phát hành bản desktop chỉ chạy khi đẩy tag, nên đẩy `main` không phát hành bản desktop.

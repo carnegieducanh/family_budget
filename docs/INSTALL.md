@@ -283,7 +283,7 @@ Lưu ý:
 
 Cần iOS 16.4 trở lên (Cài đặt → Cài đặt chung → Giới thiệu → Phiên bản iOS).
 
-1. Mở link bản web bằng **Safari** (không dùng Chrome trên iPhone: chỉ Safari thêm được vào Màn hình chính đúng cách).
+1. Mở <https://carnegieducanh.github.io/family_budget/> bằng **Safari**.
 2. Bấm nút **Chia sẻ** → **Thêm vào MH chính** (Add to Home Screen) → **Thêm**.
 3. Mở **Family Budget** từ Màn hình chính, rồi mới kết nối: app ở Màn hình chính có dữ liệu riêng, không dùng chung với tab Safari. Kết nối trong tab Safari rồi mới thêm vào Màn hình chính thì phải kết nối lại.
 4. Dán **Link kết nối** (URL ứng dụng web) và **Mã kết nối** → **Kết nối** → chọn tài khoản của mình → chọn ảnh đại diện → **Hoàn tất**.
@@ -296,3 +296,14 @@ Dùng hằng ngày:
 - Bản mới của app tự có khi mở app lúc có mạng, không cần cập nhật gì.
 
 Bản web không đọc được dữ liệu đã mã hóa (mục 2.4).
+
+### 4.3. Đưa bản web lên GitHub Pages (cho người phát triển)
+
+1. **Một lần:** GitHub → repo → **Settings → Pages** → mục Build and deployment, Source: chọn **GitHub Actions**.
+2. **Mỗi lần đẩy code lên `main`** có thay đổi ở phần web (`src/`, `web-public/`, `index.html`, `vite.config.ts`, `package.json`), workflow **"Bản web"** (`.github/workflows/web.yml`) tự kiểm tra code (typecheck, lint, format, test), build rồi đưa lên GitHub Pages, mất khoảng 2 phút. Chạy tay: tab **Actions → Bản web → Run workflow**.
+3. Điện thoại nhận bản mới ở lần mở app kế tiếp lúc có mạng; xem ở Cài đặt → Máy này → Phiên bản (thời điểm build).
+
+Lưu ý:
+
+- Đẩy lên `main` là điện thoại có bản mới ngay, không chờ phát hành bản desktop (mục 3). Thay đổi nào tăng `schemaVersion` của dữ liệu thì phát hành bản desktop cùng lúc; nếu không, app trên máy tính báo "Máy kia đang dùng bản mới hơn" và tạm dừng sync tới khi cập nhật.
+- Chạy thử trên máy: `npm run dev:web` (http://localhost:1430, không có service worker), hoặc `npm run build:web` rồi `npm run preview:web` (giống bản thật, có service worker).
