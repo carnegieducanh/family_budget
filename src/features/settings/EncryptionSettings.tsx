@@ -8,7 +8,8 @@ import { Modal } from '../../components/Modal';
 import { useDataStore, useReadyData } from '../../state/dataStore';
 import { useSyncStore } from '../../state/syncStore';
 import { MIN_PASSWORD_LENGTH } from '../../storage/crypto';
-import { encryptedContents, inspectFolder, syncNow } from '../../sync/appSync';
+import { encryptedContents, syncNow } from '../../sync/appSync';
+import { inspectFolder } from '../../sync/driveFolderConnect';
 import styles from './SettingsScreen.module.scss';
 
 type Dialog = 'set' | 'enter' | 'disable' | null;

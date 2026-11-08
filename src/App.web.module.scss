@@ -1,0 +1,145 @@
+@use './styles/mixins' as m;
+
+// Bố cục bản web cho điện thoại: thanh trên (logo, ảnh đại diện mở Cài đặt), vùng nội dung
+// cuộn, thanh tab cố định ở đáy. Chừa vùng an toàn của iPhone (tai thỏ, thanh Home).
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  padding: calc(var(--space-2) + env(safe-area-inset-top)) var(--space-4) var(--space-2);
+  background: var(--color-sidebar);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.brand,
+.profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  transition: background-color var(--transition-fast);
+
+  &:hover {
+    background: var(--color-sidebar-hover);
+  }
+}
+
+.brandName {
+  font-size: calc(15px * var(--font-scale));
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.profile {
+  border-radius: var(--radius-pill);
+}
+
+.profileActive {
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.content {
+  @include m.brand-band;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.inner {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-8);
+}
+
+// Đổi màn hình: nội dung màn mới hiện dần và trượt nhẹ lên (như App.module.scss).
+.screen {
+  animation: screen-in 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.tabs {
+  display: flex;
+  flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--color-sidebar);
+  border-top: 1px solid var(--color-border);
+}
+
+.tab {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: var(--space-2) var(--space-1);
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  transition: color var(--transition-fast);
+
+  svg {
+    color: var(--color-primary);
+  }
+}
+
+.tabActive {
+  color: var(--color-primary-strong);
+  font-weight: 600;
+
+  svg {
+    color: currentColor;
+  }
+}
+
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--space-6);
+  color: var(--color-text-muted);
+}
+
+.errorPanel {
+  max-width: 560px;
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text);
+
+  h1 {
+    margin-bottom: var(--space-3);
+    font-size: var(--font-size-xl);
+    color: var(--color-danger-text);
+  }
+}
+
+.saveError {
+  @include m.callout(danger);
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}

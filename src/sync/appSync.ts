@@ -1,21 +1,14 @@
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { DEFAULT_SYNC_INTERVAL_MIN } from '../core/defaults';
-import { parseDeviceFileName, type DeviceFileInfo } from '../core/deviceFiles';
-import { connectProblem } from '../core/sync';
+import { parseDeviceFileName } from '../core/deviceFiles';
 import type { Settings } from '../core/types';
+import { onWindowFocus } from '../platform/nativeWindow';
+import { createSyncAdapter } from '../platform/syncAdapter';
 import { useDataStore } from '../state/dataStore';
 import { useSyncStore } from '../state/syncStore';
 import { createSnapshot } from '../storage/backup';
 import { importFileKey, type FileKey } from '../storage/crypto';
 import {
-  createDriveFolderAdapter,
-  listDeviceFiles,
-  resolveDataDir,
-} from '../storage/driveFolderAdapter';
-import {
   createSyncScheduler,
-  openRemoteFiles,
-  readRemoteFiles,
   syncOnce,
   type RawRemoteFile,
   type SyncEnv,
@@ -23,7 +16,8 @@ import {
   type SyncScheduler,
 } from './syncService';
 
-// Nối syncService với store và thư mục Drive. Chạy một lần khi dữ liệu đã sẵn sàng.
+// Nối syncService với store và nơi sync (thư mục Drive trên desktop). Chạy một lần khi dữ
+// liệu đã sẵn sàng. Kết nối thư mục Drive (chỉ có trên desktop) nằm ở driveFolderConnect.ts.
 
 let cachedKey: { id: string; key: Promise<FileKey> } | null = null;
 
@@ -44,7 +38,7 @@ const env: SyncEnv = {
     const readKey = await settingsKey(settings);
     const writeKey = settings.encryption.enabled ? readKey : null;
     return {
-      adapter: createDriveFolderAdapter(settings.syncFolder, settings.deviceId, writeKey !== null),
+      adapter: createSyncAdapter(settings.syncFolder, settings.deviceId, writeKey !== null),
       readKey,
       writeKey,
       writtenBy: settings.userId,
@@ -107,14 +101,10 @@ export function startSync(): SyncScheduler {
     }),
   );
 
-  getCurrentWindow()
-    .onFocusChanged(({ payload: focused }) => {
-      if (focused) current.notifyFocus();
-    })
-    .then(
-      (unlisten) => cleanups.push(unlisten),
-      (error: unknown) => console.warn('Không theo dõi được focus cửa sổ:', error),
-    );
+  onWindowFocus(() => current.notifyFocus()).then(
+    (unlisten) => cleanups.push(unlisten),
+    (error: unknown) => console.warn('Không theo dõi được focus cửa sổ:', error),
+  );
 
   void current.request();
   return current;
@@ -133,39 +123,3 @@ function stopSync(): void {
 
 // Khi dev sửa code (HMR), dừng lịch sync cũ để không có 2 lịch chạy song song.
 import.meta.hot?.dispose(stopSync);
-
-export interface FolderContents {
-  folder: string;
-  /** Thư mục chứa file các máy (`<folder>/FamilyBudget`). */
-  dataDir: string;
-  /** Mọi file `device-*.json`, kể cả của máy này. */
-  deviceFiles: DeviceFileInfo[];
-  /** Nội dung thô các file của máy khác; file `.enc.json` chưa giải mã. */
-  rawFiles: RawRemoteFile[];
-}
-
-/**
- * Đọc thư mục Drive vừa chọn, để kiểm tra trước khi tạo mới, tham gia hoặc kết nối; cũng
- * dùng để lấy file mã hóa của máy kia khi nhập mật khẩu chung.
- */
-export async function inspectFolder(folder: string, deviceId: string): Promise<FolderContents> {
-  const dataDir = await resolveDataDir(folder);
-  const deviceFiles = await listDeviceFiles(folder);
-  const rawFiles = await readRemoteFiles(createDriveFolderAdapter(folder, deviceId));
-  return { folder, dataDir, deviceFiles, rawFiles };
-}
-
-/**
- * Kết nối thư mục Drive vừa chọn rồi sync ngay (Cài đặt, hoặc bấm "Chưa kết nối thư mục Drive"
- * ở sidebar). Ném lỗi kèm lý do nếu thư mục chứa dữ liệu của gia đình khác.
- */
-export async function connectSyncFolder(folder: string): Promise<void> {
-  const { settings, data } = useDataStore.getState();
-  if (!settings) throw new Error('Chưa đọc được settings.');
-  const contents = await inspectFolder(folder, settings.deviceId);
-  const files = await openRemoteFiles(contents.rawFiles, await settingsKey(settings));
-  const problem = data && connectProblem(data, files, new Date());
-  if (problem) throw new Error(problem);
-  await useDataStore.getState().updateSettings({ syncFolder: folder });
-  void syncNow();
-}

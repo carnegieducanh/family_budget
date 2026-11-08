@@ -83,12 +83,13 @@ interface DataState {
   /**
    * Máy thứ hai: dùng dữ liệu đọc từ thư mục Drive, chọn "Tôi là ..." và đặt ảnh đại diện.
    * `encryption`: khóa dẫn xuất từ mật khẩu chung, nếu dữ liệu trong thư mục đã được mã hóa.
+   * `syncFolder` null: chưa kết nối nơi sync (bản web mở dữ liệu từ file).
    */
   joinHousehold(
     data: DataFile,
     userId: string,
     avatar: string,
-    syncFolder: string,
+    syncFolder: string | null,
     encryption: StoredKey | null,
   ): Promise<void>;
   /** Máy đã có data.json nhưng chưa biết là của ai: chọn "Tôi là ..." và đặt ảnh đại diện. */

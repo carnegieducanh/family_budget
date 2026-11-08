@@ -1,6 +1,5 @@
-import { invoke } from '@tauri-apps/api/core';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { create } from 'zustand';
+import { setTitleBarColor, setWindowTheme } from '../platform/nativeWindow';
 
 // Theme của giao diện: Sáng, Tối hoặc Theo hệ thống. Là lựa chọn của từng máy, lưu trong
 // localStorage của WebView (không vào settings.json) để đọc được đồng bộ ngay lúc mở app,
@@ -30,12 +29,15 @@ function readStored(): ThemePreference {
   }
 }
 
-/** Thanh tiêu đề cùng màu sidebar của theme đang áp dụng (lệnh set_title_bar_color, Windows 11). */
+/**
+ * Thanh tiêu đề cùng màu sidebar của theme đang áp dụng (Windows 11); trên điện thoại là màu
+ * thanh trạng thái của trình duyệt.
+ */
 function applyTitleBarColor() {
   const color = getComputedStyle(document.documentElement)
     .getPropertyValue('--color-sidebar')
     .trim();
-  if (color) invoke('set_title_bar_color', { color }).catch(() => undefined);
+  if (color) setTitleBarColor(color);
 }
 
 /** Đặt data-theme cho CSS và theme cửa sổ (thanh tiêu đề của hệ điều hành). */
@@ -43,10 +45,7 @@ function apply(preference: ThemePreference) {
   const root = document.documentElement;
   if (preference === 'system') delete root.dataset.theme;
   else root.dataset.theme = preference;
-  // null = cửa sổ đi theo hệ thống. Lỗi (ví dụ chạy ngoài Tauri) chỉ làm thanh tiêu đề lệch màu.
-  getCurrentWindow()
-    .setTheme(preference === 'system' ? null : preference)
-    .catch(() => undefined);
+  setWindowTheme(preference === 'system' ? null : preference);
   applyTitleBarColor();
 }
 
